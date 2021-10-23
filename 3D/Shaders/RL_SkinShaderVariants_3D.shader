@@ -3,12 +3,12 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
     Properties
     {
         // skin & Head
-        _DiffuseMap("Diffuse Map", 2D) = "white" {}        
-        _MaskMap("Mask Map", 2D) = "gray" {}
-        _SSSMap("Subsurface Map", 2D) = "white" {}
-        _ThicknessMap("Thickness Map", 2D) = "black" {}
-        _NormalMap("Normal Map", 2D) = "bump" {}
-        _MicroNormalMap("Micro Normal Map", 2D) = "bump" {}
+        [NoScaleOffset] _DiffuseMap("Diffuse Map", 2D) = "white" {}
+        [NoScaleOffset]_MaskMap("Mask Map", 2D) = "gray" {}
+        [NoScaleOffset]_SSSMap("Subsurface Map", 2D) = "white" {}
+        [NoScaleOffset]_ThicknessMap("Thickness Map", 2D) = "black" {}
+        [NoScaleOffset]_NormalMap("Normal Map", 2D) = "bump" {}
+        [NoScaleOffset]_MicroNormalMap("Micro Normal Map", 2D) = "bump" {}
         _NormalStrength("Normal Strength", Range(0,2)) = 1
         _MicroNormalStrength("Micro Normal Strength", Range(0,2)) = 0.5
         _MicroNormalTiling("Micro Normal Tiling", Range(0,50)) = 25
@@ -19,19 +19,19 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
         _SubsurfaceScale("Subsurface Scale", Range(0,1)) = 1
         _ThicknessScale("Thickness Scale", Range(0,1)) = 0.4
         // head
-        _ColorBlendMap("Color Blend Map (Head)", 2D) = "grey" {}
-        _MNAOMap("Cavity AO Map (Head)", 2D) = "white" {}
+        [NoScaleOffset]_ColorBlendMap("Color Blend Map (Head)", 2D) = "grey" {}
+        [NoScaleOffset]_MNAOMap("Cavity AO Map (Head)", 2D) = "white" {}
         _MouthCavityAO("Mouth Cavity AO", Range(0.1,5)) = 2.5
         _NostrilCavityAO("Nostril Cavity AO", Range(0.1,5)) = 2.5
         _LipsCavityAO("Lips Cavity AO", Range(0.1,5)) = 2.5
-        _NormalBlendMap("Normal Blend Map (Head)", 2D) = "bump" {}
+        [NoScaleOffset]_NormalBlendMap("Normal Blend Map (Head)", 2D) = "bump" {}
         _ColorBlendStrength("Color Blend Strength (Head)", Range(0,1)) = 0.5
         _NormalBlendStrength("Normal Blend Strength (Head)", Range(0,1)) = 0.5
         // skin & head
-        _RGBAMask("RGBA Map", 2D) = "black" {}
+        [NoScaleOffset]_RGBAMask("RGBA Map", 2D) = "black" {}
         // head
-        _CFULCMask("CFULC Mask", 2D) = "black" {}
-        _EarNeckMask("Ear Neck Mask", 2D) = "black" {}
+        [NoScaleOffset]_CFULCMask("CFULC Mask", 2D) = "black" {}
+        [NoScaleOffset]_EarNeckMask("Ear Neck Mask", 2D) = "black" {}
         // skin & head
         _MicroSmoothnessMod("Micro Smoothness Mod", Range(-1.5,1.5)) = 0
         _RSmoothnessMod("Nose/R Smoothness Mod", Range(-1.5,1.5)) = 0
@@ -57,7 +57,7 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
         _ChinScatterScale("Chin Scatter Scale", Range(0,2)) = 1
         _UnmaskedScatterScale("Unmasked Scatter Scale", Range(0,2)) = 1
         // skin
-        _EmissionMap("Emission Map", 2D) = "black" {}
+        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "black" {}
         _EmissiveColor("Emissive Color", Color) = (0,0,0,0)
 
         [Toggle]BOOLEAN_IS_HEAD("Is Head", Float) = 1
@@ -94,7 +94,7 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
         
         struct Input
         {
-            float2 uv_MainTex;            
+            float2 uv_DiffuseMap;
         };
 
         half _NormalStrength;
@@ -146,9 +146,11 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
 #if BOOLEAN_IS_HEAD_ON
         void surf (Input IN, inout SurfaceOutputStandard o)
         {            
-            fixed4 base = tex2D(_DiffuseMap, IN.uv_MainTex); 
-            half4 mask = tex2D(_MaskMap, IN.uv_MainTex);
-            fixed4 bcb = tex2D(_ColorBlendMap, IN.uv_MainTex);            
+            float2 uv = IN.uv_DiffuseMap;
+
+            fixed4 base = tex2D(_DiffuseMap, uv); 
+            half4 mask = tex2D(_MaskMap, uv);
+            fixed4 bcb = tex2D(_ColorBlendMap, uv);
 
             // blend overlay the base color blend map over the diffuse
             fixed4 result1 = 1.0 - 2.0 * (1.0 - base) * (1.0 - bcb);
@@ -158,7 +160,7 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
             base = lerp(base, result3, _ColorBlendStrength);
 
             // cavity AO
-            half4 cavityAO = tex2D(_MNAOMap, IN.uv_MainTex);
+            half4 cavityAO = tex2D(_MNAOMap, uv);
             half mouthAO = pow(cavityAO.g, _MouthCavityAO);
             half nostrilAO = pow(cavityAO.b, _NostrilCavityAO);
             half lipsAO = pow(cavityAO.a, _LipsCavityAO);
@@ -169,9 +171,9 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
             half ao = lerp(1.0, mask.g, _AOStrength);
             
             // micro smoothness
-            fixed4 mask1 = tex2D(_RGBAMask, IN.uv_MainTex);
-            fixed4 mask2 = tex2D(_CFULCMask, IN.uv_MainTex);
-            fixed4 mask3 = tex2D(_EarNeckMask, IN.uv_MainTex);
+            fixed4 mask1 = tex2D(_RGBAMask, uv);
+            fixed4 mask2 = tex2D(_CFULCMask, uv);
+            fixed4 mask3 = tex2D(_EarNeckMask, uv);
             fixed4 mod1 = fixed4(_RSmoothnessMod, _GSmoothnessMod, _BSmoothnessMod, _ASmoothnessMod);
             fixed4 mod2 = fixed4(_CheekSmoothnessMod, _ForeheadSmoothnessMod, _UpperLipSmoothnessMod, _ChinSmoothnessMod);
             fixed4 mod3 = fixed4(_NeckSmoothnessMod, _EarSmoothnessMod, 0.0, 0.0);
@@ -185,15 +187,15 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
             smoothness = saturate((1.0 + smoothnessMod + _MicroSmoothnessMod) * smoothness) * cao;
 
             // normal
-            half3 normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));
+            half3 normal = UnpackNormal(tex2D(_NormalMap, uv));
             // apply normal strength
             normal = half3(normal.xy * _NormalStrength, lerp(1, normal.z, saturate(_NormalStrength)));
             // blend normal
-            half3 blendNormal = UnpackNormal(tex2D(_NormalBlendMap, IN.uv_MainTex));
+            half3 blendNormal = UnpackNormal(tex2D(_NormalBlendMap, uv));
             // apply blend normal strength
             blendNormal = half3(blendNormal.xy * _NormalBlendStrength, lerp(1, blendNormal.z, saturate(_NormalBlendStrength)));
             // micro normal
-            half3 microNormal = UnpackNormal(tex2D(_MicroNormalMap, IN.uv_MainTex * _MicroNormalTiling));
+            half3 microNormal = UnpackNormal(tex2D(_MicroNormalMap, uv * _MicroNormalTiling));
             // apply micro normal strength
             half detailStrength = _MicroNormalStrength * mask.b;
             microNormal = half3(microNormal.xy * detailStrength, lerp(1, microNormal.z, saturate(detailStrength)));
@@ -210,15 +212,17 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
 #else
         void surf(Input IN, inout SurfaceOutputStandard o)
         {
-            fixed4 base = tex2D(_DiffuseMap, IN.uv_MainTex);
-            half4 mask = tex2D(_MaskMap, IN.uv_MainTex);
-            fixed4 bcb = tex2D(_ColorBlendMap, IN.uv_MainTex);                        
+            float2 uv = IN.uv_DiffuseMap;
+
+            fixed4 base = tex2D(_DiffuseMap, uv);
+            half4 mask = tex2D(_MaskMap, uv);
+            fixed4 bcb = tex2D(_ColorBlendMap, uv);                        
 
             // remap AO
             half ao = lerp(1.0, mask.g, _AOStrength);
 
             // micro smoothness
-            fixed4 mask1 = tex2D(_RGBAMask, IN.uv_MainTex);
+            fixed4 mask1 = tex2D(_RGBAMask, uv);
             fixed4 mod1 = fixed4(_RSmoothnessMod, _GSmoothnessMod, _BSmoothnessMod, _ASmoothnessMod);            
             fixed unmask = 1.0 - saturate(mask1.x + mask1.y + mask1.z + mask1.w);
             fixed smoothnessMod = dot(mask1, mod1) + (unmask * _UnmaskedSmoothnessMod);
@@ -229,11 +233,11 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
             smoothness = saturate((1.0 + smoothnessMod + _MicroSmoothnessMod) * smoothness);
 
             // normal
-            half3 normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));
+            half3 normal = UnpackNormal(tex2D(_NormalMap, uv));
             // apply normal strength
             normal = half3(normal.xy * _NormalStrength, lerp(1, normal.z, saturate(_NormalStrength)));
             // micro normal
-            half3 microNormal = UnpackNormal(tex2D(_MicroNormalMap, IN.uv_MainTex * _MicroNormalTiling));
+            half3 microNormal = UnpackNormal(tex2D(_MicroNormalMap, uv * _MicroNormalTiling));
             // apply micro normal strength
             half detailStrength = _MicroNormalStrength * mask.b;
             microNormal = half3(microNormal.xy * detailStrength, lerp(1, microNormal.z, saturate(detailStrength)));

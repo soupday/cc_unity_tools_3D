@@ -2,12 +2,12 @@ Shader "Reallusion/RL_TeethShader_3D"
 {
     Properties
     {
-        _DiffuseMap("Diffuse Map", 2D) = "white" {}
-        _MaskMap("Mask Map", 2D) = "gray" {}
-        _NormalMap("Normal Map", 2D) = "bump" {}
-        _MicroNormalMap("Micro Normal Map", 2D) = "bump" {}
-        _GumsMaskMap("Gums Mask Map", 2D) = "white" {}
-        _GradientAOMap("Gradient AO Map", 2D) = "white" {}
+        [NoScaleOffset] _DiffuseMap("Diffuse Map", 2D) = "white" {}
+        [NoScaleOffset]_MaskMap("Mask Map", 2D) = "gray" {}
+        [NoScaleOffset]_NormalMap("Normal Map", 2D) = "bump" {}
+        [NoScaleOffset]_MicroNormalMap("Micro Normal Map", 2D) = "bump" {}
+        [NoScaleOffset]_GumsMaskMap("Gums Mask Map", 2D) = "white" {}
+        [NoScaleOffset]_GradientAOMap("Gradient AO Map", 2D) = "white" {}
         _NormalStrength("Normal Strength", Range(0,2)) = 1
         _MicroNormalStrength("Micro Normal Strength", Range(0,2)) = 0.5
         _MicroNormalTiling("Micro Normal Tiling", Range(0,10)) = 4
@@ -26,7 +26,7 @@ Shader "Reallusion/RL_TeethShader_3D"
         _GumsThickness("Tongue Thickness", Range(0,1)) = 0.85
         _TeethSSS("Tongue Subsurface Scatter", Range(0,1)) = 0.5
         _TeethThickness("Tongue Thickness", Range(0,1)) = 0.7
-        _EmissionMap("Emission Map", 2D) = "black" {}
+        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "black" {}
         _EmissiveColor("Emissive Color", Color) = (0,0,0,0)
         [ToggleUI]_IsUpperTeeth("Is Upper Teeth", Float) = 0
     }
@@ -52,7 +52,7 @@ Shader "Reallusion/RL_TeethShader_3D"
 
         struct Input
         {
-            float2 uv_MainTex;
+            float2 uv_DiffuseMap;
         };
         
         half _NormalStrength;
@@ -84,11 +84,13 @@ Shader "Reallusion/RL_TeethShader_3D"
         UNITY_INSTANCING_BUFFER_END(Props)
 
         void surf (Input IN, inout SurfaceOutputStandard o)
-        {            
-            fixed4 diffuse = tex2D(_DiffuseMap, IN.uv_MainTex);
-            half4 gradientAO = tex2D(_GradientAOMap, IN.uv_MainTex);
-            half4 gumsMask = tex2D(_GumsMaskMap, IN.uv_MainTex);
-            half4 mask = tex2D(_MaskMap, IN.uv_MainTex);            
+        {        
+            float2 uv = IN.uv_DiffuseMap;
+
+            fixed4 diffuse = tex2D(_DiffuseMap, uv);
+            half4 gradientAO = tex2D(_GradientAOMap, uv);
+            half4 gumsMask = tex2D(_GumsMaskMap, uv);
+            half4 mask = tex2D(_MaskMap, uv);            
             half cavityMask = lerp(gradientAO.r, gradientAO.g, _IsUpperTeeth);
 
             // saturation & brightness
@@ -107,11 +109,11 @@ Shader "Reallusion/RL_TeethShader_3D"
             smoothness = pow(saturate(smoothness), _SmoothnessPower);            
 
             // normal
-            half3 normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));
+            half3 normal = UnpackNormal(tex2D(_NormalMap, uv));
             // apply normal strength
             normal = half3(normal.xy * _NormalStrength, lerp(1, normal.z, saturate(_NormalStrength)));
             // micro normal
-            half3 microNormal = UnpackNormal(tex2D(_MicroNormalMap, IN.uv_MainTex * _MicroNormalTiling));
+            half3 microNormal = UnpackNormal(tex2D(_MicroNormalMap, uv * _MicroNormalTiling));
             // apply micro normal strength
             half detailMask = _MicroNormalStrength * mask.b;
             microNormal = half3(microNormal.xy * detailMask, lerp(1, microNormal.z, saturate(detailMask)));

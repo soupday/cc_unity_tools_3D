@@ -2,14 +2,14 @@ Shader "Reallusion/RL_CorneaShader_3D"
 {
     Properties
     {
-        _ScleraDiffuseMap("Sclera Diffuse Map", 2D) = "white" {}
-        _CorneaDiffuseMap("Cornea Diffuse Map", 2D) = "white" {}
-        _ColorBlendMap("Color Blend Map", 2D) = "grey" {}
-        _MaskMap("Mask Map", 2D) = "gray" {}        
+        [NoScaleOffset] _ScleraDiffuseMap("Sclera Diffuse Map", 2D) = "white" {}
+        [NoScaleOffset]_CorneaDiffuseMap("Cornea Diffuse Map", 2D) = "white" {}
+        [NoScaleOffset]_ColorBlendMap("Color Blend Map", 2D) = "grey" {}
+        [NoScaleOffset]_MaskMap("Mask Map", 2D) = "gray" {}
         _AOStrength("Ambient Occlusion Strength", Range(0,1)) = 0.2
-        _IrisNormalMap("Iris Normal Map", 2D) = "bump" {}
+        [NoScaleOffset]_IrisNormalMap("Iris Normal Map", 2D) = "bump" {}
         _IrisNormalStrength("Iris Normal Strength", Range(0,2)) = 0
-        _ScleraNormalMap("Sclera Normal Map", 2D) = "bump" {}
+        [NoScaleOffset]_ScleraNormalMap("Sclera Normal Map", 2D) = "bump" {}
         _ScleraNormalStrength("Sclera Normal Strength", Range(0,1)) = 0.1
         _ScleraNormalTiling("Sclera Normal Tiling", Range(1,10)) = 2        
         _ScleraScale("Sclera Scale", Range(0.25,2)) = 1
@@ -37,7 +37,7 @@ Shader "Reallusion/RL_CorneaShader_3D"
         _RefractionThickness("Refraction Thickness", Range(0,0.025)) = 0.01
         _IrisDepth("Iris Depth", Range(0,1)) = 0
         _DepthRadius("Depth Radius", Range(0,1)) = 0.8
-        _EmissionMap("Emission Map", 2D) = "black" {}
+        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "black" {}
         _EmissiveColor("Emissive Color", Color) = (0,0,0,0)
         [ToggleUI]_IsLeftEye("Is Left Eye", Float) = 0
         [Toggle]BOOLEAN_ISCORNEA("IsCornea", Float) = 0
@@ -64,7 +64,7 @@ Shader "Reallusion/RL_CorneaShader_3D"
 
         struct Input
         {
-            float2 uv_MainTex;
+            float2 uv_ScleraDiffuseMap;
         };
         
         half _AOStrength;
@@ -141,10 +141,12 @@ Shader "Reallusion/RL_CorneaShader_3D"
 
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
-            half4 mask = tex2D(_MaskMap, IN.uv_MainTex);
+            float2 uv = IN.uv_ScleraDiffuseMap;
+
+            half4 mask = tex2D(_MaskMap, uv);
             half irisRadius = _IrisScale * _IrisRadius;
             half limbusWidth = _IrisScale * _LimbusWidth;
-            half radial = length(IN.uv_MainTex.xy - half2(0.5, 0.5));
+            half radial = length(uv.xy - half2(0.5, 0.5));
             half scleraMask = smoothstep(irisRadius - limbusWidth, irisRadius, radial);
             half irisMask = 1 - scleraMask;
             half depthRadius = irisRadius * _DepthRadius;
@@ -155,7 +157,7 @@ Shader "Reallusion/RL_CorneaShader_3D"
             half corneaTiling = 1.0 / lerp(_IrisScale, pupilScale, depthMask);
             half corneaOffset = half2(0.5, 0.5) * (1 - corneaTiling);
 
-            fixed4 cornea = HSV(tex2D(_CorneaDiffuseMap, IN.uv_MainTex * corneaTiling + corneaOffset), 
+            fixed4 cornea = HSV(tex2D(_CorneaDiffuseMap, uv * corneaTiling + corneaOffset), 
                                 _IrisHue, _IrisSaturation, _IrisBrightness);
 
             half limbusDarkRadius = _LimbusDarkRadius * _IrisScale;
@@ -167,7 +169,7 @@ Shader "Reallusion/RL_CorneaShader_3D"
             half scleraTiling = 1.0 / _ScleraScale;
             half2 scleraOffset = half2(0.5, 0.5) * (1 - scleraTiling);
 
-            fixed4 sclera = HSV(tex2D(_ScleraDiffuseMap, IN.uv_MainTex * scleraTiling + scleraOffset),
+            fixed4 sclera = HSV(tex2D(_ScleraDiffuseMap, uv * scleraTiling + scleraOffset),
                                 _ScleraHue, _ScleraSaturation, _ScleraBrightness);
 
             half shadowRadius = _ShadowRadius * _ScleraScale;
@@ -177,7 +179,7 @@ Shader "Reallusion/RL_CorneaShader_3D"
 
             fixed4 c = lerp(sclera, cornea, irisMask);
 
-            half4 blend = tex2D(_ColorBlendMap, IN.uv_MainTex);
+            half4 blend = tex2D(_ColorBlendMap, uv);
             c = lerp(c, c * blend, _ColorBlendStrength);
             
             // Smoothness
@@ -187,7 +189,7 @@ Shader "Reallusion/RL_CorneaShader_3D"
             half ao = lerp(1.0, mask.g, _AOStrength);
 
             // Sclera Normal
-            half3 scleraNormal = UnpackNormal(tex2D(_ScleraNormalMap, IN.uv_MainTex * _ScleraNormalTiling));
+            half3 scleraNormal = UnpackNormal(tex2D(_ScleraNormalMap, uv * _ScleraNormalTiling));
             // apply micro normal strength
             half detailMask = _ScleraNormalStrength * scleraMask;
             scleraNormal = half3(scleraNormal.xy * detailMask, lerp(1, scleraNormal.z, saturate(detailMask)));            

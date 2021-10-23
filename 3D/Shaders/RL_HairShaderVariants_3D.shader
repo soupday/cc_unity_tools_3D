@@ -85,7 +85,7 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
 
         struct Input
         {
-            float2 uv_MainTex;
+            float2 uv_DiffuseMap;
             fixed4 vertColor : COLOR;
         };        
 
@@ -161,11 +161,13 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
 #if BOOLEAN_ENABLECOLOR_ON
         void surf(Input IN, inout SurfaceOutputStandard o)
         {
-            fixed4 diffuse = tex2D(_DiffuseMap, IN.uv_MainTex);
-            half4 rootMap = tex2D(_RootMap, IN.uv_MainTex);
-            half4 idMap = tex2D(_IDMap, IN.uv_MainTex);
-            half4 depthBlend = tex2D(_BlendMap, IN.uv_MainTex);
-            half4 mask = tex2D(_MaskMap, IN.uv_MainTex);
+            float2 uv = IN.uv_DiffuseMap;
+
+            fixed4 diffuse = tex2D(_DiffuseMap, uv);
+            half4 rootMap = tex2D(_RootMap, uv);
+            half4 idMap = tex2D(_IDMap, uv);
+            half4 depthBlend = tex2D(_BlendMap, uv);
+            half4 mask = tex2D(_MaskMap, uv);
 
             // remap AO
             half aoStrength = (_AOStrength + _AOOccludeAll) * 0.5;
@@ -194,15 +196,17 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             o.Albedo = color.rgb * ao;
             o.Metallic = mask.r;
             o.Smoothness = smoothness;            
-            o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));            
+            o.Normal = UnpackNormal(tex2D(_NormalMap, uv));            
             o.Alpha = alpha;            
         }
 #else
         void surf(Input IN, inout SurfaceOutputStandard o)
         {
-            fixed4 diffuse = tex2D(_DiffuseMap, IN.uv_MainTex);
-            half4 depthBlend = tex2D(_BlendMap, IN.uv_MainTex);
-            half4 mask = tex2D(_MaskMap, IN.uv_MainTex);
+            float2 uv = IN.uv_DiffuseMap;
+
+            fixed4 diffuse = tex2D(_DiffuseMap, uv);
+            half4 depthBlend = tex2D(_BlendMap, uv);
+            half4 mask = tex2D(_MaskMap, uv);
 
             // remap AO
             half aoStrength = (_AOStrength + _AOOccludeAll) * 0.5;
@@ -224,7 +228,7 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             o.Albedo = color.rgb * ao;
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
-            o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));
+            o.Normal = UnpackNormal(tex2D(_NormalMap, uv));
             o.Alpha = alpha;
         }
 #endif
@@ -255,7 +259,7 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
 
         struct Input
         {
-            float2 uv_MainTex;
+            float2 uv_DiffuseMap;
             fixed4 vertColor : COLOR;
         };
 
@@ -331,11 +335,13 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
 #if BOOLEAN_ENABLECOLOR_ON
         void surf(Input IN, inout SurfaceOutputStandard o)
         {
-            fixed4 diffuse = tex2D(_DiffuseMap, IN.uv_MainTex);
-            half4 rootMap = tex2D(_RootMap, IN.uv_MainTex);
-            half4 idMap = tex2D(_IDMap, IN.uv_MainTex);
-            half4 depthBlend = tex2D(_BlendMap, IN.uv_MainTex);
-            half4 mask = tex2D(_MaskMap, IN.uv_MainTex);
+            float2 uv = IN.uv_DiffuseMap;
+
+            fixed4 diffuse = tex2D(_DiffuseMap, uv);
+            half4 rootMap = tex2D(_RootMap, uv);
+            half4 idMap = tex2D(_IDMap, uv);
+            half4 depthBlend = tex2D(_BlendMap, uv);
+            half4 mask = tex2D(_MaskMap, uv);
 
             // remap AO
             half aoStrength = (_AOStrength + _AOOccludeAll) * 0.5;
@@ -363,15 +369,17 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             o.Albedo = color.rgb * ao;
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
-            o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));
+            o.Normal = UnpackNormal(tex2D(_NormalMap, uv));
             o.Alpha = alpha;
         }
 #else
         void surf(Input IN, inout SurfaceOutputStandard o)
         {
-            fixed4 diffuse = tex2D(_DiffuseMap, IN.uv_MainTex);
-            half4 depthBlend = tex2D(_BlendMap, IN.uv_MainTex);
-            half4 mask = tex2D(_MaskMap, IN.uv_MainTex);
+            float2 uv = IN.uv_DiffuseMap;
+
+            fixed4 diffuse = tex2D(_DiffuseMap, uv);
+            half4 depthBlend = tex2D(_BlendMap, uv);
+            half4 mask = tex2D(_MaskMap, uv);
 
             // remap AO
             half aoStrength = (_AOStrength + _AOOccludeAll) * 0.5;
@@ -392,7 +400,7 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             o.Albedo = color.rgb * ao;
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
-            o.Normal = UnpackNormal(tex2D(_NormalMap, IN.uv_MainTex));
+            o.Normal = UnpackNormal(tex2D(_NormalMap, uv));
             o.Alpha = alpha;
         }
 #endif

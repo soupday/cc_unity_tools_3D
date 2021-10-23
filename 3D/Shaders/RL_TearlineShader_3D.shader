@@ -25,8 +25,6 @@ Shader "Reallusion/RL_TearlineShader_3D"
         // Use shader model 3.0 target, to get nicer looking lighting
         #pragma target 3.0
 
-        sampler2D _MainTex;
-
         struct Input
         {
             float2 uv_MainTex;
