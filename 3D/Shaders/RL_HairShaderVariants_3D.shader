@@ -2,36 +2,37 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
 {
     Properties
     {
+        // Main Maps
         [NoScaleOffset]_DiffuseMap("Diffuse Map", 2D) = "white" {}
-        [NoScaleOffset]_MaskMap("Mask Map", 2D) = "white" {}
-        [NoScaleOffset]_NormalMap("Normal Map", 2D) = "bump" {}
-        [NoScaleOffset]_IDMap("ID Map", 2D) = "grey" {}
-        [NoScaleOffset]_BlendMap("Blend Map", 2D) = "white" {}
-        [NoScaleOffset]_RootMap("Root Map", 2D) = "grey" {}
-        [NoScaleOffset]_SpecularMap("Specular Map", 2D) = "white" {}
-        [NoScaleOffset]_FlowMap("Flow Map", 2D) = "grey" {}
-        _AOStrength("Ambient Occlusion Strength", Range(0, 1)) = 1
-        _AOOccludeAll("AO Occlude All", Range(0, 1)) = 0
         _DiffuseStrength("Diffuse Strength", Range(0, 2)) = 1
-        _BlendStrength("Blend Strength", Range(0, 1)) = 1
         _VertexBaseColor("Vertex Base Color", Color) = (0, 0, 0, 0)
         _VertexColorStrength("Vertex Color Strength", Range(0, 1)) = 0.5
         _BaseColorStrength("Base Color Strength", Range(0, 1)) = 1
         _AlphaPower("Alpha Power", Range(0.01, 2)) = 1
         _AlphaRemap("Alpha Remap", Range(0.5, 1)) = 1
-        _AlphaClip2("Alpha Clip", Range(0, 1)) = 1
-        _ShadowClip("Shadow Clip", Range(0, 1)) = 0.2
-        _DepthPrepass("Depth Prepass", Range(0, 1)) = 0.95
-        _DepthPostpass("Depth Postpass", Range(0, 1)) = 0.2
+        _AlphaClip("Alpha Clip", Range(0, 1)) = 1
+        [NoScaleOffset]_MaskMap("Mask Map", 2D) = "white" {}
+        _AOStrength("Ambient Occlusion Strength", Range(0, 1)) = 1
+        _AOOccludeAll("AO Occlude All", Range(0, 1)) = 0
         _SmoothnessMin("Smoothness Min", Range(0, 1)) = 0
         _SmoothnessMax("Smoothness Max", Range(0, 1)) = 1
         _SmoothnessPower("Smoothness Power", Range(0.5, 2)) = 1
+        // Normals
+        [NoScaleOffset]_NormalMap("Normal Map", 2D) = "bump" {}        
+        _NormalStrength("Normal Strength", Range(0, 2)) = 1
+        // Blend Maps
+        [NoScaleOffset]_BlendMap("Blend Map", 2D) = "white" {}
+        _BlendStrength("Blend Strength", Range(0, 1)) = 1
+        // Hair Root/End Colouring
+        [NoScaleOffset]_RootMap("Root Map", 2D) = "grey" {}
         _GlobalStrength("Global Strength", Range(0, 1)) = 1
         _RootColorStrength("Root Color Strength", Range(0, 1)) = 1
         _EndColorStrength("End Color Strength", Range(0, 1)) = 1
         _InvertRootMap("Invert Root Map", Range(0, 1)) = 0
         _RootColor("Root Color", Color) = (0.3294118, 0.1411765, 0.05098039, 0)
         _EndColor("End Color", Color) = (0.6039216, 0.454902, 0.2862745, 0)
+        // Hair ID Map Highlights
+        [NoScaleOffset]_IDMap("ID Map", 2D) = "grey" {}
         _HighlightAStrength("Highlight A Strength", Range(0, 1)) = 1
         _HighlightAColor("Highlight A Color", Color) = (0.9137255, 0.7803922, 0.6352941, 0)
         _HighlightADistribution("Highlight A Distribution", Vector) = (0.1, 0.2, 0.3, 0)
@@ -41,22 +42,27 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
         _HighlightBColor("Highlight B Color", Color) = (1, 1, 1, 0)
         _HighlightBDistribution("Highlight B Distribution", Vector) = (0.6, 0.7, 0.8, 0)
         _HighlightBOverlapEnd("Highlight B Overlap End", Range(0, 1)) = 1
-        _HighlightBOverlapInvert("Highlight B Overlap Invert", Range(0, 1)) = 1
-        _RimTransmissionIntensity("Rim Transmission Intensity", Range(0, 1)) = 0.05
-        _SpecularTint("Specular Tint", Color) = (1, 1, 1, 1)
-        _SpecularMultiplier("Specular Multiplier", Range(0, 1)) = 0.5
-        _SpecularShift("Specular Shift", Range(-1, 1)) = 0.15
-        _SecondarySpecularMultiplier("Secondary Specular Multiplier", Range(0, 1)) = 0.05
-        _SecondarySpecularShift("Secondary Specular Shift", Range(-1, 1)) = 0.15
-        _SecondarySmoothness("Secondary Smoothness", Range(0, 1)) = 0.625
-        _NormalStrength("Normal Strength", Range(0, 2)) = 1
+        _HighlightBOverlapInvert("Highlight B Overlap Invert", Range(0, 1)) = 1                       
+        // Emission
         [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "white" {}
         [HDR]_EmissiveColor("Emissive Color", Color) = (0, 0, 0, 0)
-        [HideInInspector][NoScaleOffset]unity_Lightmaps("unity_Lightmaps", 2DArray) = "" {}
-        [HideInInspector][NoScaleOffset]unity_LightmapsInd("unity_LightmapsInd", 2DArray) = "" {}
-        [HideInInspector][NoScaleOffset]unity_ShadowMasks("unity_ShadowMasks", 2DArray) = "" {}
-        [KeywordEnum(Standard, Noise, Dither)]_ENUMCLIPQUALITY_ON("Clip Quality", Float) = 0
+        // Keywords            
         [Toggle]BOOLEAN_ENABLECOLOR("Enable Color", Float) = 0
+
+        // NOT YET IMPLEMENTED
+        [HideInInspector][NoScaleOffset]_SpecularMap("Specular Map", 2D) = "white" {}
+        [HideInInspector][NoScaleOffset]_FlowMap("Flow Map", 2D) = "grey" {}
+        [HideInInspector]_ShadowClip("Shadow Clip", Range(0, 1)) = 0.2
+        [HideInInspector]_DepthPrepass("Depth Prepass", Range(0, 1)) = 0.95
+        [HideInInspector]_DepthPostpass("Depth Postpass", Range(0, 1)) = 0.2
+        [HideInInspector]_RimTransmissionIntensity("Rim Transmission Intensity", Range(0, 1)) = 0.05
+        [HideInInspector]_SpecularTint("Specular Tint", Color) = (1, 1, 1, 1)
+        [HideInInspector]_SpecularMultiplier("Specular Multiplier", Range(0, 1)) = 0.5
+        [HideInInspector]_SpecularShift("Specular Shift", Range(-1, 1)) = 0.15
+        [HideInInspector]_SecondarySpecularMultiplier("Secondary Specular Multiplier", Range(0, 1)) = 0.05
+        [HideInInspector]_SecondarySpecularShift("Secondary Specular Shift", Range(-1, 1)) = 0.15
+        [HideInInspector]_SecondarySmoothness("Secondary Smoothness", Range(0, 1)) = 0.625
+        [HideInInspector][KeywordEnum(Standard, Noise, Dither)]_ENUMCLIPQUALITY_ON("Clip Quality", Float) = 0
     }
     SubShader
     {
@@ -64,10 +70,14 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
         LOD 200
 
         Cull Off
+        ZWrite On
+
+        // First pass: Render the hair as opaque alpha clipped. 
+        // This should act as a depth prepass for the 2nd alpha blend pass.
 
         CGPROGRAM
         // Physically based Standard lighting model, and enable shadows on all light types
-        #pragma surface surf Standard fullforwardshadows alphatest:_AlphaClip2 addshadow
+        #pragma surface surf Standard fullforwardshadows alphatest:_AlphaClip addshadow
         #pragma multi_compile _ BOOLEAN_ENABLECOLOR_ON //_ENUMCLIPQUALITY_ON_STANDARD _ENUMCLIPQUALITY_ON_NOISE _ENUMCLIPQUALITY_ON_DITHER
 
         // Use shader model 3.0 target, to get nicer looking lighting
@@ -129,14 +139,7 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
         half _SecondarySmoothness;
         half _NormalStrength;        
         fixed4 _EmissiveColor;        
-        half BOOLEAN_ENABLECOLOR;
-
-        // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
-        // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
-        // #pragma instancing_options assumeuniformscaling
-        UNITY_INSTANCING_BUFFER_START(Props)
-            // put more per-instance properties here
-        UNITY_INSTANCING_BUFFER_END(Props)      
+        half BOOLEAN_ENABLECOLOR;        
 
         float4 RootEndBlend(float4 color, float rootMask)
         {
@@ -169,13 +172,11 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             half4 depthBlend = tex2D(_BlendMap, uv);
             half4 mask = tex2D(_MaskMap, uv);
 
-            // remap AO
-            half aoStrength = (_AOStrength + _AOOccludeAll) * 0.5;
-            half ao = lerp(1.0, mask.g, aoStrength);
+            // remap AO          
+            half ao = lerp(1.0, mask.g, _AOStrength);
 
             // remap Alpha
-            //half alpha = pow(saturate((diffuse.a / _AlphaRemap)), _AlphaPower);
-            half alpha = diffuse.a;
+            half alpha = pow(saturate((diffuse.a / _AlphaRemap)), _AlphaPower);
 
             // remap smoothness
             half smoothness = lerp(_SmoothnessMin, _SmoothnessMax, pow(mask.a, _SmoothnessPower));
@@ -193,9 +194,10 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
             color = lerp(color, _VertexBaseColor, vcf);
             
-            o.Albedo = color.rgb * ao;
+            o.Albedo = lerp(color.rgb, color.rgb * mask.g, _AOOccludeAll * 0.5);
             o.Metallic = mask.r;
             o.Smoothness = smoothness;            
+            o.Occlusion = ao;
             o.Normal = UnpackNormal(tex2D(_NormalMap, uv));            
             o.Alpha = alpha;            
         }
@@ -208,13 +210,11 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             half4 depthBlend = tex2D(_BlendMap, uv);
             half4 mask = tex2D(_MaskMap, uv);
 
-            // remap AO
-            half aoStrength = (_AOStrength + _AOOccludeAll) * 0.5;
-            half ao = lerp(1.0, mask.g, aoStrength);
+            // remap AO          
+            half ao = lerp(1.0, mask.g, _AOStrength);
 
             // remap Alpha
-            //half alpha = pow(saturate((diffuse.a / _AlphaRemap)), _AlphaPower);
-            half alpha = diffuse.a;
+            half alpha = pow(saturate((diffuse.a / _AlphaRemap)), _AlphaPower);            
 
             // remap smoothness
             half smoothness = lerp(_SmoothnessMin, _SmoothnessMax, pow(mask.a, _SmoothnessPower));
@@ -225,15 +225,19 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
             color = lerp(color, _VertexBaseColor, vcf);
 
-            o.Albedo = color.rgb * ao;
+            o.Albedo = lerp(color.rgb, color.rgb * mask.g, _AOOccludeAll * 0.5);
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
+            o.Occlusion = ao;
             o.Normal = UnpackNormal(tex2D(_NormalMap, uv));
             o.Alpha = alpha;
         }
 #endif
         ENDCG
 
+        // 2nd Pass, render remaining alpha blended hair (fade) around the first opaque pass
+        // ZTest set to Less than, so that the opaque parts of each hair card will never be overdrawn. 
+        // (Should be better performance)
         Blend SrcAlpha OneMinusSrcAlpha
         ZTest Less
         Cull Off
@@ -303,14 +307,7 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
         half _SecondarySmoothness;
         half _NormalStrength;
         fixed4 _EmissiveColor;
-        half BOOLEAN_ENABLECOLOR;
-
-        // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
-        // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
-        // #pragma instancing_options assumeuniformscaling
-        UNITY_INSTANCING_BUFFER_START(Props)
-            // put more per-instance properties here
-        UNITY_INSTANCING_BUFFER_END(Props)
+        half BOOLEAN_ENABLECOLOR;        
 
         float4 RootEndBlend(float4 color, float rootMask)
         {
@@ -343,9 +340,8 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             half4 depthBlend = tex2D(_BlendMap, uv);
             half4 mask = tex2D(_MaskMap, uv);
 
-            // remap AO
-            half aoStrength = (_AOStrength + _AOOccludeAll) * 0.5;
-            half ao = lerp(1.0, mask.g, aoStrength);
+            // remap AO          
+            half ao = lerp(1.0, mask.g, _AOStrength);
 
             // remap Alpha
             half alpha = pow(saturate((diffuse.a / _AlphaRemap)), _AlphaPower);
@@ -366,9 +362,10 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
             color = lerp(color, _VertexBaseColor, vcf);
 
-            o.Albedo = color.rgb * ao;
+            o.Albedo = lerp(color.rgb, color.rgb * mask.g, _AOOccludeAll * 0.5);
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
+            o.Occlusion = ao;
             o.Normal = UnpackNormal(tex2D(_NormalMap, uv));
             o.Alpha = alpha;
         }
@@ -381,9 +378,8 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             half4 depthBlend = tex2D(_BlendMap, uv);
             half4 mask = tex2D(_MaskMap, uv);
 
-            // remap AO
-            half aoStrength = (_AOStrength + _AOOccludeAll) * 0.5;
-            half ao = lerp(1.0, mask.g, aoStrength);
+            // remap AO          
+            half ao = lerp(1.0, mask.g, _AOStrength);
 
             // remap Alpha
             half alpha = pow(saturate((diffuse.a / _AlphaRemap)), _AlphaPower);
@@ -397,9 +393,10 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
             color = lerp(color, _VertexBaseColor, vcf);
 
-            o.Albedo = color.rgb * ao;
+            o.Albedo = lerp(color.rgb, color.rgb * mask.g, _AOOccludeAll * 0.5);
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
+            o.Occlusion = ao;
             o.Normal = UnpackNormal(tex2D(_NormalMap, uv));
             o.Alpha = alpha;
         }

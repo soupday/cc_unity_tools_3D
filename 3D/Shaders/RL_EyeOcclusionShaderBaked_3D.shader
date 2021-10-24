@@ -2,7 +2,8 @@ Shader "Reallusion/RL_EyeOcclusionShaderBaked_3D"
 {
     Properties
     {
-        [NoScaleOffset] _BaseColorMap("Base Color Map", 2D) = "white" {}        
+        // replicate standard shader inputs
+        [NoScaleOffset] _MainTex("Albedo", 2D) = "white" {}        
         // vertex properties
         _ExpandOut("Expand Outward", Range(-0.001,0.001)) = 0 //0.0001
         _ExpandUpper("Expand Upper", Range(-0.001,0.001)) = 0
@@ -42,7 +43,7 @@ Shader "Reallusion/RL_EyeOcclusionShaderBaked_3D"
                 float4 vertex : SV_POSITION;
             };
 
-            sampler2D _BaseColorMap;
+            sampler2D _MainTex;            
             // vertex properties
             float _ExpandOut;
             float _ExpandUpper;
@@ -63,11 +64,11 @@ Shader "Reallusion/RL_EyeOcclusionShaderBaked_3D"
                 o.uv = v.uv;
                 UNITY_TRANSFER_FOG(o,o.vertex);
                 return o;
-            }            
+            }
 
             fixed4 frag(v2f i) : SV_Target
             {
-                fixed4 col = tex2D(_BaseColorMap, i.uv);
+                fixed4 col = tex2D(_MainTex, i.uv);
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, col);
                 return col;

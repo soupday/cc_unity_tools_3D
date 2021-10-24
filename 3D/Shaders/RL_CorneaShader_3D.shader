@@ -2,25 +2,19 @@ Shader "Reallusion/RL_CorneaShader_3D"
 {
     Properties
     {
+        // Base Color
         [NoScaleOffset] _ScleraDiffuseMap("Sclera Diffuse Map", 2D) = "white" {}
-        [NoScaleOffset]_CorneaDiffuseMap("Cornea Diffuse Map", 2D) = "white" {}
-        [NoScaleOffset]_ColorBlendMap("Color Blend Map", 2D) = "grey" {}
-        [NoScaleOffset]_MaskMap("Mask Map", 2D) = "gray" {}
-        _AOStrength("Ambient Occlusion Strength", Range(0,1)) = 0.2
-        [NoScaleOffset]_IrisNormalMap("Iris Normal Map", 2D) = "bump" {}
-        _IrisNormalStrength("Iris Normal Strength", Range(0,2)) = 0
-        [NoScaleOffset]_ScleraNormalMap("Sclera Normal Map", 2D) = "bump" {}
-        _ScleraNormalStrength("Sclera Normal Strength", Range(0,1)) = 0.1
-        _ScleraNormalTiling("Sclera Normal Tiling", Range(1,10)) = 2        
         _ScleraScale("Sclera Scale", Range(0.25,2)) = 1
         _ScleraHue("Sclera Hue", Range(0,1)) = 0.5
         _ScleraSaturation("Sclera Saturation", Range(0,2)) = 1
         _ScleraBrightness("Sclera Brightness", Range(0,2)) = 0.75
+        [NoScaleOffset]_CorneaDiffuseMap("Cornea Diffuse Map", 2D) = "white" {}
         _IrisScale("Iris Scale", Range(0.25,2)) = 1
         _IrisHue("Iris Hue", Range(0,1)) = 0.5
         _IrisSaturation("Iris Saturation", Range(0,2)) = 1
         _IrisBrightness("Iris Brightness", Range(0,2)) = 1
         _PupilScale("Pupil Scale", Range(0.25,10)) = 0.8
+        _DepthRadius("Pupil Effect Scale", Range(0,1)) = 0.8
         _IrisRadius("Iris Radius", Range(0.01,0.2)) = 0.15
         _LimbusWidth("Limbus Width", Range(0.01,0.1)) = 0.055
         _LimbusDarkRadius("Limbus Dark Radius", Range(0.01,0.2)) = 0.1
@@ -29,18 +23,32 @@ Shader "Reallusion/RL_CorneaShader_3D"
         _ShadowRadius("Shadow Radius", Range(0,0.5)) = 0.275
         _ShadowHardness("Shadow Hardness", Range(0.01,0.99)) = 0.5
         _CornerShadowColor("Corner Shadow Color", Color) = (1,0.7333333,0.6980392,1)
-        _ColorBlendStrength("Color Blend Strength", Range(0,1)) = 0.2
+        // Mask
+        [NoScaleOffset]_MaskMap("Mask Map", 2D) = "gray" {}
+        _AOStrength("Ambient Occlusion Strength", Range(0,1)) = 0.2
         _ScleraSmoothness("Sclera Smoothness", Range(0,1)) = 0.8
         _CorneaSmoothness("Cornea Smoothness", Range(0,1)) = 1
         _IrisSmoothness("Iris Smoothness", Range(0,1)) = 0
-        _IOR("IOR", Range(1,2)) = 1.4
-        _RefractionThickness("Refraction Thickness", Range(0,0.025)) = 0.01
-        _IrisDepth("Iris Depth", Range(0,1)) = 0
-        _DepthRadius("Depth Radius", Range(0,1)) = 0.8
+        // Blend Maps
+        [NoScaleOffset]_ColorBlendMap("Color Blend Map", 2D) = "grey" {}
+        _ColorBlendStrength("Color Blend Strength", Range(0,1)) = 0.2        
+        // Normals
+        [NoScaleOffset]_IrisNormalMap("Iris Normal Map", 2D) = "bump" {}
+        _IrisNormalStrength("Iris Normal Strength", Range(0,2)) = 0
+        [NoScaleOffset]_ScleraNormalMap("Sclera Normal Map", 2D) = "bump" {}
+        _ScleraNormalStrength("Sclera Normal Strength", Range(0,1)) = 0.1
+        _ScleraNormalTiling("Sclera Normal Tiling", Range(1,10)) = 2        
+        // Emission
         [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "black" {}
-        _EmissiveColor("Emissive Color", Color) = (0,0,0,0)
+        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0,0)
+        // Keywords
         [ToggleUI]_IsLeftEye("Is Left Eye", Float) = 0
         [Toggle]BOOLEAN_ISCORNEA("IsCornea", Float) = 0
+
+        // NOT YET IMPLEMENTED
+        [HideInInspector]_IOR("IOR", Range(1,2)) = 1.4
+        [HideInInspector]_RefractionThickness("Refraction Thickness", Range(0,0.025)) = 0.01
+        [HideInInspector]_IrisDepth("Iris Depth", Range(0,1)) = 0                       
     }
     SubShader
     {
@@ -97,14 +105,7 @@ Shader "Reallusion/RL_CorneaShader_3D"
         half _IrisDepth;
         half _DepthRadius;        
         fixed4 _EmissiveColor;
-        half _IsLeftEye;
-
-        // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
-        // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
-        // #pragma instancing_options assumeuniformscaling
-        UNITY_INSTANCING_BUFFER_START(Props)
-            // put more per-instance properties here
-        UNITY_INSTANCING_BUFFER_END(Props)
+        half _IsLeftEye;        
 
         fixed4 HSV(fixed4 rgba, half hue, half saturation, half brightness)
         {
@@ -164,7 +165,7 @@ Shader "Reallusion/RL_CorneaShader_3D"
             half limbusDarkWidth = _LimbusDarkWidth * _IrisScale;
             half limbusMask = smoothstep(limbusDarkRadius, limbusDarkRadius + limbusDarkWidth, radial);
 
-            cornea = lerp(cornea, _LimbusColor, limbusMask);
+            cornea = lerp(cornea, cornea * _LimbusColor, limbusMask);
 
             half scleraTiling = 1.0 / _ScleraScale;
             half2 scleraOffset = half2(0.5, 0.5) * (1 - scleraTiling);
@@ -195,9 +196,10 @@ Shader "Reallusion/RL_CorneaShader_3D"
             scleraNormal = half3(scleraNormal.xy * detailMask, lerp(1, scleraNormal.z, saturate(detailMask)));            
 
             // outputs
-            o.Albedo = c.rgb * ao;
+            o.Albedo = c.rgb;
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
+            o.Occlusion = ao;
             o.Normal = scleraNormal;
             o.Alpha = 1.0;
         }        

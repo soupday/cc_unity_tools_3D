@@ -2,37 +2,33 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
 {
     Properties
     {
-        // skin & Head
+        // Main Maps
         [NoScaleOffset] _DiffuseMap("Diffuse Map", 2D) = "white" {}
         [NoScaleOffset]_MaskMap("Mask Map", 2D) = "gray" {}
-        [NoScaleOffset]_SSSMap("Subsurface Map", 2D) = "white" {}
-        [NoScaleOffset]_ThicknessMap("Thickness Map", 2D) = "black" {}
-        [NoScaleOffset]_NormalMap("Normal Map", 2D) = "bump" {}
-        [NoScaleOffset]_MicroNormalMap("Micro Normal Map", 2D) = "bump" {}
-        _NormalStrength("Normal Strength", Range(0,2)) = 1
-        _MicroNormalStrength("Micro Normal Strength", Range(0,2)) = 0.5
-        _MicroNormalTiling("Micro Normal Tiling", Range(0,50)) = 25
         _AOStrength("Ambient Occlusion Strength", Range(0,1)) = 1
         _SmoothnessPower("Smoothness Power", Range(0.5,2)) = 1
         _SmoothnessMin("Smoothness Min", Range(0,1)) = 0
-        _SmoothnessMax("Smoothness Max", Range(0,1)) = 0.88
-        _SubsurfaceScale("Subsurface Scale", Range(0,1)) = 1
-        _ThicknessScale("Thickness Scale", Range(0,1)) = 0.4
-        // head
+        _SmoothnessMax("Smoothness Max", Range(0,1)) = 0.88        
+        // Normals
+        [NoScaleOffset]_NormalMap("Normal Map", 2D) = "bump" {}
+        _NormalStrength("Normal Strength", Range(0,2)) = 1
+        [NoScaleOffset]_MicroNormalMap("Micro Normal Map", 2D) = "bump" {}        
+        _MicroNormalStrength("Micro Normal Strength", Range(0,2)) = 0.5
+        _MicroNormalTiling("Micro Normal Tiling", Range(0,50)) = 25                              
+        // Blend Maps
         [NoScaleOffset]_ColorBlendMap("Color Blend Map (Head)", 2D) = "grey" {}
+        _ColorBlendStrength("Color Blend Strength (Head)", Range(0,1)) = 0.5
+        [NoScaleOffset]_NormalBlendMap("Normal Blend Map (Head)", 2D) = "bump" {}
+        _NormalBlendStrength("Normal Blend Strength (Head)", Range(0,1)) = 0.5
+        // Cavity AO
         [NoScaleOffset]_MNAOMap("Cavity AO Map (Head)", 2D) = "white" {}
         _MouthCavityAO("Mouth Cavity AO", Range(0.1,5)) = 2.5
         _NostrilCavityAO("Nostril Cavity AO", Range(0.1,5)) = 2.5
-        _LipsCavityAO("Lips Cavity AO", Range(0.1,5)) = 2.5
-        [NoScaleOffset]_NormalBlendMap("Normal Blend Map (Head)", 2D) = "bump" {}
-        _ColorBlendStrength("Color Blend Strength (Head)", Range(0,1)) = 0.5
-        _NormalBlendStrength("Normal Blend Strength (Head)", Range(0,1)) = 0.5
-        // skin & head
-        [NoScaleOffset]_RGBAMask("RGBA Map", 2D) = "black" {}
-        // head
+        _LipsCavityAO("Lips Cavity AO", Range(0.1,5)) = 2.5        
+        // Micro maps
+        [NoScaleOffset]_RGBAMask("RGBA Map", 2D) = "black" {}        
         [NoScaleOffset]_CFULCMask("CFULC Mask", 2D) = "black" {}
         [NoScaleOffset]_EarNeckMask("Ear Neck Mask", 2D) = "black" {}
-        // skin & head
         _MicroSmoothnessMod("Micro Smoothness Mod", Range(-1.5,1.5)) = 0
         _RSmoothnessMod("Nose/R Smoothness Mod", Range(-1.5,1.5)) = 0
         _GSmoothnessMod("Mouth/G Smoothness Mod", Range(-1.5,1.5)) = 0
@@ -56,14 +52,17 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
         _UpperLipScatterScale("Upper Lip Scatter Scale", Range(0,2)) = 1
         _ChinScatterScale("Chin Scatter Scale", Range(0,2)) = 1
         _UnmaskedScatterScale("Unmasked Scatter Scale", Range(0,2)) = 1
-        // skin
+        // Emission
         [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "black" {}
-        _EmissiveColor("Emissive Color", Color) = (0,0,0,0)
-
+        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0,0)
+        // Keywords
         [Toggle]BOOLEAN_IS_HEAD("Is Head", Float) = 1
 
-        //_Map("Map", 2D) = "white" {}
-        //_Param("Param", Range(0,1)) = 0.5
+        // NOT YET IMPLEMENTED
+        [HideInInspector][NoScaleOffset]_SSSMap("Subsurface Map", 2D) = "white" {}
+        [HideInInspector]_SubsurfaceScale("Subsurface Scale", Range(0,1)) = 1
+        [HideInInspector][NoScaleOffset]_ThicknessMap("Thickness Map", 2D) = "black" {}
+        [HideInInspector]_ThicknessScale("Thickness Scale", Range(0,1)) = 0.4
     }
     SubShader
     {
@@ -134,14 +133,7 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
         half _UpperLipScatterScale;
         half _ChinScatterScale;
         half _UnmaskedScatterScale;
-        fixed4 _EmissiveColor;
-        
-        // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
-        // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
-        // #pragma instancing_options assumeuniformscaling
-        UNITY_INSTANCING_BUFFER_START(Props)
-            // put more per-instance properties here
-        UNITY_INSTANCING_BUFFER_END(Props)
+        fixed4 _EmissiveColor;        
 
 #if BOOLEAN_IS_HEAD_ON
         void surf (Input IN, inout SurfaceOutputStandard o)
@@ -203,9 +195,10 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
             normal = normalize(half3(normal.xy + blendNormal.xy + microNormal.xy, normal.z * blendNormal.z * microNormal.z));
             
             // outputs
-            o.Albedo = base.rgb * ao;
+            o.Albedo = base.rgb;
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
+            o.Occlusion = ao;
             o.Normal = normal;
             o.Alpha = 1.0;            
         }
@@ -245,9 +238,10 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
             normal = normalize(half3(normal.xy + microNormal.xy, normal.z * microNormal.z));
             
             // outputs
-            o.Albedo = base.rgb * ao;
+            o.Albedo = base.rgb;
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
+            o.Occlusion = ao;
             o.Normal = normal;
             o.Alpha = 1.0;
         }

@@ -3,32 +3,35 @@ Shader "Reallusion/RL_TeethShader_3D"
     Properties
     {
         [NoScaleOffset] _DiffuseMap("Diffuse Map", 2D) = "white" {}
+        _GumsSaturation("Gums Saturation", Range(0,2)) = 1
+        _GumsBrightness("Gums Brightness", Range(0,2)) = 0.9
+        _TeethSaturation("Teeth Saturation", Range(0,2)) = 0.9
+        _TeethBrightness("Teeth Brightness", Range(0,2)) = 0.7
         [NoScaleOffset]_MaskMap("Mask Map", 2D) = "gray" {}
-        [NoScaleOffset]_NormalMap("Normal Map", 2D) = "bump" {}
-        [NoScaleOffset]_MicroNormalMap("Micro Normal Map", 2D) = "bump" {}
-        [NoScaleOffset]_GumsMaskMap("Gums Mask Map", 2D) = "white" {}
-        [NoScaleOffset]_GradientAOMap("Gradient AO Map", 2D) = "white" {}
-        _NormalStrength("Normal Strength", Range(0,2)) = 1
-        _MicroNormalStrength("Micro Normal Strength", Range(0,2)) = 0.5
-        _MicroNormalTiling("Micro Normal Tiling", Range(0,10)) = 4
         _AOStrength("Ambient Occlusion Strength", Range(0,1)) = 1
         _SmoothnessPower("Smoothness Power", Range(0.5,2)) = 0.5
         _SmoothnessFront("Smoothness Front", Range(0,1)) = 0
         _SmoothnessRear("Smoothness Rear", Range(0,1)) = 0
         _SmoothnessMax("Smoothness Max", Range(0,1)) = 0.88
-        _GumsSaturation("Gums Saturation", Range(0,2)) = 1
-        _GumsBrightness("Gums Brightness", Range(0,2)) = 0.9
-        _TeethSaturation("Teeth Saturation", Range(0,2)) = 0.9
-        _TeethBrightness("Teeth Brightness", Range(0,2)) = 0.7
+        [NoScaleOffset]_NormalMap("Normal Map", 2D) = "bump" {}
+        _NormalStrength("Normal Strength", Range(0,2)) = 1
+        [NoScaleOffset]_MicroNormalMap("Micro Normal Map", 2D) = "bump" {}                
+        _MicroNormalStrength("Micro Normal Strength", Range(0,2)) = 0.5
+        _MicroNormalTiling("Micro Normal Tiling", Range(0,10)) = 4
+        [NoScaleOffset]_GumsMaskMap("Gums Mask Map", 2D) = "white" {}        
+        [NoScaleOffset]_GradientAOMap("Gradient AO Map", 2D) = "white" {}
         _FrontAO("Front AO", Range(0,1.5)) = 1
-        _RearAO("Rear AO", Range(0,1.5)) = 0
-        _GumsSSS("Tongue Subsurface Scatter", Range(0,1)) = 1
-        _GumsThickness("Tongue Thickness", Range(0,1)) = 0.85
-        _TeethSSS("Tongue Subsurface Scatter", Range(0,1)) = 0.5
-        _TeethThickness("Tongue Thickness", Range(0,1)) = 0.7
+        _RearAO("Rear AO", Range(0,1.5)) = 0        
         [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "black" {}
-        _EmissiveColor("Emissive Color", Color) = (0,0,0,0)
+        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0,0)
+        // Keywords
         [ToggleUI]_IsUpperTeeth("Is Upper Teeth", Float) = 0
+
+        // NOT YET IMPLEMENTED
+        [HideInInspector]_GumsSSS("Tongue Subsurface Scatter", Range(0,1)) = 1
+        [HideInInspector]_GumsThickness("Tongue Thickness", Range(0,1)) = 0.85
+        [HideInInspector]_TeethSSS("Tongue Subsurface Scatter", Range(0,1)) = 0.5
+        [HideInInspector]_TeethThickness("Tongue Thickness", Range(0,1)) = 0.7
     }
     SubShader
     {
@@ -74,14 +77,7 @@ Shader "Reallusion/RL_TeethShader_3D"
         half _TeethSSS;
         half _TeethThickness;
         fixed4 _EmissiveColor;
-        half _IsUpperTeeth;
-
-        // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
-        // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
-        // #pragma instancing_options assumeuniformscaling
-        UNITY_INSTANCING_BUFFER_START(Props)
-            // put more per-instance properties here
-        UNITY_INSTANCING_BUFFER_END(Props)
+        half _IsUpperTeeth;        
 
         void surf (Input IN, inout SurfaceOutputStandard o)
         {        
@@ -121,9 +117,10 @@ Shader "Reallusion/RL_TeethShader_3D"
             normal = normalize(half3(normal.xy + microNormal.xy, normal.z * microNormal.z));
 
             // outputs
-            o.Albedo = c.rgb * ao;
+            o.Albedo = c.rgb;
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
+            o.Occlusion = ao;
             o.Normal = normal;
             o.Alpha = 1.0;
         }
