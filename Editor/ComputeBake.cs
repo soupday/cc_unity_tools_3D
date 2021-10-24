@@ -134,25 +134,31 @@ namespace Reallusion.Import
 
         private Texture2D GetMaterialTexture(Material mat, string shaderRef, bool isNormal = false)
         {
-            Texture2D tex = (Texture2D)mat.GetTexture(shaderRef);
-            string assetPath = AssetDatabase.GetAssetPath(tex);
-            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(assetPath);
+            Texture2D tex = null;
+            if (mat.HasProperty(shaderRef))
+                tex = (Texture2D)mat.GetTexture(shaderRef);
 
-            if (importer)
+            if (tex)
             {
-                // TODO should the character importer set these as the defaults?
-                // Turn off texture compression and unlock max size to 4k, for the best possible quality bake:
-                if (importer.textureCompression != TextureImporterCompression.Uncompressed ||
-                    importer.compressionQuality != 0 ||
-                    importer.maxTextureSize < 4096 ||
-                    (isNormal && importer.textureType != TextureImporterType.NormalMap))
+                string assetPath = AssetDatabase.GetAssetPath(tex);
+                TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(assetPath);
+
+                if (importer)
                 {
-                    importer.textureCompression = TextureImporterCompression.Uncompressed;
-                    importer.compressionQuality = 0;
-                    importer.maxTextureSize = 4096;
-                    if (isNormal) importer.textureType = TextureImporterType.NormalMap;
-                    else importer.textureType = TextureImporterType.Default;
-                    importer.SaveAndReimport();
+                    // TODO should the character importer set these as the defaults?
+                    // Turn off texture compression and unlock max size to 4k, for the best possible quality bake:
+                    if (importer.textureCompression != TextureImporterCompression.Uncompressed ||
+                        importer.compressionQuality != 0 ||
+                        importer.maxTextureSize < 4096 ||
+                        (isNormal && importer.textureType != TextureImporterType.NormalMap))
+                    {
+                        importer.textureCompression = TextureImporterCompression.Uncompressed;
+                        importer.compressionQuality = 0;
+                        importer.maxTextureSize = 4096;
+                        if (isNormal) importer.textureType = TextureImporterType.NormalMap;
+                        else importer.textureType = TextureImporterType.Default;
+                        importer.SaveAndReimport();
+                    }
                 }
             }
 

@@ -180,7 +180,7 @@ namespace Reallusion.Import
         public const string MATERIAL_BAKED_SKIN = "RL_Template_Baked_Skin_URP";
         public const string MATERIAL_BAKED_HEAD = "RL_Temaplte_Baked_Skin_URP";
         public const string MATERIAL_BAKED_CORNEA = "RL_Template_Baked_Cornea_URP";
-        public const string MATERIAL_BAKED_EYE = "RL_Template_Baked_Eye_URP";
+        public const string MATERIAL_BAKED_EYE = "RL_Template_Default_Opaque_URP";
         public const string MATERIAL_BAKED_EYE_OCCLUSION = "RL_Template_Baked_EyeOcclusion_URP";
         public const string MATERIAL_BAKED_TEARLINE = "RL_Template_Tearline_URP";
         public const string MATERIAL_BAKED_HAIR = "RL_Template_Baked_Hair_URP";
@@ -259,7 +259,7 @@ namespace Reallusion.Import
         public const string MATERIAL_BAKED_SKIN = "RL_Template_Baked_Skin_3D";
         public const string MATERIAL_BAKED_HEAD = "RL_Temaplte_Baked_Skin_3D";
         public const string MATERIAL_BAKED_CORNEA = "RL_Template_Baked_Cornea_3D";
-        public const string MATERIAL_BAKED_EYE = "RL_Template_Baked_Eye_3D";
+        public const string MATERIAL_BAKED_EYE = "RL_Template_Default_Opaque_3D";
         public const string MATERIAL_BAKED_EYE_OCCLUSION = "RL_Template_Baked_EyeOcclusion_3D";
         public const string MATERIAL_BAKED_TEARLINE = "RL_Template_Tearline_3D";
         public const string MATERIAL_BAKED_HAIR = "RL_Template_Baked_Hair_3D";

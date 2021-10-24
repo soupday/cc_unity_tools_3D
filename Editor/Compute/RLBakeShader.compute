@@ -901,7 +901,7 @@ float EyeDepthMask(float radial)
 
 float EyeShadowMask(float radial)
 {
-    return saturate(Remap_float(radial, shadowRadius * scleraScale, shadowRadius * shadowHardness * scleraScale, 1.0, 0.0));
+    return saturate(smoothstep(shadowRadius * shadowHardness * scleraScale, shadowRadius * scleraScale, radial));
 }
 
 
