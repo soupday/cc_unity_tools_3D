@@ -1,6 +1,10 @@
 Changelog
 =========
 
+### v 0.1.9 3d
+- Converted shaders and materials to use the build-in render pipeline.
+- Bake shaders and materials updated to support standard shader.
+
 ### v 0.1.8b
 - Fix to baking functions with missing textures.
 
