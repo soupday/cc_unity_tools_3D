@@ -12,6 +12,11 @@ Additionally, more performance focussed characters can be produced using simpler
 
 Progress and additional information can be found in the [Reallusion forum thread](https://forum.reallusion.com/488356/Unity-Auto-Setup).
 
+Build-In Render Pipeline Support
+================================
+
+This version of the Unity auto-setup is for the Build-in render pipeline, also known as Unity 3D. To get the most accurate results the project should be set to Linear color space (found in Project settings / Player / Other Settings - Rendering / Color Space). The preview scene for importing character materials uses the Unity Post Processing stack package. This does __not__ need to be installed, but the preview scene looks better with it.
+
 How it works
 ============
 
