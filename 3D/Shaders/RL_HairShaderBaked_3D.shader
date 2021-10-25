@@ -128,9 +128,10 @@ Shader "Reallusion/RL_HairShaderBaked_3D"
             normal = half3(normal.xy * _BumpScale, lerp(1, normal.z, saturate(_BumpScale)));
 
             // outputs
-            o.Albedo = color.rgb * ao;
+            o.Albedo = color.rgb;
             o.Metallic = metallicGloss.g;
             o.Smoothness = metallicGloss.a;
+            o.Occlusion = ao.g;
             o.Normal = normal;
             o.Alpha = alpha;
         }
