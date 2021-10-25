@@ -39,8 +39,8 @@ Shader "Reallusion/RL_CorneaShader_3D"
         _ScleraNormalStrength("Sclera Normal Strength", Range(0,1)) = 0.1
         _ScleraNormalTiling("Sclera Normal Tiling", Range(1,10)) = 2        
         // Emission
-        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "black" {}
-        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0,0)
+        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "white" {}
+        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0)
         // Keywords
         [ToggleUI]_IsLeftEye("Is Left Eye", Float) = 0
         [Toggle]BOOLEAN_ISCORNEA("IsCornea", Float) = 0
@@ -104,7 +104,7 @@ Shader "Reallusion/RL_CorneaShader_3D"
         half _RefractionThickness;
         half _IrisDepth;
         half _DepthRadius;        
-        fixed4 _EmissiveColor;
+        half3 _EmissiveColor;
         half _IsLeftEye;        
 
         fixed4 HSV(fixed4 rgba, half hue, half saturation, half brightness)
@@ -195,6 +195,9 @@ Shader "Reallusion/RL_CorneaShader_3D"
             half detailMask = _ScleraNormalStrength * scleraMask;
             scleraNormal = half3(scleraNormal.xy * detailMask, lerp(1, scleraNormal.z, saturate(detailMask)));            
 
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
+
             // outputs
             o.Albedo = c.rgb;
             o.Metallic = mask.r;
@@ -202,6 +205,7 @@ Shader "Reallusion/RL_CorneaShader_3D"
             o.Occlusion = ao;
             o.Normal = scleraNormal;
             o.Alpha = 1.0;
+            o.Emission = emission;
         }        
         ENDCG
     }

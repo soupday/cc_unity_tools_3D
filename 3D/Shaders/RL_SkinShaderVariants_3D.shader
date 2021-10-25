@@ -53,8 +53,8 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
         _ChinScatterScale("Chin Scatter Scale", Range(0,2)) = 1
         _UnmaskedScatterScale("Unmasked Scatter Scale", Range(0,2)) = 1
         // Emission
-        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "black" {}
-        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0,0)
+        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "white" {}
+        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0)
         // Keywords
         [Toggle]BOOLEAN_IS_HEAD("Is Head", Float) = 1
 
@@ -133,7 +133,7 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
         half _UpperLipScatterScale;
         half _ChinScatterScale;
         half _UnmaskedScatterScale;
-        fixed4 _EmissiveColor;        
+        half3 _EmissiveColor;
 
 #if BOOLEAN_IS_HEAD_ON
         void surf (Input IN, inout SurfaceOutputStandard o)
@@ -194,13 +194,17 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
             // combine normals
             normal = normalize(half3(normal.xy + blendNormal.xy + microNormal.xy, normal.z * blendNormal.z * microNormal.z));
             
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) + _EmissiveColor;
+
             // outputs
             o.Albedo = base.rgb;
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
             o.Occlusion = ao;
-            o.Normal = normal;
-            o.Alpha = 1.0;            
+            o.Normal = normal;            
+            o.Alpha = 1.0; 
+            o.Emission = emission;
         }
 #else
         void surf(Input IN, inout SurfaceOutputStandard o)
@@ -237,6 +241,9 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
             // combine normals
             normal = normalize(half3(normal.xy + microNormal.xy, normal.z * microNormal.z));
             
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor.rgb;
+
             // outputs
             o.Albedo = base.rgb;
             o.Metallic = mask.r;
@@ -244,6 +251,7 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
             o.Occlusion = ao;
             o.Normal = normal;
             o.Alpha = 1.0;
+            o.Emission = emission;
         }
 #endif
         ENDCG

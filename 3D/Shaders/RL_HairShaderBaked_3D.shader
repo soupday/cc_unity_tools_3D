@@ -9,8 +9,8 @@ Shader "Reallusion/RL_HairShaderBaked_3D"
         _BumpScale("Normal Scale", Range(0, 2)) = 1
         [NoScaleOffset]_OcclusionMap("Occlusion", 2D) = "white" {}
         _OcclusionStrength("Occlusion Strength", Range(0, 1)) = 1
-        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "black" {}
-        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0,0)
+        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "white" {}
+        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0)
         // custom shader
         _AlphaClip("Alpha Clip", Range(0, 1)) = 1
         _VertexBaseColor("Vertex Base Color", Color) = (0, 0, 0, 0)
@@ -44,7 +44,7 @@ Shader "Reallusion/RL_HairShaderBaked_3D"
          
         half _BumpScale;
         half _OcclusionStrength;
-        fixed4 _EmissiveColor;
+        half3 _EmissiveColor;
         // custom
         fixed4 _VertexBaseColor;
         half _VertexColorStrength;        
@@ -67,6 +67,9 @@ Shader "Reallusion/RL_HairShaderBaked_3D"
             // apply normal strength
             normal = half3(normal.xy * _BumpScale, lerp(1, normal.z, saturate(_BumpScale)));
             
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
+
             // outputs
             o.Albedo = color.rgb;
             o.Metallic = metallicGloss.g;
@@ -74,6 +77,7 @@ Shader "Reallusion/RL_HairShaderBaked_3D"
             o.Occlusion = ao.g;
             o.Normal = normal;
             o.Alpha = alpha;
+            o.Emission = emission;
         }        
         ENDCG
 
@@ -127,6 +131,9 @@ Shader "Reallusion/RL_HairShaderBaked_3D"
             // apply normal strength
             normal = half3(normal.xy * _BumpScale, lerp(1, normal.z, saturate(_BumpScale)));
 
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
+
             // outputs
             o.Albedo = color.rgb;
             o.Metallic = metallicGloss.g;
@@ -134,6 +141,7 @@ Shader "Reallusion/RL_HairShaderBaked_3D"
             o.Occlusion = ao.g;
             o.Normal = normal;
             o.Alpha = alpha;
+            o.Emission = emission;
         }
         ENDCG
 

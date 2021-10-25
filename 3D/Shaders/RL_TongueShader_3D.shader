@@ -19,8 +19,8 @@ Shader "Reallusion/RL_TongueShader_3D"
         [NoScaleOffset]_GradientAOMap("Gradient AO Map", 2D) = "white" {}
         _FrontAO("Front AO", Range(0,1.5)) = 1
         _RearAO("Rear AO", Range(0,1.5)) = 0        
-        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "black" {}
-        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0,0)
+        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "white" {}
+        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0)
 
         // NOT YET IMPLEMENTED
         [HideInInspector]_TongueSSS("Tongue Subsurface Scatter", Range(0,1)) = 1
@@ -64,7 +64,7 @@ Shader "Reallusion/RL_TongueShader_3D"
         half _RearAO;
         half _TongueSSS;
         half _TongueThickness;
-        fixed4 _EmissiveColor;        
+        half3 _EmissiveColor;
 
         void surf (Input IN, inout SurfaceOutputStandard o)
         {        
@@ -100,6 +100,9 @@ Shader "Reallusion/RL_TongueShader_3D"
             // combine normals
             normal = normalize(half3(normal.xy + microNormal.xy, normal.z * microNormal.z));
 
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
+
             // outputs
             o.Albedo = c.rgb;
             o.Metallic = mask.r;
@@ -107,6 +110,7 @@ Shader "Reallusion/RL_TongueShader_3D"
             o.Occlusion = ao;
             o.Normal = normal;
             o.Alpha = 1.0;
+            o.Emission = emission;
         }
         ENDCG
     }

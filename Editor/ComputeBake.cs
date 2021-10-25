@@ -366,7 +366,7 @@ namespace Reallusion.Import
         {
             Material bakedMaterial = Util.FindMaterial(sourceName, new string[] { materialsFolder });            
             Shader shader = Pipeline.GetDefaultShader();
-
+            
             if (!bakedMaterial)
             {
                 // create the remapped material and save it as an asset.
@@ -402,6 +402,7 @@ namespace Reallusion.Import
                 bakedMaterial.SetTextureIf("_NormalMap", normalMap);
                 if (normalMap) bakedMaterial.SetFloatIf("_NormalScale", normalScale);                
                 bakedMaterial.SetTextureIf("_EmissionColorMap", emissionMap);
+                bakedMaterial.SetColorIf("_EmissionColor", emissiveColor);
                 if (detailMap)
                 {
                     bakedMaterial.SetTextureIf("_DetailMap", detailMap);
@@ -433,6 +434,14 @@ namespace Reallusion.Import
                     bakedMaterial.SetFloatIf("_DetailNormalMapScale", detailScale);
                 }
                 bakedMaterial.SetTextureIf("_EmissionMap", emissionMap);
+                bakedMaterial.SetColorIf("_EmissionColor", emissiveColor);
+                if (emissiveColor.r + emissiveColor.g +  emissiveColor.b > 0f)
+                {
+                    bakedMaterial.EnableKeyword("_EMISSION");
+                    bakedMaterial.SetTextureIf("_EmissionMap", emissionMap);
+                    bakedMaterial.SetColorIf("_EmissionColor", emissiveColor);
+                    bakedMaterial.globalIlluminationFlags = bakedMaterial.globalIlluminationFlags | MaterialGlobalIlluminationFlags.BakedEmissive;
+                }
             }
 
             // add the path of the remapped material for later re-import.

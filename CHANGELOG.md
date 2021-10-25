@@ -1,6 +1,9 @@
 Changelog
 =========
 
+### v 0.2.0 3d
+- Added emission to the high quality and baked shaders.
+
 ### v 0.1.9 3d
 - Converted shaders and materials to use the build-in render pipeline.
 - Bake shaders and materials updated to support standard shader.

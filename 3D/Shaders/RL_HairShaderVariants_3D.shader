@@ -45,7 +45,7 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
         _HighlightBOverlapInvert("Highlight B Overlap Invert", Range(0, 1)) = 1                       
         // Emission
         [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "white" {}
-        [HDR]_EmissiveColor("Emissive Color", Color) = (0, 0, 0, 0)
+        [HDR]_EmissiveColor("Emissive Color", Color) = (0, 0, 0)
         // Keywords            
         [Toggle]BOOLEAN_ENABLECOLOR("Enable Color", Float) = 0
 
@@ -138,7 +138,7 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
         half _SecondarySpecularShift;
         half _SecondarySmoothness;
         half _NormalStrength;        
-        fixed4 _EmissiveColor;        
+        half3 _EmissiveColor;
         half BOOLEAN_ENABLECOLOR;        
 
         float4 RootEndBlend(float4 color, float rootMask)
@@ -194,12 +194,16 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
             color = lerp(color, _VertexBaseColor, vcf);
             
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
+
             o.Albedo = lerp(color.rgb, color.rgb * mask.g, _AOOccludeAll * 0.5);
             o.Metallic = mask.r;
             o.Smoothness = smoothness;            
             o.Occlusion = ao;
             o.Normal = UnpackNormal(tex2D(_NormalMap, uv));            
-            o.Alpha = alpha;            
+            o.Alpha = alpha; 
+            o.Emission = emission;
         }
 #else
         void surf(Input IN, inout SurfaceOutputStandard o)
@@ -225,12 +229,16 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
             color = lerp(color, _VertexBaseColor, vcf);
 
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
+
             o.Albedo = lerp(color.rgb, color.rgb * mask.g, _AOOccludeAll * 0.5);
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
             o.Occlusion = ao;
             o.Normal = UnpackNormal(tex2D(_NormalMap, uv));
             o.Alpha = alpha;
+            o.Emission = emission;
         }
 #endif
         ENDCG
@@ -362,12 +370,16 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
             color = lerp(color, _VertexBaseColor, vcf);
 
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
+
             o.Albedo = lerp(color.rgb, color.rgb * mask.g, _AOOccludeAll * 0.5);
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
             o.Occlusion = ao;
             o.Normal = UnpackNormal(tex2D(_NormalMap, uv));
             o.Alpha = alpha;
+            o.Emission = emission;
         }
 #else
         void surf(Input IN, inout SurfaceOutputStandard o)
@@ -393,12 +405,16 @@ Shader "Reallusion/RL_HairShaderVariants_3D"
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
             color = lerp(color, _VertexBaseColor, vcf);
 
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
+
             o.Albedo = lerp(color.rgb, color.rgb * mask.g, _AOOccludeAll * 0.5);
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
             o.Occlusion = ao;
             o.Normal = UnpackNormal(tex2D(_NormalMap, uv));
             o.Alpha = alpha;
+            o.Emission = emission;
         }
 #endif
         ENDCG
