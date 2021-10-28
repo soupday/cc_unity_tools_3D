@@ -195,7 +195,7 @@ Shader "Reallusion/RL_SkinShaderVariants_3D"
             normal = normalize(half3(normal.xy + blendNormal.xy + microNormal.xy, normal.z * blendNormal.z * microNormal.z));
             
             // emission
-            half3 emission = tex2D(_EmissionMap, uv) + _EmissiveColor;
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor.rgb;
 
             // outputs
             o.Albedo = base.rgb;
