@@ -1,6 +1,6 @@
 Shader "Reallusion/RL_TeethShader_3D"
 {
-    Properties
+    Properties 
     {
         [NoScaleOffset] _DiffuseMap("Diffuse Map", 2D) = "white" {}
         _GumsSaturation("Gums Saturation", Range(0,2)) = 1

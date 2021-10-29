@@ -1,6 +1,6 @@
 Shader "Reallusion/RL_TearlineShader_3D"
 {
-    Properties
+    Properties 
     {                
         // Occlusion alpha
         _Color("Color", Color) = (1,1,1,1)

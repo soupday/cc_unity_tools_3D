@@ -1,6 +1,6 @@
 Shader "Reallusion/RL_EyeOcclusionShader_3D"
 {
-    Properties
+    Properties 
     {
         _OcclusionColor("Occlusion Color", Color) = (0.3294118,0.09411765,0.05490196,1)        
         _OcclusionStrength("Occlusion Strength", Range(0,2)) = 0.2

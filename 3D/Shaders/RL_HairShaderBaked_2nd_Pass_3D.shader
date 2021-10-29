@@ -1,6 +1,6 @@
 Shader "Reallusion/RL_HairShaderBaked_1st_Pass_3D"
 {
-    Properties
+    Properties 
     {
         // replicate standard shader inputs
         [NoScaleOffset]_MainTex("Albedo", 2D) = "white" {}

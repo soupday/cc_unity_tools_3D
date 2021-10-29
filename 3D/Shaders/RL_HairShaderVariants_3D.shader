@@ -1,6 +1,6 @@
 Shader "Reallusion/RL_HairShaderVariants_3D"
 {
-    Properties
+    Properties 
     {
         // Main Maps
         [NoScaleOffset]_DiffuseMap("Diffuse Map", 2D) = "white" {}

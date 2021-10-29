@@ -1,6 +1,6 @@
 Shader "Reallusion/RL_TongueShader_3D"
 {
-    Properties
+    Properties 
     {
         [NoScaleOffset] _DiffuseMap("Diffuse Map", 2D) = "white" {}
         _TongueSaturation("Tongue Saturation", Range(0,2)) = 0.95

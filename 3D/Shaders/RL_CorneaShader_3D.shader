@@ -1,6 +1,6 @@
 Shader "Reallusion/RL_CorneaShader_3D"
 {
-    Properties
+    Properties 
     {
         // Base Color
         [NoScaleOffset] _ScleraDiffuseMap("Sclera Diffuse Map", 2D) = "white" {}
