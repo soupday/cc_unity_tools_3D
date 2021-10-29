@@ -66,6 +66,19 @@ namespace Reallusion.Import
                 Write();
         }
 
+        public void ApplySettings()
+        {
+            _qualRefractiveEyes = qualRefractiveEyes;
+            _dualMaterialHair = dualMaterialHair;
+            _bakeCustomShaders = bakeCustomShaders;
+            _bakeSeparatePrefab = bakeSeparatePrefab;
+        }
+
+        public bool IsBuiltDualHair
+        {
+            get { return _dualMaterialHair; }
+        }
+
         public GameObject Fbx
         {
             get
