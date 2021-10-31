@@ -1,6 +1,6 @@
 Shader "Reallusion/RL_CorneaShaderBaked_3D"
 {
-    Properties
+    Properties 
     {
         // replicate standard shader inputs
         [NoScaleOffset]_MainTex("Albedo", 2D) = "white" {}
@@ -13,8 +13,8 @@ Shader "Reallusion/RL_CorneaShaderBaked_3D"
         _DetailAlbedoMap("Detail Albedo Map", 2D) = "grey" {}
         _DetailNormalMap("Detail Normal Map", 2D) = "bump" {}
         _DetailNormalMapScale("Detail Normal Scale", Range(0, 2)) = 0.5
-        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "black" {}
-        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0,0)
+        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "white" {}
+        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0)
         // custom shader
         _PupilScale("Pupil Scale", Range(0.25,2)) = 0.8        
     }
@@ -49,7 +49,7 @@ Shader "Reallusion/RL_CorneaShaderBaked_3D"
         half _BumpScale;
         half _OcclusionStrength;
         half _DetailNormalMapScale;
-        fixed4 _EmissiveColor;
+        half3 _EmissiveColor;
         half _PupilScale;        
 
         void surf (Input IN, inout SurfaceOutputStandard o)
@@ -71,6 +71,9 @@ Shader "Reallusion/RL_CorneaShaderBaked_3D"
             half normalStrength = detail.a * _DetailNormalMapScale;
             normal = half3(normal.xy * normalStrength, lerp(1, normal.z, saturate(normalStrength)));
             
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
+
             // outputs
             o.Albedo = color.rgb;
             o.Metallic = metallicGloss.g;
@@ -78,6 +81,7 @@ Shader "Reallusion/RL_CorneaShaderBaked_3D"
             o.Occlusion = ao.g;
             o.Normal = normal;
             o.Alpha = color.a;
+            o.Emission = emission;
         }        
         ENDCG
     }

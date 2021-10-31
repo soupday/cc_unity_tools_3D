@@ -1,6 +1,6 @@
 Shader "Reallusion/RL_TeethShader_3D"
 {
-    Properties
+    Properties 
     {
         [NoScaleOffset] _DiffuseMap("Diffuse Map", 2D) = "white" {}
         _GumsSaturation("Gums Saturation", Range(0,2)) = 1
@@ -22,8 +22,8 @@ Shader "Reallusion/RL_TeethShader_3D"
         [NoScaleOffset]_GradientAOMap("Gradient AO Map", 2D) = "white" {}
         _FrontAO("Front AO", Range(0,1.5)) = 1
         _RearAO("Rear AO", Range(0,1.5)) = 0        
-        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "black" {}
-        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0,0)
+        [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "white" {}
+        [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0)
         // Keywords
         [ToggleUI]_IsUpperTeeth("Is Upper Teeth", Float) = 0
 
@@ -76,7 +76,7 @@ Shader "Reallusion/RL_TeethShader_3D"
         half _GumsThickness;
         half _TeethSSS;
         half _TeethThickness;
-        fixed4 _EmissiveColor;
+        half3 _EmissiveColor;
         half _IsUpperTeeth;        
 
         void surf (Input IN, inout SurfaceOutputStandard o)
@@ -116,6 +116,9 @@ Shader "Reallusion/RL_TeethShader_3D"
             // combine normals
             normal = normalize(half3(normal.xy + microNormal.xy, normal.z * microNormal.z));
 
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
+
             // outputs
             o.Albedo = c.rgb;
             o.Metallic = mask.r;
@@ -123,6 +126,7 @@ Shader "Reallusion/RL_TeethShader_3D"
             o.Occlusion = ao;
             o.Normal = normal;
             o.Alpha = 1.0;
+            o.Emission = emission;
         }
         ENDCG
     }
