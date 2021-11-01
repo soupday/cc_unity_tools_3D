@@ -196,6 +196,10 @@ Shader "Reallusion/RL_HairShaderVariants_2nd_Pass_3D"
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
             color = lerp(color, _VertexBaseColor, vcf);
 
+            half3 normal = UnpackNormal(tex2D(_NormalMap, uv));
+            // apply normal strength
+            normal = half3(normal.xy * _NormalStrength, lerp(1, normal.z, saturate(_NormalStrength)));
+
             // emission
             half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
 
@@ -203,7 +207,7 @@ Shader "Reallusion/RL_HairShaderVariants_2nd_Pass_3D"
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
             o.Occlusion = ao;
-            o.Normal = UnpackNormal(tex2D(_NormalMap, uv));
+            o.Normal = normal;
             o.Alpha = alpha;
             o.Emission = emission;
         }
@@ -231,6 +235,10 @@ Shader "Reallusion/RL_HairShaderVariants_2nd_Pass_3D"
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
             color = lerp(color, _VertexBaseColor, vcf);
 
+            half3 normal = UnpackNormal(tex2D(_NormalMap, uv));
+            // apply normal strength
+            normal = half3(normal.xy * _NormalStrength, lerp(1, normal.z, saturate(_NormalStrength)));
+
             // emission
             half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
 
@@ -238,7 +246,7 @@ Shader "Reallusion/RL_HairShaderVariants_2nd_Pass_3D"
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
             o.Occlusion = ao;
-            o.Normal = UnpackNormal(tex2D(_NormalMap, uv));
+            o.Normal = normal;
             o.Alpha = alpha;
             o.Emission = emission;
         }
