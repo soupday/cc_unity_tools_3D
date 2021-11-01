@@ -179,17 +179,17 @@ Shader "Reallusion/RL_HairShaderClipped_3D"
             return In - DITHER_THRESHOLDS[index];
         }
 
-        inline float unity_noise_randomValue(float2 uv)
+        inline float NoiseRandom(float2 uv)
         {
             return frac(sin(dot(uv, float2(12.9898, 78.233))) * 43758.5453);
         }
 
-        inline float unity_noise_interpolate(float a, float b, float t)
+        inline float NoiseInterpolate(float a, float b, float t)
         {
             return (1.0 - t) * a + (t * b);
         }
 
-        inline float unity_valueNoise(float2 uv)
+        inline float ValueNoise(float2 uv)
         {
             float2 i = floor(uv);
             float2 f = frac(uv);
@@ -200,14 +200,14 @@ Shader "Reallusion/RL_HairShaderClipped_3D"
             float2 c1 = i + float2(1.0, 0.0);
             float2 c2 = i + float2(0.0, 1.0);
             float2 c3 = i + float2(1.0, 1.0);
-            float r0 = unity_noise_randomValue(c0);
-            float r1 = unity_noise_randomValue(c1);
-            float r2 = unity_noise_randomValue(c2);
-            float r3 = unity_noise_randomValue(c3);
+            float r0 = NoiseRandom(c0);
+            float r1 = NoiseRandom(c1);
+            float r2 = NoiseRandom(c2);
+            float r3 = NoiseRandom(c3);
 
-            float bottomOfGrid = unity_noise_interpolate(r0, r1, f.x);
-            float topOfGrid = unity_noise_interpolate(r2, r3, f.x);
-            float t = unity_noise_interpolate(bottomOfGrid, topOfGrid, f.y);
+            float bottomOfGrid = NoiseInterpolate(r0, r1, f.x);
+            float topOfGrid = NoiseInterpolate(r2, r3, f.x);
+            float t = NoiseInterpolate(bottomOfGrid, topOfGrid, f.y);
             return t;
         }
 
@@ -217,15 +217,15 @@ Shader "Reallusion/RL_HairShaderClipped_3D"
 
             float freq = pow(2.0, float(0));
             float amp = pow(0.5, float(3 - 0));
-            t += unity_valueNoise(float2(UV.x * Scale / freq, UV.y * Scale / freq)) * amp;
+            t += ValueNoise(float2(UV.x * Scale / freq, UV.y * Scale / freq)) * amp;
 
             freq = pow(2.0, float(1));
             amp = pow(0.5, float(3 - 1));
-            t += unity_valueNoise(float2(UV.x * Scale / freq, UV.y * Scale / freq)) * amp;
+            t += ValueNoise(float2(UV.x * Scale / freq, UV.y * Scale / freq)) * amp;
 
             freq = pow(2.0, float(2));
             amp = pow(0.5, float(3 - 2));
-            t += unity_valueNoise(float2(UV.x * Scale / freq, UV.y * Scale / freq)) * amp;
+            t += ValueNoise(float2(UV.x * Scale / freq, UV.y * Scale / freq)) * amp;
 
             return t;
         }
@@ -263,6 +263,10 @@ Shader "Reallusion/RL_HairShaderClipped_3D"
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
             color = lerp(color, _VertexBaseColor, vcf);
             
+            half3 normal = UnpackNormal(tex2D(_NormalMap, uv));
+            // apply normal strength
+            normal = half3(normal.xy * _NormalStrength, lerp(1, normal.z, saturate(_NormalStrength)));
+
             // emission
             half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
 
@@ -270,7 +274,7 @@ Shader "Reallusion/RL_HairShaderClipped_3D"
             o.Metallic = mask.r;
             o.Smoothness = smoothness;            
             o.Occlusion = ao;
-            o.Normal = UnpackNormal(tex2D(_NormalMap, uv));            
+            o.Normal = normal;            
             o.Alpha = alpha; 
             o.Emission = emission;
 #else        
@@ -295,6 +299,10 @@ Shader "Reallusion/RL_HairShaderClipped_3D"
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
             color = lerp(color, _VertexBaseColor, vcf);
 
+            half3 normal = UnpackNormal(tex2D(_NormalMap, uv));
+            // apply normal strength
+            normal = half3(normal.xy * _NormalStrength, lerp(1, normal.z, saturate(_NormalStrength)));
+
             // emission
             half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
 
@@ -302,7 +310,7 @@ Shader "Reallusion/RL_HairShaderClipped_3D"
             o.Metallic = mask.r;
             o.Smoothness = smoothness;
             o.Occlusion = ao;
-            o.Normal = UnpackNormal(tex2D(_NormalMap, uv));
+            o.Normal = normal;
             o.Alpha = alpha;
             o.Emission = emission;
 #endif

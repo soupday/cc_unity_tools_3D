@@ -41,8 +41,7 @@ Shader "Reallusion/RL_HairShaderBaked_2nd_Pass_3D"
             float2 uv_MainTex;    
             fixed4 vertColor : COLOR;
         };
-        
-         
+                 
         half _BumpScale;
         half _OcclusionStrength;
         half3 _EmissiveColor;
