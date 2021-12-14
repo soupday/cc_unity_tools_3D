@@ -48,7 +48,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: RL_Template_Baked_CorneaCustom_3D
+  m_Name: RL_Template_Baked_CorneaBasicCustom_3D
   m_Shader: {fileID: 4800000, guid: 526959adc9afad74386484581606475c, type: 3}
   m_ShaderKeywords: _DETAIL_MULX2 _GLOSSYREFLECTIONS_OFF _METALLICGLOSSMAP _METALLICSPECGLOSSMAP
     _NORMALMAP _OCCLUSIONMAP

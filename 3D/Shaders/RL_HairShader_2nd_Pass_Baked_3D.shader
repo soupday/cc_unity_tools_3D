@@ -1,4 +1,4 @@
-Shader "Reallusion/RL_HairShaderBaked_1st_Pass_3D"
+Shader "Reallusion/RL_HairShader_2nd_Pass_Baked_3D"
 {
     Properties 
     {

@@ -1,4 +1,4 @@
-Shader "Reallusion/RL_EyeOcclusionShaderBaked_3D"
+Shader "Reallusion/RL_EyeOcclusionShader_Baked_3D"
 {
     Properties 
     {

@@ -1,4 +1,4 @@
-Shader "Reallusion/RL_CorneaShaderBaked_3D"
+Shader "Reallusion/RL_CorneaShaderParallax_Baked_3D"
 {
     Properties 
     {

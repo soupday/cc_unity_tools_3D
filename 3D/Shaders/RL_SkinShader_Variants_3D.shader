@@ -1,4 +1,4 @@
-Shader "Reallusion/RL_SkinShaderVariants_3D"
+Shader "Reallusion/RL_SkinShader_Variants_3D"
 {
     Properties 
     {

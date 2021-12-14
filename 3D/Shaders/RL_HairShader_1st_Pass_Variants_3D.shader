@@ -1,4 +1,4 @@
-Shader "Reallusion/RL_HairShaderVariants_1st_Pass_3D"
+Shader "Reallusion/RL_HairShader_1st_Pass_Variants_3D"
 {
     Properties 
     {

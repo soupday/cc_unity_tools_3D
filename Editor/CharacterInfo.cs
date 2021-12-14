@@ -25,6 +25,7 @@ namespace Reallusion.Import
     public class CharacterInfo
     {
         public enum ProcessingType { None, Basic, HighQuality }
+        public enum EyeQuality { None, Basic, Parallax, Refractive }
         
         public string guid;
         public string path;        
@@ -32,23 +33,73 @@ namespace Reallusion.Import
         public string jsonPath;
         public string name;
         public string folder;                
-        public ProcessingType logType = ProcessingType.None;
+          
         public bool isLOD = false;
         public bool bakeIsBaked = false;
 
-        public bool qualRefractiveEyes = true;
-        public bool dualMaterialHair = false;        
-        public bool bakeCustomShaders = true;
-        public bool bakeSeparatePrefab = true;        
-        
-        private bool _qualRefractiveEyes = true;
-        private bool _dualMaterialHair = false;
-        private bool _bakeCustomShaders = true;
-        private bool _bakeSeparatePrefab = true;        
+        // these are the settings the character is currently set to build
+        private ProcessingType logType = ProcessingType.None;
+        private EyeQuality qualEyes = EyeQuality.Parallax;        
+        private bool dualMaterialHair = true;
+        private bool bakeCustomShaders = true;
+        private bool bakeSeparatePrefab = true;
+
+        public ProcessingType BuildType { get { return logType; } set { logType = value; } }
+        public MaterialQuality BuildQuality
+        {
+            get
+            {                
+                if (BuildType == ProcessingType.HighQuality) return MaterialQuality.High;
+                else if (BuildType == ProcessingType.Basic) return MaterialQuality.Default;
+                return MaterialQuality.None;
+            }
+            set
+            {
+                if (value == MaterialQuality.High) BuildType = ProcessingType.HighQuality;
+                else if (value == MaterialQuality.Default) BuildType = ProcessingType.Basic;
+                else BuildType = ProcessingType.None;
+            }
+        }
+        public bool BasicMaterials => logType == ProcessingType.Basic;
+        public bool HQMaterials => logType == ProcessingType.HighQuality;
+        public EyeQuality QualEyes { get { return qualEyes; } set { qualEyes = value; } }        
+        public bool RefractiveEyes => QualEyes == EyeQuality.Refractive;
+        public bool BasicEyes => QualEyes == EyeQuality.Basic;
+        public bool ParallaxEyes => QualEyes == EyeQuality.Parallax;
+        public bool DualMaterialHair { get { return dualMaterialHair; } set { dualMaterialHair = value; } }
+        public bool BakeCustomShaders { get { return bakeCustomShaders; } set { bakeCustomShaders = value; } }
+        public bool BakeSeparatePrefab { get { return bakeSeparatePrefab; } set { bakeSeparatePrefab = value; } }        
+
+        // these are the settings the character has been built to.  
+        private ProcessingType builtLogType = ProcessingType.None;
+        private EyeQuality builtQualEyes = EyeQuality.Parallax;        
+        private bool builtDualMaterialHair = true;
+        private bool builtBakeCustomShaders = true;
+        private bool builtBakeSeparatePrefab = true;
+
+        public bool BuiltBasicMaterials => builtLogType == ProcessingType.Basic;
+        public bool BuiltHQMaterials => builtLogType == ProcessingType.HighQuality;
+        public bool BuiltDualMaterialHair => builtDualMaterialHair;
+        public EyeQuality BuiltQualEyes => builtQualEyes;
+        public bool BuiltRefractiveEyes => BuiltQualEyes == EyeQuality.Refractive;
+        public bool BuiltBasicEyes => BuiltQualEyes == EyeQuality.Basic;
+        public bool BuiltParallaxEyes => BuiltQualEyes == EyeQuality.Parallax;
+
+        public MaterialQuality BuiltQuality => BuiltHQMaterials ? MaterialQuality.High : MaterialQuality.Default;
+        public bool Unprocessed => builtLogType == ProcessingType.None;
 
         private BaseGeneration generation = BaseGeneration.None;
         private GameObject fbx;
         private QuickJSON jsonData;
+
+        private void FixCharSettings()
+        {
+            if (logType == ProcessingType.HighQuality && !CanHaveHighQualityMaterials)
+                logType = ProcessingType.Basic;
+
+            if (qualEyes == EyeQuality.Refractive && !Pipeline.isHDRP) 
+                qualEyes = EyeQuality.Parallax;
+        }
 
         public CharacterInfo(string guid)
         {
@@ -63,21 +114,19 @@ namespace Reallusion.Import
             if (File.Exists(infoPath))            
                 Read();
             else
-                Write();
+                Write();            
         }
 
         public void ApplySettings()
-        {
-            _qualRefractiveEyes = qualRefractiveEyes;
-            _dualMaterialHair = dualMaterialHair;
-            _bakeCustomShaders = bakeCustomShaders;
-            _bakeSeparatePrefab = bakeSeparatePrefab;
-        }
+        {            
+            FixCharSettings();
 
-        public bool IsBuiltDualHair
-        {
-            get { return _dualMaterialHair; }
-        }
+            builtLogType = logType;
+            builtQualEyes = qualEyes;
+            builtDualMaterialHair = dualMaterialHair;
+            builtBakeCustomShaders = bakeCustomShaders;
+            builtBakeSeparatePrefab = bakeSeparatePrefab;
+        }        
 
         public GameObject Fbx
         {
@@ -170,24 +219,23 @@ namespace Reallusion.Import
                         else if (value == "HighQuality") logType = ProcessingType.HighQuality;
                         else logType = ProcessingType.None;
                         break;
-                    case "qualRefractiveEyes":
-                        _qualRefractiveEyes = value == "true" ? true : false;
-                        qualRefractiveEyes = _qualRefractiveEyes;
+                    case "qualEyes":
+                        if (value == "Basic") qualEyes = EyeQuality.Basic;
+                        else if (value == "Parallax") qualEyes = EyeQuality.Parallax;
+                        else if (value == "Refractive") qualEyes = EyeQuality.Refractive;
+                        else qualEyes = EyeQuality.None;                        
                         break;
                     case "dualMaterialHair":
-                        _dualMaterialHair = value == "true" ? true : false;
-                        dualMaterialHair = _dualMaterialHair;
+                        dualMaterialHair = value == "true" ? true : false;                        
                         break;
                     case "bakeIsBaked":
                         bakeIsBaked = value == "true" ? true : false;                        
                         break;
                     case "bakeCustomShaders":
-                        _bakeCustomShaders = value == "true" ? true : false;
-                        bakeCustomShaders = _bakeCustomShaders;
+                        bakeCustomShaders = value == "true" ? true : false;                        
                         break;
                     case "bakeSeparatePrefab":
-                        _bakeSeparatePrefab = value == "true" ? true : false;
-                        bakeSeparatePrefab = _bakeSeparatePrefab;
+                        bakeSeparatePrefab = value == "true" ? true : false;                        
                         break;
                     case "generation":
                         generation = (BaseGeneration)System.Enum.Parse(typeof(BaseGeneration), value);
@@ -197,20 +245,21 @@ namespace Reallusion.Import
                         break;
                 }
             }
+            ApplySettings();
         }
 
         public void Write()
         {
             ApplySettings();
             StreamWriter writer = new StreamWriter(infoPath, false);
-            writer.WriteLine("logType=" + logType.ToString());
+            writer.WriteLine("logType=" + builtLogType.ToString());
             writer.WriteLine("generation=" + generation.ToString());
             writer.WriteLine("isLOD=" + (isLOD ? "true" : "false"));
-            writer.WriteLine("qualRefractiveEyes=" + (_qualRefractiveEyes ? "true" : "false"));
-            writer.WriteLine("dualMaterialHair=" + (_dualMaterialHair ? "true" : "false"));
+            writer.WriteLine("qualEyes=" + builtQualEyes.ToString());
+            writer.WriteLine("dualMaterialHair=" + (builtDualMaterialHair ? "true" : "false"));            
             writer.WriteLine("bakeIsBaked=" + (bakeIsBaked ? "true" : "false"));
-            writer.WriteLine("bakeCustomShaders=" + (_bakeCustomShaders ? "true" : "false"));
-            writer.WriteLine("bakeSeparatePrefab=" + (_bakeSeparatePrefab ? "true" : "false"));
+            writer.WriteLine("bakeCustomShaders=" + (builtBakeCustomShaders ? "true" : "false"));
+            writer.WriteLine("bakeSeparatePrefab=" + (builtBakeSeparatePrefab ? "true" : "false"));
             writer.Close();
             AssetDatabase.ImportAsset(infoPath);            
         }

@@ -1,4 +1,4 @@
-Shader "Reallusion/RL_HairShaderVariants_2nd_Pass_3D"
+Shader "Reallusion/RL_HairShader_Variants_3D"
 {
     Properties 
     {
@@ -66,8 +66,190 @@ Shader "Reallusion/RL_HairShaderVariants_2nd_Pass_3D"
     }
     SubShader
     {
-        Tags { "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" "ForceNoShadowCasting" = "True" }
+        Tags { "Queue" = "AlphaTest" "RenderType" = "TransparentCutout" }
         LOD 200
+
+        Cull Off
+        ZWrite On
+
+        // First pass: Render the hair as opaque alpha clipped. 
+        // This should act as a depth prepass for the 2nd alpha blend pass.
+
+        CGPROGRAM
+        // Physically based Standard lighting model, and enable shadows on all light types
+        #pragma surface surf Standard fullforwardshadows alphatest:_AlphaClip addshadow        
+        #pragma multi_compile _ BOOLEAN_ENABLECOLOR_ON //_ENUMCLIPQUALITY_ON_STANDARD _ENUMCLIPQUALITY_ON_NOISE _ENUMCLIPQUALITY_ON_DITHER
+
+        // Use shader model 3.0 target, to get nicer looking lighting
+        #pragma target 3.0                
+        
+        sampler2D _DiffuseMap;
+        sampler2D _MaskMap;
+        sampler2D _NormalMap;
+        sampler2D _IDMap;
+        sampler2D _BlendMap;
+        sampler2D _RootMap;
+        sampler2D _SpecularMap;
+        sampler2D _FlowMap;
+        sampler2D _EmissionMap;
+
+        struct Input
+        {
+            float2 uv_DiffuseMap;
+            fixed4 vertColor : COLOR;
+        };        
+
+        half _AOStrength;
+        half _AOOccludeAll;
+        half _DiffuseStrength;
+        half _BlendStrength;
+        fixed4 _VertexBaseColor;
+        half _VertexColorStrength;
+        half _BaseColorStrength;
+        half _AlphaPower;
+        half _AlphaRemap;
+        half _ShadowClip;
+        half _DepthPrepass;
+        half _DepthPostpass;
+        half _SmoothnessMin;
+        half _SmoothnessMax;
+        half _SmoothnessPower;
+        half _GlobalStrength;
+        half _RootColorStrength;
+        half _EndColorStrength;
+        half _InvertRootMap;
+        fixed4 _RootColor;
+        fixed4 _EndColor;
+        half _HighlightAStrength;
+        fixed4 _HighlightAColor;
+        half4 _HighlightADistribution;
+        half _HighlightAOverlapEnd;
+        half _HighlightAOverlapInvert;
+        half _HighlightBStrength;
+        fixed4 _HighlightBColor;
+        half4 _HighlightBDistribution;
+        half _HighlightBOverlapEnd;
+        half _HighlightBOverlapInvert;
+        half _RimTransmissionIntensity;
+        fixed4 _SpecularTint;
+        half _SpecularMultiplier;
+        half _SpecularShift;
+        half _SecondarySpecularMultiplier;
+        half _SecondarySpecularShift;
+        half _SecondarySmoothness;
+        half _NormalStrength;        
+        half3 _EmissiveColor;
+        half BOOLEAN_ENABLECOLOR;        
+
+        float4 RootEndBlend(float4 color, float rootMask)
+        {
+            float globalMask = _GlobalStrength * (((1.0 - rootMask) * _RootColorStrength) + (rootMask * _EndColorStrength));
+            rootMask = lerp(rootMask, 1.0 - rootMask, _InvertRootMap);
+            float4 rootEnd = lerp(_RootColor, _EndColor, rootMask);
+            return lerp(color, rootEnd, globalMask);
+        }
+
+        float4 HighlightBlend(float4 color, float idMap, float rootMask, float4 highlightColor,
+                              float3 distribution, float strength, float overlap, float invert)
+        {
+            float lower = smoothstep(distribution.x, distribution.y, idMap);
+            float upper = 1.0 - smoothstep(distribution.y, distribution.z, idMap);
+            float highlightMask = strength * lerp(lower, upper, step(distribution.y, idMap));
+            float invertedRootMask = lerp(rootMask, 1.0 - rootMask, 1.0 - invert);
+            float overlappedInvertedRootMask = 1.0 - ((1.0 - invertedRootMask) * overlap);
+            highlightMask = saturate(highlightMask * overlappedInvertedRootMask);
+            return lerp(color, highlightColor, highlightMask);
+        }
+
+#if BOOLEAN_ENABLECOLOR_ON
+        void surf(Input IN, inout SurfaceOutputStandard o)
+        {
+            float2 uv = IN.uv_DiffuseMap;
+
+            fixed4 diffuse = tex2D(_DiffuseMap, uv);
+            half4 rootMap = tex2D(_RootMap, uv);
+            half4 idMap = tex2D(_IDMap, uv);
+            half4 depthBlend = tex2D(_BlendMap, uv);
+            half4 mask = tex2D(_MaskMap, uv);
+
+            // remap AO          
+            half ao = lerp(1.0, mask.g, _AOStrength);
+
+            // remap Alpha
+            half alpha = pow(saturate((diffuse.a / _AlphaRemap)), _AlphaPower);
+
+            // remap smoothness
+            half smoothness = lerp(_SmoothnessMin, _SmoothnessMax, pow(mask.a, _SmoothnessPower));
+
+            fixed4 color = lerp(float4(1.0, 1.0, 1.0, 1.0), diffuse, _BaseColorStrength);
+            color = RootEndBlend(color, rootMap.g);
+            color = HighlightBlend(color, idMap.g, rootMap.g, _HighlightAColor, _HighlightADistribution,
+                _HighlightAStrength, _HighlightAOverlapEnd, _HighlightAOverlapInvert);
+            color = HighlightBlend(color, idMap.g, rootMap.g, _HighlightBColor, _HighlightBDistribution,
+                _HighlightBStrength, _HighlightBOverlapEnd, _HighlightBOverlapInvert);
+
+            color *= _DiffuseStrength;
+            color = lerp(color, color * depthBlend, _BlendStrength);
+
+            half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
+            color = lerp(color, _VertexBaseColor, vcf);
+            
+            half3 normal = UnpackNormal(tex2D(_NormalMap, uv));
+            // apply normal strength
+            normal = half3(normal.xy * _NormalStrength, lerp(1, normal.z, saturate(_NormalStrength)));
+            
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
+
+            o.Albedo = lerp(color.rgb, color.rgb * mask.g, _AOOccludeAll * 0.5);
+            o.Metallic = mask.r;
+            o.Smoothness = smoothness;            
+            o.Occlusion = ao;
+            o.Normal = normal;
+            o.Alpha = alpha; 
+            o.Emission = emission;
+        }
+#else
+        void surf(Input IN, inout SurfaceOutputStandard o)
+        {
+            float2 uv = IN.uv_DiffuseMap;
+
+            fixed4 diffuse = tex2D(_DiffuseMap, uv);
+            half4 depthBlend = tex2D(_BlendMap, uv);
+            half4 mask = tex2D(_MaskMap, uv);
+
+            // remap AO          
+            half ao = lerp(1.0, mask.g, _AOStrength);
+
+            // remap Alpha
+            half alpha = pow(saturate((diffuse.a / _AlphaRemap)), _AlphaPower);            
+
+            // remap smoothness
+            half smoothness = lerp(_SmoothnessMin, _SmoothnessMax, pow(mask.a, _SmoothnessPower));
+
+            fixed4 color = diffuse * _DiffuseStrength;
+            color = lerp(color, color * depthBlend, _BlendStrength);
+
+            half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
+            color = lerp(color, _VertexBaseColor, vcf);
+
+            half3 normal = UnpackNormal(tex2D(_NormalMap, uv));
+            // apply normal strength
+            normal = half3(normal.xy * _NormalStrength, lerp(1, normal.z, saturate(_NormalStrength)));
+
+            // emission
+            half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
+
+            o.Albedo = lerp(color.rgb, color.rgb * mask.g, _AOOccludeAll * 0.5);
+            o.Metallic = mask.r;
+            o.Smoothness = smoothness;
+            o.Occlusion = ao;
+            o.Normal = normal;
+            o.Alpha = alpha;
+            o.Emission = emission;
+        }
+#endif
+        ENDCG
 
         // 2nd Pass, render remaining alpha blended hair (fade) around the first opaque pass
         // ZTest set to Less than, so that the opaque parts of each hair card will never be overdrawn. 
@@ -79,7 +261,7 @@ Shader "Reallusion/RL_HairShaderVariants_2nd_Pass_3D"
 
         CGPROGRAM
         // Physically based Standard lighting model, and enable shadows on all light types
-        #pragma surface surf Standard alpha:blend
+        #pragma surface surf Standard fullforwardshadows alpha:fade
         #pragma multi_compile _ BOOLEAN_ENABLECOLOR_ON //_ENUMCLIPQUALITY_ON_STANDARD _ENUMCLIPQUALITY_ON_NOISE _ENUMCLIPQUALITY_ON_DITHER
 
         // Use shader model 3.0 target, to get nicer looking lighting
@@ -253,5 +435,5 @@ Shader "Reallusion/RL_HairShaderVariants_2nd_Pass_3D"
 #endif
         ENDCG
     }
-    FallBack "diffuse"
+    FallBack "Diffuse"
 }

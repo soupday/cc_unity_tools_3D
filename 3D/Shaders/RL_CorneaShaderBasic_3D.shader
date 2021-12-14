@@ -1,4 +1,4 @@
-Shader "Reallusion/RL_CorneaShader_3D"
+Shader "Reallusion/RL_CorneaShaderBasic_3D"
 {
     Properties 
     {

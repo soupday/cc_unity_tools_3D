@@ -1,4 +1,4 @@
-Shader "Reallusion/RL_HairShaderClipped_3D"
+Shader "Reallusion/RL_HairShader_Clipped_3D"
 {
     Properties 
     {
