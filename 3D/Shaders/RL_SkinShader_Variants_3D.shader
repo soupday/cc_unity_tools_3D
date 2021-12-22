@@ -40,18 +40,7 @@ Shader "Reallusion/RL_SkinShader_Variants_3D"
         _ForeheadSmoothnessMod("Forehead Smoothness Mod", Range(-1.5,1.5)) = 0
         _UpperLipSmoothnessMod("Upper Lip Smoothness Mod", Range(-1.5,1.5)) = 0
         _ChinSmoothnessMod("Chin Smoothness Mod", Range(-1.5,1.5)) = 0
-        _UnmaskedSmoothnessMod("Unmasked Smoothness Mod", Range(-1.5,1.5)) = 0
-        _RScatterScale("Nose/R Scatter Scale", Range(0,2)) = 1
-        _GScatterScale("Mouth/G Scatter Scale", Range(0,2)) = 1
-        _BScatterScale("Upper Lid/B Scatter Scale", Range(0,2)) = 1
-        _AScatterScale("Inner Lid/A Scatter Scale", Range(0,2)) = 1
-        _EarScatterScale("Ear Scatter Scale", Range(0,2)) = 1
-        _NeckScatterScale("Neck Scatter Scale", Range(0,2)) = 1
-        _CheekScatterScale("Cheek Scatter Scale", Range(0,2)) = 1
-        _ForeheadScatterScale("Forehead Scatter Scale", Range(0,2)) = 1
-        _UpperLipScatterScale("Upper Lip Scatter Scale", Range(0,2)) = 1
-        _ChinScatterScale("Chin Scatter Scale", Range(0,2)) = 1
-        _UnmaskedScatterScale("Unmasked Scatter Scale", Range(0,2)) = 1
+        _UnmaskedSmoothnessMod("Unmasked Smoothness Mod", Range(-1.5,1.5)) = 0        
         // Emission
         [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "white" {}
         [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0)
@@ -63,6 +52,17 @@ Shader "Reallusion/RL_SkinShader_Variants_3D"
         [HideInInspector]_SubsurfaceScale("Subsurface Scale", Range(0,1)) = 1
         [HideInInspector][NoScaleOffset]_ThicknessMap("Thickness Map", 2D) = "black" {}
         [HideInInspector]_ThicknessScale("Thickness Scale", Range(0,1)) = 0.4
+        [HideInInspector]_RScatterScale("Nose/R Scatter Scale", Range(0,2)) = 1
+        [HideInInspector]_GScatterScale("Mouth/G Scatter Scale", Range(0,2)) = 1
+        [HideInInspector]_BScatterScale("Upper Lid/B Scatter Scale", Range(0,2)) = 1
+        [HideInInspector]_AScatterScale("Inner Lid/A Scatter Scale", Range(0,2)) = 1
+        [HideInInspector]_EarScatterScale("Ear Scatter Scale", Range(0,2)) = 1
+        [HideInInspector]_NeckScatterScale("Neck Scatter Scale", Range(0,2)) = 1
+        [HideInInspector]_CheekScatterScale("Cheek Scatter Scale", Range(0,2)) = 1
+        [HideInInspector]_ForeheadScatterScale("Forehead Scatter Scale", Range(0,2)) = 1
+        [HideInInspector]_UpperLipScatterScale("Upper Lip Scatter Scale", Range(0,2)) = 1
+        [HideInInspector]_ChinScatterScale("Chin Scatter Scale", Range(0,2)) = 1
+        [HideInInspector]_UnmaskedScatterScale("Unmasked Scatter Scale", Range(0,2)) = 1
     }
     SubShader
     {

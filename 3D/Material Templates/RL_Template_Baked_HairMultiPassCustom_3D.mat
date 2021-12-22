@@ -20,15 +20,15 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: RL_Template_Baked_HairCustom_3D
-  m_Shader: {fileID: 4800000, guid: a0133c7617d5ecc43a0039d04a6da874, type: 3}
+  m_Name: RL_Template_Baked_HairMultiPassCustom_3D
+  m_Shader: {fileID: 4800000, guid: 7132cd41c8d6fad448b61cdd226bebba, type: 3}
   m_ShaderKeywords: _ALPHATEST_ON _ALPHATOMASK_ON _DISABLE_SSR_TRANSPARENT _DOUBLESIDED_ON
     _ENABLE_FOG_ON_TRANSPARENT _ENUMCLIPQUALITY_ON_DITHER _SURFACE_TYPE_TRANSPARENT
     _TRANSPARENT_WRITES_MOTION_VEC
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 1
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 3001
   stringTagMap:
     MotionVector: User
   disabledShaderPasses:
@@ -60,7 +60,6 @@ Material:
     m_Floats:
     - _AlphaClip: 0.5
     - _BumpScale: 1
-    - _ENUMCLIPQUALITY_ON: 2
     - _OcclusionStrength: 1
     - _VertexColorStrength: 0.5
     m_Colors:

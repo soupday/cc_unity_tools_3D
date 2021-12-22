@@ -9,14 +9,17 @@ Shader "Reallusion/RL_CorneaShaderParallax_Baked_3D"
         _BumpScale("Normal Scale", Range(0, 2)) = 1
         [NoScaleOffset]_OcclusionMap("Occlusion", 2D) = "white" {}
         _OcclusionStrength("Occlusion Strength", Range(0, 1)) = 1
-        [NoScaleOffset]_DetailMask("Detail Mask (A)", 2D) = "gray" {}               // depth mask(g), detail mask(a)
+        [NoScaleOffset]_DetailMask("Detail Mask (A)", 2D) = "gray" {}               // eye blend mask(r), pupil scale mask(g), parallax height mask(b), iris mask(a)
         _DetailAlbedoMap("Detail Albedo Map", 2D) = "grey" {}
         _DetailNormalMap("Detail Normal Map", 2D) = "bump" {}
         _DetailNormalMapScale("Detail Normal Scale", Range(0, 2)) = 0.5
         [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "white" {}
         [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0)
         // custom shader
-        _PupilScale("Pupil Scale", Range(0.25,2)) = 0.8        
+        _PupilScale("Pupil Scale", Range(0.1,2)) = 0.8
+        _IrisDepth("Iris Depth", Range(0.1,1)) = 0.225
+        _IOR("IOR", Range(1,2)) = 1.4        
+        _PMod("Parallax Mod", Range(0,10)) = 6.2717        
     }
     SubShader
     {
@@ -43,6 +46,7 @@ Shader "Reallusion/RL_CorneaShaderParallax_Baked_3D"
         {
             float2 uv_MainTex;
             float2 uv_DetailNormalMap;
+            float3 viewDir;
         };
         
          
@@ -50,7 +54,10 @@ Shader "Reallusion/RL_CorneaShaderParallax_Baked_3D"
         half _OcclusionStrength;
         half _DetailNormalMapScale;
         half3 _EmissiveColor;
-        half _PupilScale;        
+        half _PupilScale;  
+        half _IOR;
+        half _PMod;        
+        half _IrisDepth;
 
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
@@ -62,8 +69,20 @@ Shader "Reallusion/RL_CorneaShaderParallax_Baked_3D"
 
             half tiling = 1.0 / lerp(1, _PupilScale, detail.g);
             half offset = half2(0.5, 0.5) * (1 - tiling);
+            half2 pupilUV = uv * tiling + offset;
 
-            half4 color = tex2D(_MainTex, uv * tiling + offset);
+            // parallax mapping            
+            half3 Vr = normalize(o.Normal * (_IOR - 0.6) + IN.viewDir);
+            half parallaxTiling = 1.0 / ((_IrisDepth * _PMod) + 0.8711572);
+            half parallaxOffset = 0.5 * (1.0 - parallaxTiling);
+            half2 parallaxUV = (pupilUV - (half2(Vr.xy) * _IrisDepth)) * parallaxTiling + parallaxOffset;
+            half2 corneaUV = lerp(pupilUV, parallaxUV, detail.b);
+
+            half4 sclera = tex2D(_MainTex, uv);
+            half4 cornea = tex2D(_MainTex, corneaUV);
+            half4 color = lerp(sclera, cornea, detail.r);
+
+            //half4 color = tex2D(_MainTex, lerp(uv, corneaUV, detail.r));
 
             // normal
             half3 normal = UnpackNormal(tex2D(_DetailNormalMap, IN.uv_DetailNormalMap));

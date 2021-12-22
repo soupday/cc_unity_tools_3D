@@ -73,9 +73,6 @@ Shader "Reallusion/RL_HairShader_Clipped_3D"
         Cull Off
         ZWrite On
 
-        // First pass: Render the hair as opaque alpha clipped. 
-        // This should act as a depth prepass for the 2nd alpha blend pass.
-
         CGPROGRAM
         // Physically based Standard lighting model, and enable shadows on all light types
         #pragma surface surf Standard fullforwardshadows addshadow        

@@ -12,9 +12,7 @@ Shader "Reallusion/RL_CorneaShaderBasic_3D"
         _IrisScale("Iris Scale", Range(0.25,2)) = 1
         _IrisHue("Iris Hue", Range(0,1)) = 0.5
         _IrisSaturation("Iris Saturation", Range(0,2)) = 1
-        _IrisBrightness("Iris Brightness", Range(0,2)) = 1
-        _PupilScale("Pupil Scale", Range(0.25,10)) = 0.8
-        _DepthRadius("Pupil Effect Scale", Range(0,1)) = 0.8
+        _IrisBrightness("Iris Brightness", Range(0,2)) = 1                
         _IrisRadius("Iris Radius", Range(0.01,0.2)) = 0.15
         _LimbusWidth("Limbus Width", Range(0.01,0.1)) = 0.055
         _LimbusDarkRadius("Limbus Dark Radius", Range(0.01,0.2)) = 0.1
@@ -28,27 +26,28 @@ Shader "Reallusion/RL_CorneaShaderBasic_3D"
         _AOStrength("Ambient Occlusion Strength", Range(0,1)) = 0.2
         _ScleraSmoothness("Sclera Smoothness", Range(0,1)) = 0.8
         _CorneaSmoothness("Cornea Smoothness", Range(0,1)) = 1
-        _IrisSmoothness("Iris Smoothness", Range(0,1)) = 0
         // Blend Maps
         [NoScaleOffset]_ColorBlendMap("Color Blend Map", 2D) = "grey" {}
         _ColorBlendStrength("Color Blend Strength", Range(0,1)) = 0.2        
         // Normals
-        [NoScaleOffset]_IrisNormalMap("Iris Normal Map", 2D) = "bump" {}
-        _IrisNormalStrength("Iris Normal Strength", Range(0,2)) = 0
         [NoScaleOffset]_ScleraNormalMap("Sclera Normal Map", 2D) = "bump" {}
         _ScleraNormalStrength("Sclera Normal Strength", Range(0,1)) = 0.1
         _ScleraNormalTiling("Sclera Normal Tiling", Range(1,10)) = 2        
         // Emission
         [NoScaleOffset]_EmissionMap("Emission Map", 2D) = "white" {}
         [HDR]_EmissiveColor("Emissive Color", Color) = (0,0,0)
-        // Keywords
-        [ToggleUI]_IsLeftEye("Is Left Eye", Float) = 0
-        [Toggle]BOOLEAN_ISCORNEA("IsCornea", Float) = 0
+        // 
+        _PupilScale("Pupil Scale", Range(0.25,10)) = 0.8
+        _DepthRadius("Pupil Scale Radius", Range(0,1)) = 0.8        
 
         // NOT YET IMPLEMENTED
         [HideInInspector]_IOR("IOR", Range(1,2)) = 1.4
         [HideInInspector]_RefractionThickness("Refraction Thickness", Range(0,0.025)) = 0.01
         [HideInInspector]_IrisDepth("Iris Depth", Range(0,1)) = 0                       
+
+        // Keywords
+        [ToggleUI]_IsLeftEye("Is Left Eye", Float) = 0
+        [Toggle]BOOLEAN_ISCORNEA("IsCornea", Float) = 0
     }
     SubShader
     {
@@ -65,8 +64,7 @@ Shader "Reallusion/RL_CorneaShaderBasic_3D"
         sampler2D _ScleraDiffuseMap;
         sampler2D _CorneaDiffuseMap;
         sampler2D _ColorBlendMap;
-        sampler2D _MaskMap;
-        sampler2D _IrisNormalMap;
+        sampler2D _MaskMap;        
         sampler2D _ScleraNormalMap;
         sampler2D _EmissionMap;
 
@@ -75,8 +73,7 @@ Shader "Reallusion/RL_CorneaShaderBasic_3D"
             float2 uv_ScleraDiffuseMap;
         };
         
-        half _AOStrength;
-        half _IrisNormalStrength;
+        half _AOStrength;        
         half _ScleraNormalStrength;
         half _ScleraNormalTiling;
         half _ScleraScale;
@@ -99,7 +96,6 @@ Shader "Reallusion/RL_CorneaShaderBasic_3D"
         half _ColorBlendStrength;
         half _ScleraSmoothness;
         half _CorneaSmoothness;
-        half _IrisSmoothness;
         half _IOR;
         half _RefractionThickness;
         half _IrisDepth;
