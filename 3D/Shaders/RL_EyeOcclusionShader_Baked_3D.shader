@@ -17,7 +17,7 @@ Shader "Reallusion/RL_EyeOcclusionShader_Baked_3D"
         LOD 100
 
         ZWrite Off
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend DstColor OneMinusSrcAlpha
 
         Pass
         {

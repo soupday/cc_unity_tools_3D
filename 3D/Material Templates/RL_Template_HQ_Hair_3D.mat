@@ -64,7 +64,7 @@ Material:
     - BOOLEAN_ENABLECOLOR: 0
     - _AOOccludeAll: 0
     - _AOStrength: 1
-    - _AlphaClip: 1
+    - _AlphaClip: 0.5
     - _AlphaPower: 1
     - _AlphaRemap: 1
     - _BaseColorStrength: 1
