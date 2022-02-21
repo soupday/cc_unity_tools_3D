@@ -12,6 +12,11 @@ Additionally, more performance focussed characters can be produced using simpler
 
 Progress and additional information can be found in the [Reallusion forum thread](https://forum.reallusion.com/488356/Unity-Auto-Setup).
 
+Links
+=====
+[HDRP Version](https://github.com/soupday/cc3_unity_tools_HDRP)
+[URP Version](https://github.com/soupday/cc3_unity_tools_URP)
+
 Build-In Render Pipeline Support
 ================================
 

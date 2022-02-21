@@ -4,7 +4,8 @@
     "references": [
         "GUID:457756d89b35d2941b3e7b37b4ece6f1",
         "GUID:3eae0364be2026648bf74846acb8a731",
-        "GUID:78bd2ddd6e276394a9615c203e574844"
+        "GUID:78bd2ddd6e276394a9615c203e574844",
+        "GUID:d60799ab2a985554ea1a39cd38695018"
     ],
     "includePlatforms": [
         "Editor"
@@ -19,9 +20,14 @@
     "defineConstraints": [],
     "versionDefines": [
         {
-            "name": "com.unity.render-pipelines.universal",
-            "expression": "10.5.0",
-            "define": "URP_10_5_0_OR_NEWER"
+            "name": "Unity",
+            "expression": "2021.2.0a17",
+            "define": "SCENEVIEW_OVERLAY_COMPATIBLE"
+        },
+        {
+            "name": "com.unity.postprocessing",
+            "expression": "3.1.1",
+            "define": "UNITY_POST_PROCESSING_3_1_1"
         }
     ],
     "noEngineReferences": false
