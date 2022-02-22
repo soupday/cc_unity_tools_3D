@@ -1275,12 +1275,11 @@ void RLHairDiffuse(uint3 id : SV_DispatchThreadID)
     float4 mask = SAMPLE(Mask, uv);    
     
     float ao = INVERTED_SCALE(mask.g, aoStrength);
-    float alpha = pow(saturate((diffuse.a / alphaRemap)), alphaPower);
+    float alpha = saturate(pow(saturate((diffuse.a / alphaRemap)), alphaPower));
     
     float4 color = diffuse * diffuseStrength;
-    color = lerp(color, color * depthBlend, colorBlendStrength);
-    color = lerp(color, color * ao, aoOccludeAll * 0.5);
-
+    color = lerp(color, color * depthBlend, colorBlendStrength);    
+    
     color = LinearTosRGB(color);
     color.a = alpha;
 
@@ -1333,7 +1332,7 @@ void RLHairAO(uint3 id : SV_DispatchThreadID)
     float ao = INVERTED_SCALE(mask.g, aoStrength);
     float detailMask = (specular.r + specular.g + specular.b) / 3.0;
     float smoothness = lerp(smoothnessMin, smoothnessMax, pow(mask.a, smoothnessPower));
-    float4 packed = float4(ao, ao, ao, 1.0);
+    float4 packed = float4(ao, ao, ao, detailMask);
 
     Result[id.xy] = packed;
 }

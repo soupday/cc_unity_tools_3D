@@ -564,6 +564,7 @@ namespace Reallusion.Import
                 sssNormalSoften = 0f;
 
             bool isHead = mat.GetFloatIf("BOOLEAN_IS_HEAD") > 0f;
+            bool useAmplify = characterInfo.BakeCustomShaders && mat.shader.name.iContains("/Amplify/");
 
             Texture2D bakedBaseMap = diffuse;
             Texture2D bakedMaskMap = mask;
@@ -687,7 +688,7 @@ namespace Reallusion.Import
                 1.0f, microNormalTiling, microNormalStrength, emissiveColor,
                 sourceName,
                 Pipeline.GetTemplateMaterial(MaterialType.Skin,
-                            MaterialQuality.Baked, characterInfo));
+                            MaterialQuality.Baked, characterInfo, useAmplify));
 
             CopyAMPSubsurface(mat, result);
 
@@ -729,6 +730,8 @@ namespace Reallusion.Import
             Color emissiveColor = mat.GetColorIf("_EmissiveColor");
             Color subsurfaceFalloff = mat.GetColorIf("_SubsurfaceFalloff");
             if (IS_HDRP) subsurfaceFalloff = Color.white;
+
+            bool useAmplify = characterInfo.BakeCustomShaders && mat.shader.name.iContains("/Amplify/");
 
             Texture2D bakedBaseMap = diffuse;
             Texture2D bakedMaskMap = mask;
@@ -790,7 +793,7 @@ namespace Reallusion.Import
                 normalStrength, microNormalTiling, microNormalStrength, emissiveColor,
                 sourceName,
                 Pipeline.GetTemplateMaterial(MaterialType.Teeth,
-                            MaterialQuality.Baked, characterInfo));
+                            MaterialQuality.Baked, characterInfo, useAmplify));
 
             CopyAMPSubsurface(mat, result);
 
@@ -820,8 +823,10 @@ namespace Reallusion.Import
             float tongueThickness = mat.GetFloatIf("_TongueThickness");
             Texture2D emission = GetMaterialTexture(mat, "_EmissionMap");
             Color emissiveColor = mat.GetColorIf("_EmissiveColor");
-            Color subsurfaceFalloff = mat.GetColorIf("_SubsurfaceFalloff");
+            Color subsurfaceFalloff = mat.GetColorIf("_SubsurfaceFalloff");            
             if (IS_HDRP) subsurfaceFalloff = Color.white;
+
+            bool useAmplify = characterInfo.BakeCustomShaders && mat.shader.name.iContains("/Amplify/");
 
             Texture2D bakedBaseMap = diffuse;
             Texture2D bakedMaskMap = mask;
@@ -885,7 +890,7 @@ namespace Reallusion.Import
                 normalStrength, microNormalTiling, microNormalStrength, emissiveColor,
                 sourceName, 
                 Pipeline.GetTemplateMaterial(MaterialType.Tongue, 
-                            MaterialQuality.Baked, characterInfo));
+                            MaterialQuality.Baked, characterInfo, useAmplify));
 
             CopyAMPSubsurface(mat, result);
 
@@ -939,7 +944,9 @@ namespace Reallusion.Import
             bool isLeftEye = mat.GetFloatIf("_IsLeftEye") > 0f;
             Texture2D emission = GetMaterialTexture(mat, "_EmissionMap");
             Color emissiveColor = mat.GetColorIf("_EmissiveColor");
-            Color subsurfaceFalloff = mat.GetColorIf("_SubsurfaceFalloff");            
+            Color subsurfaceFalloff = mat.GetColorIf("_SubsurfaceFalloff");
+
+            bool useAmplify = characterInfo.BakeCustomShaders && mat.shader.name.iContains("/Amplify/");
 
             Texture2D bakedBaseMap = cornea;
             Texture2D bakedMaskMap = mask;
@@ -1028,7 +1035,7 @@ namespace Reallusion.Import
                 bakedDetailMask, bakedDetailMap, bakedSubsurfaceMap, bakedThicknessMap, emissionMap,
                 1f, microNormalTiling, microNormalStrength, emissiveColor,
                 sourceName, isCornea ? Pipeline.GetTemplateMaterial(MaterialType.Cornea, 
-                                            MaterialQuality.Baked, characterInfo) 
+                                            MaterialQuality.Baked, characterInfo, useAmplify) 
                                      : Pipeline.GetTemplateMaterial(MaterialType.Eye, 
                                             MaterialQuality.Baked, characterInfo));
 
@@ -1137,6 +1144,8 @@ namespace Reallusion.Import
             firstPass = null;
             secondPass = null;
 
+            bool useAmplify = characterInfo.BakeCustomShaders && mat.shader.name.iContains("/Amplify/");
+
             Texture2D bakedBaseMap = diffuse;
             Texture2D bakedMaskMap = mask;
             Texture2D bakedMetallicGlossMap = null;
@@ -1188,6 +1197,7 @@ namespace Reallusion.Import
             {
                 Action<Material> SetCustom = (bakeMat) =>
                 {
+                    bakeMat.SetFloatIf("_AOOccludeAll", aoOccludeAll);
                     bakeMat.SetTextureIf("_FlowMap", flow);
                     bakeMat.SetFloatIf("_FlowMapFlipGreen", flowMapFlipGreen);
                     bakeMat.SetFloatIf("_Translucency", translucency);
@@ -1260,13 +1270,15 @@ namespace Reallusion.Import
                         null, null, null, null, emissionMap,
                         normalStrength, 1f, 1f, emissiveColor,
                         sourceName,
-                        Pipeline.GetCustomTemplateMaterial(Pipeline.MATERIAL_BAKED_HAIR_CUSTOM_1ST_PASS, MaterialQuality.Baked));
+                        Pipeline.GetCustomTemplateMaterial(Pipeline.MATERIAL_BAKED_HAIR_CUSTOM_1ST_PASS, 
+                            MaterialQuality.Baked, useAmplify));
 
                     secondPass = CreateBakedMaterial(bakedBaseMap, bakedMaskMap, bakedMetallicGlossMap, bakedAOMap, bakedNormalMap,
                         null, null, null, null, emissionMap,
                         normalStrength, 1f, 1f, emissiveColor,
                         sourceName.Replace("_1st_Pass", "_2nd_Pass"),
-                        Pipeline.GetCustomTemplateMaterial(Pipeline.MATERIAL_BAKED_HAIR_CUSTOM_2ND_PASS, MaterialQuality.Baked));
+                        Pipeline.GetCustomTemplateMaterial(Pipeline.MATERIAL_BAKED_HAIR_CUSTOM_2ND_PASS, 
+                            MaterialQuality.Baked, useAmplify));
 
                     // multi material pass hair is custom baked shader only:
                     SetCustom(firstPass);
@@ -1280,7 +1292,7 @@ namespace Reallusion.Import
                         normalStrength, 1f, 1f, emissiveColor,
                         sourceName,
                         Pipeline.GetTemplateMaterial(MaterialType.Hair,
-                                    MaterialQuality.Baked, characterInfo));
+                                    MaterialQuality.Baked, characterInfo, useAmplify));
 
                     SetCustom(result);
                     return result;
@@ -1310,13 +1322,13 @@ namespace Reallusion.Import
                         null, null, null, null, emissionMap,
                         normalStrength, 1f, 1f, emissiveColor,
                         sourceName,
-                        Pipeline.GetCustomTemplateMaterial(Pipeline.MATERIAL_BAKED_HAIR_1ST_PASS, MaterialQuality.Baked));
+                        Pipeline.GetCustomTemplateMaterial(Pipeline.MATERIAL_BAKED_HAIR_1ST_PASS, MaterialQuality.Baked, useAmplify));
 
                     secondPass = CreateBakedMaterial(bakedBaseMap, bakedMaskMap, bakedMetallicGlossMap, bakedAOMap, bakedNormalMap,
                         null, null, null, null, emissionMap,
                         normalStrength, 1f, 1f, emissiveColor,
                         sourceName.Replace("_1st_Pass", "_2nd_Pass"),
-                        Pipeline.GetCustomTemplateMaterial(Pipeline.MATERIAL_BAKED_HAIR_2ND_PASS, MaterialQuality.Baked));
+                        Pipeline.GetCustomTemplateMaterial(Pipeline.MATERIAL_BAKED_HAIR_2ND_PASS, MaterialQuality.Baked, useAmplify));
 
                     SetBasic(firstPass);
                     SetBasic(secondPass);
@@ -2352,7 +2364,7 @@ namespace Reallusion.Import
             Vector2Int maxSize = GetMaxSize(diffuse, id);
             ComputeBakeTexture bakeTarget =
                 new ComputeBakeTexture(maxSize, texturesFolder, name, 
-                    Importer.FLAG_SRGB + Importer.FLAG_ALPHA_DATA + 
+                    Importer.FLAG_SRGB +
                     (name.iContains("hair") ? Importer.FLAG_HAIR : Importer.FLAG_ALPHA_CLIP)
                 );
 
@@ -2447,7 +2459,7 @@ namespace Reallusion.Import
         {
             Vector2Int maxSize = GetMaxSize(mask);
             ComputeBakeTexture bakeTarget =
-                new ComputeBakeTexture(maxSize, texturesFolder, name);
+                new ComputeBakeTexture(maxSize, texturesFolder, name, Importer.FLAG_ALPHA_DATA);
 
             ComputeShader bakeShader = Util.FindComputeShader(COMPUTE_SHADER);
             if (bakeShader)

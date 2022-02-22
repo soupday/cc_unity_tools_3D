@@ -353,7 +353,7 @@ namespace Reallusion.Import
         private Material CreateRemapMaterial(MaterialType materialType, Material sharedMaterial, string sourceName)
         {
             // get the template material.
-            Material templateMaterial = Pipeline.GetTemplateMaterial(materialType, characterInfo.BuildQuality, characterInfo);
+            Material templateMaterial = Pipeline.GetTemplateMaterial(materialType, characterInfo.BuildQuality, characterInfo, USE_AMPLIFY_SHADER);
 
             // get the appropriate shader to use            
             Shader shader;
