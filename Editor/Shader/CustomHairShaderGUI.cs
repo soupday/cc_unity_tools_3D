@@ -37,8 +37,6 @@ namespace Reallusion.Import
 
             if (rebuild)
             {
-                Debug.Log("REBUILD");
-
                 for (int i = 0; i < targets.Length; i++)
                 {
                     Material target = targets[i] as Material;
@@ -74,8 +72,7 @@ namespace Reallusion.Import
 
         private bool SetFloatIfSourcesAgree(Material from, string prop)
         {
-            float value = from.GetFloat(prop);
-            Debug.Log(prop);
+            float value = from.GetFloat(prop);            
 
             for (int i = 0; i < sources.Length; i++)
             {
