@@ -355,12 +355,12 @@ namespace Reallusion.Import
         {
             // don't link the prefab as a variant to the original prefabs as updating the original causes the variants to be reset.
             if (prefab)
-                //clone = GameObject.Instantiate<GameObject>(prefab);                
-                clone = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+                clone = GameObject.Instantiate<GameObject>(prefab);                
+                //clone = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             else
-                //clone = GameObject.Instantiate<GameObject>(fbx);
-                clone = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
-            PrefabUtility.UnpackPrefabInstance(clone, PrefabUnpackMode.Completely, InteractionMode.UserAction);
+                clone = GameObject.Instantiate<GameObject>(fbx);
+                //clone = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
+            //PrefabUtility.UnpackPrefabInstance(clone, PrefabUnpackMode.Completely, InteractionMode.UserAction);
         }
 
         public GameObject SaveAsPrefab()
