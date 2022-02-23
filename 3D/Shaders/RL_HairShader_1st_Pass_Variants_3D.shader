@@ -174,6 +174,8 @@ Shader "Reallusion/RL_HairShader_1st_Pass_Variants_3D"
 
             // remap AO          
             half ao = lerp(1.0, mask.g, _AOStrength);
+            half aoIndirect = lerp(1.0, ao, _AOOccludeAll * 0.5);
+            half aoAll = lerp(1.0, ao, _AOOccludeAll);
 
             // remap Alpha
             half alpha = pow(saturate((diffuse.a / _AlphaRemap)), _AlphaPower);
@@ -201,9 +203,9 @@ Shader "Reallusion/RL_HairShader_1st_Pass_Variants_3D"
             // emission
             half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
 
-            o.Albedo = lerp(color.rgb, color.rgb * mask.g, _AOOccludeAll * 0.5);
+            o.Albedo = color.rgb * aoIndirect;
             o.Metallic = mask.r;
-            o.Smoothness = smoothness;            
+            o.Smoothness = smoothness * aoAll;
             o.Occlusion = ao;
             o.Normal = normal;            
             o.Alpha = alpha; 
@@ -220,6 +222,8 @@ Shader "Reallusion/RL_HairShader_1st_Pass_Variants_3D"
 
             // remap AO          
             half ao = lerp(1.0, mask.g, _AOStrength);
+            half aoIndirect = lerp(1.0, ao, _AOOccludeAll * 0.5);
+            half aoAll = lerp(1.0, ao, _AOOccludeAll);
 
             // remap Alpha
             half alpha = pow(saturate((diffuse.a / _AlphaRemap)), _AlphaPower);            
@@ -240,9 +244,9 @@ Shader "Reallusion/RL_HairShader_1st_Pass_Variants_3D"
             // emission
             half3 emission = tex2D(_EmissionMap, uv) * _EmissiveColor;
 
-            o.Albedo = lerp(color.rgb, color.rgb * mask.g, _AOOccludeAll * 0.5);
+            o.Albedo = color.rgb * aoIndirect;
             o.Metallic = mask.r;
-            o.Smoothness = smoothness;
+            o.Smoothness = smoothness * aoAll;
             o.Occlusion = ao;
             o.Normal = normal;
             o.Alpha = alpha;

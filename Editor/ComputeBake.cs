@@ -1147,7 +1147,7 @@ namespace Reallusion.Import
             firstPass = null;
             secondPass = null;
 
-            bool useAmplify = characterInfo.BakeCustomShaders && mat.shader.name.iContains("/Amplify/");
+            bool useAmplify = characterInfo.BakeCustomShaders && mat.shader.name.iContains("/Amplify/");            
 
             Texture2D bakedBaseMap = diffuse;
             Texture2D bakedMaskMap = mask;
@@ -1159,7 +1159,7 @@ namespace Reallusion.Import
             if (enableColor)
             {
                 bakedBaseMap = BakeHairDiffuseMap(diffuse, blend, id, root, mask,
-                    diffuseStrength, alphaPower, alphaRemap, aoStrength, aoOccludeAll,
+                    diffuseStrength, alphaPower, alphaRemap, aoStrength, (useAmplify ? 0f : aoOccludeAll),
                     rootColor, rootColorStrength, endColor, endColorStrength, globalStrength,
                     invertRootMap, baseColorStrength,
                     highlightAColor, highlightADistribution, highlightAOverlapEnd,
@@ -1172,7 +1172,7 @@ namespace Reallusion.Import
             else
             {
                 bakedBaseMap = BakeHairDiffuseMap(diffuse, blend, mask,
-                    diffuseStrength, alphaPower, alphaRemap, aoStrength, aoOccludeAll,
+                    diffuseStrength, alphaPower, alphaRemap, aoStrength, (useAmplify ? 0f : aoOccludeAll),
                     blendStrength, vertexBaseColor, vertexColorStrength,
                     sourceName + "_BaseMap");
             }
@@ -1180,21 +1180,22 @@ namespace Reallusion.Import
             if (IS_HDRP)
             {
                 bakedMaskMap = BakeHairMaskMap(mask, specular,
-                    aoStrength, smoothnessMin, smoothnessMax, smoothnessPower,
+                    aoStrength, (useAmplify ? 0f : aoOccludeAll),                     
+                    smoothnessMin, smoothnessMax, smoothnessPower,
                     sourceName + "_Mask", "RLHairMask");
             }
             else
             {
                 bakedMetallicGlossMap = BakeHairMaskMap(mask, specular,
-                    aoStrength, smoothnessMin, smoothnessMax, smoothnessPower,
+                    aoStrength, (useAmplify ? 0f : aoOccludeAll), 
+                    smoothnessMin, smoothnessMax, smoothnessPower,
                     sourceName + "_MetallicAlpha", "RLHairMetallicGloss");
 
                 bakedAOMap = BakeHairMaskMap(mask, specular,
-                    aoStrength, smoothnessMin, smoothnessMax, smoothnessPower,
+                    aoStrength, (useAmplify ? 0f : aoOccludeAll), 
+                    smoothnessMin, smoothnessMax, smoothnessPower,
                     sourceName + "_Occlusion", "RLHairAO");
             }
-
-            // TODO: if the shader is 1st pass hair, create both 1st and 2nd pass hair materials from these textures...
 
             if (CUSTOM_SHADERS)
             {
@@ -1225,6 +1226,7 @@ namespace Reallusion.Import
                     bakeMat.SetFloatIf("_SecondarySmoothness", secondarySmoothness);
                     if (bakeMat.SetFloatIf("_ENUMCLIPQUALITY_ON", clipQuality))
                     {
+                        // Shader Graph clip quality:
                         switch (clipQuality)
                         {                            
                             case 1f:
@@ -1242,7 +1244,7 @@ namespace Reallusion.Import
                                 break;
                         }
                     }
-                    // Amplify shader clip quality
+                    // Amplify shader clip quality:
                     if (bakeMat.SetFloatIf("_ClipQuality", clipQuality))
                     {
                         switch (clipQuality)
@@ -2457,7 +2459,7 @@ namespace Reallusion.Import
         }
 
         private Texture2D BakeHairMaskMap(Texture2D mask, Texture2D specular,
-            float aoStrength, float smoothnessMin, float smoothnessMax, float smoothnessPower,            
+            float aoStrength, float aoOccludeAll, float smoothnessMin, float smoothnessMax, float smoothnessPower,            
             string name, string kernelName)
         {
             Vector2Int maxSize = GetMaxSize(mask);
@@ -2475,6 +2477,7 @@ namespace Reallusion.Import
                 bakeShader.SetTexture(kernel, "Mask", mask);
                 bakeShader.SetTexture(kernel, "Specular", specular);
                 bakeShader.SetFloat("aoStrength", aoStrength);
+                bakeShader.SetFloat("aoOccludeAll", aoOccludeAll);
                 bakeShader.SetFloat("smoothnessMin", smoothnessMin);
                 bakeShader.SetFloat("smoothnessMax", smoothnessMax);
                 bakeShader.SetFloat("smoothnessPower", smoothnessPower);                
@@ -2537,6 +2540,28 @@ namespace Reallusion.Import
             Texture2D bakedDetail = BakeDetailMap(microNormal, name);
             return bakedDetail;
         }        
+
+        public Texture2D BakeFlowMapToNormalMap(Texture2D flowMap, Vector3 tangentVector, bool tangentFlipY, 
+            string name)
+        {
+            Vector2Int maxSize = GetMaxSize(flowMap);
+            ComputeBakeTexture bakeTarget =
+                new ComputeBakeTexture(maxSize, texturesFolder, name, Importer.FLAG_NORMAL);
+
+            ComputeShader bakeShader = Util.FindComputeShader(COMPUTE_SHADER);
+            if (bakeShader)
+            {
+                int kernel = bakeShader.FindKernel("RLFlowToNormal");
+                bakeTarget.Create(bakeShader, kernel);
+                bakeShader.SetTexture(kernel, "Flow", flowMap);
+                bakeShader.SetFloat("tangentFlipY", tangentFlipY ? 1f : 0f);
+                bakeShader.SetVector("tangentVector", tangentVector);
+                bakeShader.Dispatch(kernel, bakeTarget.width, bakeTarget.height, 1);
+                return bakeTarget.SaveAndReimport();
+            }
+
+            return null;
+        }
     }
 
 }
