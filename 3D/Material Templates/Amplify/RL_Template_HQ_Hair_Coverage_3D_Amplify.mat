@@ -56,6 +56,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _SpecularMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _texcoord:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -64,6 +68,7 @@ Material:
     - BOOLEAN_ENABLECOLOR: 0
     - _AOOccludeAll: 0
     - _AOStrength: 1
+    - _AlphaClip: 0.25
     - _AlphaPower: 0.5
     - _AlphaRemap: 1
     - _BaseColorStrength: 1
@@ -92,7 +97,7 @@ Material:
     - _SpecularShiftMax: 0.25
     - _SpecularShiftMin: -0.25
     - _SpecularTint: 0.5
-    - _Tranlucency: 0.15
+    - _Translucency: 0.15
     - _VertexColorStrength: 0.5
     - __dirty: 1
     m_Colors:

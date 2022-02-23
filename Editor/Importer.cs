@@ -1120,7 +1120,7 @@ namespace Reallusion.Import
                 mat.SetFloatIf("_HighlightBOverlapInvert", matJson.GetFloatValue("Custom Shader/Variable/Invert 2nd Dye RootMap Mask"));                
             }
 
-            if (mat.GetTexture("_NormalMap") == null && mat.GetTexture("_FlowMap"))
+            if (mat.GetTexture("_NormalMap") == null)
             {
                 BakeHairFlowToNormalMap(mat, sourceName, matJson);
             }
