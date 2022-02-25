@@ -122,9 +122,9 @@ Material:
     - _NostrilCavityAO: 2.5
     - _RScatterScale: 1
     - _RSmoothnessMod: 0
-    - _SmoothnessMax: 0.88
+    - _SmoothnessMax: 0.897
     - _SmoothnessMin: 0
-    - _SmoothnessPower: 1
+    - _SmoothnessPower: 1.25
     - _SubsurfaceScale: 1
     - _ThicknessScale: 0.4
     - _UnmaskedScatterScale: 1
