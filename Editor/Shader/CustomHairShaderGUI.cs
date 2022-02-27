@@ -37,8 +37,6 @@ namespace Reallusion.Import
 
             if (rebuild)
             {
-                Debug.Log("REBUILD");
-
                 for (int i = 0; i < targets.Length; i++)
                 {
                     Material target = targets[i] as Material;
@@ -84,7 +82,24 @@ namespace Reallusion.Import
             for (int i = 0; i < sources.Length; i++)
             {
                 if (pass1[i]) pass1[i].SetFloatIf(prop, value);
-                if (pass2[i]) pass2[i].SetFloatIf(prop, value);
+                if (pass2[i]) pass2[i].SetFloatIf(prop, value);                    
+            }
+
+            if (prop == "BOOLEAN_ENABLECOLOR")
+            {                
+                for (int i = 0; i < sources.Length; i++)
+                {
+                    if (value == 1f)
+                    {
+                        if (pass1[i]) pass1[i].EnableKeyword("BOOLEAN_ENABLECOLOR_ON");
+                        if (pass2[i]) pass2[i].EnableKeyword("BOOLEAN_ENABLECOLOR_ON");                        
+                    }
+                    else
+                    {
+                        if (pass1[i]) pass1[i].DisableKeyword("BOOLEAN_ENABLECOLOR_ON");
+                        if (pass2[i]) pass2[i].DisableKeyword("BOOLEAN_ENABLECOLOR_ON");
+                    }
+                }
             }
 
             return true;

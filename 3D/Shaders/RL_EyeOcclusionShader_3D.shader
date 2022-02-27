@@ -1,8 +1,8 @@
 Shader "Reallusion/RL_EyeOcclusionShader_3D"
 {
-    Properties 
+    Properties
     {
-        _OcclusionColor("Occlusion Color", Color) = (0.3294118,0.09411765,0.05490196,1)        
+        _OcclusionColor("Occlusion Color", Color) = (0.3294118,0.09411765,0.05490196,1)
         _OcclusionStrength("Occlusion Strength", Range(0,2)) = 0.2
         _OcclusionPower("Occlusion Power", Range(0.1,4)) = 1.5
         _TopMin("Top Min", Range(0,1)) = 0.1
@@ -27,13 +27,13 @@ Shader "Reallusion/RL_EyeOcclusionShader_3D"
         _ExpandInner("Expand Inner", Range(-0.001,0.001)) = 0
         _ExpandOuter("Expand Outer", Range(-0.001,0.001)) = 0
     }
-    SubShader
+        SubShader
     {
         Tags { "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
         LOD 100
 
         ZWrite Off
-        Blend SrcAlpha OneMinusSrcAlpha
+        Blend DstColor OneMinusSrcAlpha
 
         Pass
         {
@@ -117,8 +117,9 @@ Shader "Reallusion/RL_EyeOcclusionShader_3D"
             fixed4 frag(v2f i) : SV_Target
             {
                 // sample the texture
-                fixed4 col = _OcclusionColor;
-                col.a = EyeOcclusionGradient(i.uv);
+                half a = EyeOcclusionGradient(i.uv);
+                fixed4 col = _OcclusionColor * a;
+                col.a = a;
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, col);
                 return col;
