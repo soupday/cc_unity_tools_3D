@@ -45,7 +45,7 @@ namespace Reallusion.Import
         public static bool IsCC3Character(string guid)
         {
             string assetPath = AssetDatabase.GUIDToAssetPath(guid);
-            if (assetPath.iEndsWith(".fbx"))
+            if (assetPath.iEndsWith(".fbx") || assetPath.iEndsWith(".blend"))
             {
                 string assetFolder = Path.GetDirectoryName(assetPath);
                 string assetName = Path.GetFileNameWithoutExtension(assetPath);
