@@ -268,7 +268,12 @@ namespace Reallusion.Import
                         if (jsonMeshData != null && jsonMeshData.PathExists(jsonPath))
                             matJson = jsonMeshData.GetObjectAtPath(jsonPath);
                         else
-                            Debug.LogError("Unable to find json material data: " + jsonPath);
+                            Debug.LogWarning("Unable to find json material data: " + jsonPath + " , testing _Pbr postfix");
+                            jsonPath = obj.name + "/Materials/" + sourceName + "_Pbr";
+                            if (jsonMeshData != null && jsonMeshData.PathExists(jsonPath))
+                                matJson = jsonMeshData.GetObjectAtPath(jsonPath);
+                            else
+                                Debug.LogError("Unable to find json material data: " + jsonPath);
 
                         // determine the material type, this dictates the shader and template material.
                         MaterialType materialType = GetMaterialType(obj, sharedMat, sourceName, matJson);
