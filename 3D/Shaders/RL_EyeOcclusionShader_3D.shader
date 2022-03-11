@@ -26,6 +26,7 @@ Shader "Reallusion/RL_EyeOcclusionShader_3D"
         _ExpandLower("Expand Lower", Range(-0.001,0.001)) = 0
         _ExpandInner("Expand Inner", Range(-0.001,0.001)) = 0
         _ExpandOuter("Expand Outer", Range(-0.001,0.001)) = 0
+        _ExpandScale("Expand Scale", Range(1,100)) = 1.0
     }
         SubShader
     {
@@ -83,6 +84,7 @@ Shader "Reallusion/RL_EyeOcclusionShader_3D"
             float _ExpandLower;
             float _ExpandInner;
             float _ExpandOuter;
+            float _ExpandScale;
 
             v2f vert (appdata v)
             {
@@ -91,7 +93,7 @@ Shader "Reallusion/RL_EyeOcclusionShader_3D"
                 float outer = (1 - v.uv.x) * _ExpandOuter;
                 float upper = v.uv.y * _ExpandUpper;
                 float lower = (1 - v.uv.y) * _ExpandLower;
-                float expand = inner + outer + upper + lower + _ExpandOut;
+                float expand = (inner + outer + upper + lower + _ExpandOut) * _ExpandScale;
 
                 o.vertex = UnityObjectToClipPos(v.vertex + (v.normal * expand));
                 o.uv = v.uv;

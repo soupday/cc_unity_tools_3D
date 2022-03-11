@@ -9,7 +9,9 @@ Shader "Reallusion/RL_TearlineShader_3D"
         _Metallic("Metallic", Range(0,1)) = 0
         // Vertex Adjust
         _DepthOffset("Depth Offset", Range(-0.001,0.001)) = 0
-        _InnerOffset("Inner Offset", Range(-0.001,0.001)) = 0.0005        
+        _InnerOffset("Inner Offset", Range(-0.001,0.001)) = 0.0005
+        // Keywords            
+        [Toggle]BOOLEAN_ZUP("Z Up", Float) = 0
     }
     SubShader
     {
@@ -22,7 +24,7 @@ Shader "Reallusion/RL_TearlineShader_3D"
         CGPROGRAM
         // Physically based Standard lighting model, and enable shadows on all light types
         #pragma surface surf Standard alpha:premul vertex:vert finalcolor:NoFogColor
-
+        #pragma multi_compile _ BOOLEAN_ZUP_ON
         // Use shader model 3.0 target, to get nicer looking lighting
         #pragma target 3.0
 
@@ -37,14 +39,18 @@ Shader "Reallusion/RL_TearlineShader_3D"
 
         half _DepthOffset;
         half _InnerOffset;
-        fixed4 _Color;        
+        fixed4 _Color;
+        half BOOLEAN_ZUP;
 
         void vert(inout appdata_full v)
         {
             float inner = (1 - smoothstep(0, 0.05, abs(v.texcoord.x - 0.5))) * _InnerOffset;
-            float offset = inner + _DepthOffset;
-            float4 vpos = float4(0, 0, 1, 0) * offset;
-            v.vertex += vpos;
+            float offset = (inner + _DepthOffset);            
+#if BOOLEAN_ZUP_ON
+            v.vertex.y -= offset;
+#else
+            v.vertex.z += offset;
+#endif
         }    
 
         void NoFogColor(Input IN, SurfaceOutputStandard o, inout fixed4 color)

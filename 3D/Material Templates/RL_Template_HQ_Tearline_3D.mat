@@ -39,6 +39,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs: []
     m_Floats:
+    - BOOLEAN_ZUP: 0
     - _Alpha: 0
     - _DepthOffset: 0
     - _InnerOffset: 0.001
