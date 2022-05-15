@@ -14,6 +14,8 @@ Shader "Reallusion/RL_CorneaShaderBasic_3D"
         _IrisSaturation("Iris Saturation", Range(0,2)) = 1
         _IrisBrightness("Iris Brightness", Range(0,2)) = 1                
         _IrisRadius("Iris Radius", Range(0.01,0.2)) = 0.15
+        _IrisColor("Iris Color", Color) = (1,1,1,1)
+        _IrisCloudyColor("Iris Cloudy Color", Color) = (0,0,0,0)
         _LimbusWidth("Limbus Width", Range(0.01,0.1)) = 0.055
         _LimbusDarkRadius("Limbus Dark Radius", Range(0.01,0.2)) = 0.1
         _LimbusDarkWidth("Limbus Dark Width", Range(0.01,0.1)) = 0.025
@@ -86,6 +88,8 @@ Shader "Reallusion/RL_CorneaShaderBasic_3D"
         half _IrisBrightness;
         half _PupilScale;
         half _IrisRadius;
+        fixed4 _IrisColor;
+        fixed4 _IrisCloudyColor;
         half _LimbusWidth;
         half _LimbusDarkRadius;
         half _LimbusDarkWidth;
@@ -161,6 +165,7 @@ Shader "Reallusion/RL_CorneaShaderBasic_3D"
             half limbusDarkWidth = _LimbusDarkWidth * _IrisScale;
             half limbusMask = smoothstep(limbusDarkRadius, limbusDarkRadius + limbusDarkWidth, radial);
 
+            cornea = cornea * _IrisColor + (_IrisCloudyColor * 0.5);
             cornea = lerp(cornea, cornea * _LimbusColor, limbusMask);
 
             half scleraTiling = 1.0 / _ScleraScale;

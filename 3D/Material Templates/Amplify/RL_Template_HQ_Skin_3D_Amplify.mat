@@ -142,10 +142,10 @@ Material:
     - _UnmaskedSmoothnessMod: 0
     - _UpperLipScatterScale: 1
     - _UpperLipSmoothnessMod: 0
-    - __dirty: 0
+    - __dirty: 1
     m_Colors:
     - _EmissiveColor: {r: 0, g: 0, b: 0, a: 0}
-    - _SubsurfaceFalloff: {r: 1, g: 0.36862746, b: 0.29803917, a: 0}
+    - _SubsurfaceFalloff: {r: 1, g: 0.36862743, b: 0.29803914, a: 0}
   m_BuildTextureStacks: []
 --- !u!114 &168235113489978298
 MonoBehaviour:
