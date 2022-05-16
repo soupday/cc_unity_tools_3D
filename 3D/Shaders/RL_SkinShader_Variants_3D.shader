@@ -4,6 +4,7 @@ Shader "Reallusion/RL_SkinShader_Variants_3D"
     {
         // Main Maps
         [NoScaleOffset] _DiffuseMap("Diffuse Map", 2D) = "white" {}
+        _DiffuseColor("Diffuse Color", Color) = (1,1,1)
         [NoScaleOffset]_MaskMap("Mask Map", 2D) = "gray" {}
         _AOStrength("Ambient Occlusion Strength", Range(0,1)) = 1
         _SmoothnessPower("Smoothness Power", Range(0.5,2)) = 1
@@ -134,13 +135,14 @@ Shader "Reallusion/RL_SkinShader_Variants_3D"
         half _ChinScatterScale;
         half _UnmaskedScatterScale;
         half3 _EmissiveColor;
+        half3 _DiffuseColor;
 
 #if BOOLEAN_IS_HEAD_ON
         void surf (Input IN, inout SurfaceOutputStandard o)
         {            
             float2 uv = IN.uv_DiffuseMap;
 
-            fixed4 base = tex2D(_DiffuseMap, uv); 
+            fixed4 base = tex2D(_DiffuseMap, uv) * fixed4(_DiffuseColor, 1.0);
             half4 mask = tex2D(_MaskMap, uv);
             fixed4 bcb = tex2D(_ColorBlendMap, uv);
 
@@ -211,7 +213,7 @@ Shader "Reallusion/RL_SkinShader_Variants_3D"
         {
             float2 uv = IN.uv_DiffuseMap;
 
-            fixed4 base = tex2D(_DiffuseMap, uv);
+            fixed4 base = tex2D(_DiffuseMap, uv) * fixed4(_DiffuseColor, 1.0);
             half4 mask = tex2D(_MaskMap, uv);
             fixed4 bcb = tex2D(_ColorBlendMap, uv);                        
 
