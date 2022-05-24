@@ -4,6 +4,7 @@ Shader "Reallusion/RL_HairShader_2nd_Pass_Variants_3D"
     {
         // Main Maps
         [NoScaleOffset]_DiffuseMap("Diffuse Map", 2D) = "white" {}
+        _DiffuseColor("Diffuse Color", Color) = (1,1,1)
         _DiffuseStrength("Diffuse Strength", Range(0, 2)) = 1
         _VertexBaseColor("Vertex Base Color", Color) = (0, 0, 0, 0)
         _VertexColorStrength("Vertex Color Strength", Range(0, 1)) = 0.5
@@ -141,6 +142,7 @@ Shader "Reallusion/RL_HairShader_2nd_Pass_Variants_3D"
         half _SecondarySmoothness;
         half _NormalStrength;
         fixed4 _EmissiveColor;
+        fixed4 _DiffuseColor;
         half BOOLEAN_ENABLECOLOR;        
 
         float4 RootEndBlend(float4 color, float rootMask)
@@ -196,7 +198,7 @@ Shader "Reallusion/RL_HairShader_2nd_Pass_Variants_3D"
             color = lerp(color, color * depthBlend, _BlendStrength);
 
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
-            color = lerp(color, _VertexBaseColor, vcf);
+            color = lerp(color, _VertexBaseColor, vcf) * _DiffuseColor;
 
             half3 normal = UnpackNormal(tex2D(_NormalMap, uv));
             // apply normal strength
@@ -237,7 +239,7 @@ Shader "Reallusion/RL_HairShader_2nd_Pass_Variants_3D"
             color = lerp(color, color * depthBlend, _BlendStrength);
 
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
-            color = lerp(color, _VertexBaseColor, vcf);
+            color = lerp(color, _VertexBaseColor, vcf) * _DiffuseColor;
 
             half3 normal = UnpackNormal(tex2D(_NormalMap, uv));
             // apply normal strength

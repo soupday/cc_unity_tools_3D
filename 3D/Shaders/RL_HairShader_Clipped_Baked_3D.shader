@@ -4,6 +4,7 @@ Shader "Reallusion/RL_HairShader_Clipped_Baked_3D"
     {
         // replicate standard shader inputs
         [NoScaleOffset]_MainTex("Albedo", 2D) = "white" {}
+        _Color("Diffuse Color", Color) = (1,1,1)
         [NoScaleOffset]_MetallicGlossMap("Metallic", 2D) = "gray" {}                // metallic(rgb), smoothness(a)
         [NoScaleOffset]_BumpMap("Normal", 2D) = "bump" {}
         _BumpScale("Normal Scale", Range(0, 2)) = 1
@@ -50,9 +51,10 @@ Shader "Reallusion/RL_HairShader_Clipped_Baked_3D"
         half _AlphaClip;
         half _BumpScale;
         half _OcclusionStrength;
-        half3 _EmissiveColor;
+        fixed4 _EmissiveColor;
         // custom
         fixed4 _VertexBaseColor;
+        fixed4 _Color;
         half _VertexColorStrength;
 
         half Dither(half In, half2 ScreenPosition)
@@ -131,7 +133,7 @@ Shader "Reallusion/RL_HairShader_Clipped_Baked_3D"
 
             // apply vertex color mask
             half vcf = (1 - (IN.vertColor.r + IN.vertColor.g + IN.vertColor.b) * 0.3333) * _VertexColorStrength;
-            color = lerp(color, _VertexBaseColor, vcf);
+            color = lerp(color, _VertexBaseColor, vcf) * _Color;
 
             // normal
             half3 normal = UnpackNormal(tex2D(_BumpMap, uv));
