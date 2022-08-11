@@ -1,6 +1,9 @@
 Changelog
 =========
 
+### v 1.3.7
+- Fix for Unity 2019 compile errors
+
 ### v 1.3.6
 - Runtime components Build fix.
 
