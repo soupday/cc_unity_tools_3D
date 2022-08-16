@@ -2,7 +2,8 @@ Changelog
 =========
 
 ### v 1.3.7
-- Fix for Unity 2019 compile errors
+- Backported function to mid release 2020.3 and 2021.1 SaveAssetIfDirty removed.
+- GUIDFromAssetPath Unity 2019 fix for built-in pipeline.
 
 ### v 1.3.6
 - Runtime components Build fix.

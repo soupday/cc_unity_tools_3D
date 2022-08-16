@@ -249,10 +249,6 @@ public class QuickAnimProcess : Editor
     {
         const string emptyGuid = "00000000000000000000000000000000";
 
-#if UNITY_2019
-        return AssetDatabase.AssetPathToGUID(assetPath).ToString().Equals(emptyGuid);
-#else
-            return AssetDatabase.GUIDFromAssetPath(assetPath).ToString().Equals(emptyGuid);
-#endif
+        return AssetDatabase.AssetPathToGUID(assetPath).Equals(emptyGuid);
     }
 }
