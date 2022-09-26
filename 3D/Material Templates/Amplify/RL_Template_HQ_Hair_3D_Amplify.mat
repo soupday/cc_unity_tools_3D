@@ -84,6 +84,7 @@ Material:
     - _HighlightBOverlapEnd: 1
     - _HighlightBOverlapInvert: 1
     - _HighlightBStrength: 0
+    - _HighlightBlend: 1
     - _InvertRootMap: 0
     - _NormalStrength: 1
     - _RimPower: 4
@@ -98,7 +99,7 @@ Material:
     - _SpecularShiftMax: 0.25
     - _SpecularShiftMin: -0.25
     - _SpecularTint: 0.5
-    - _Translucency: 0.15
+    - _Translucency: 0.25
     - _VertexColorStrength: 0.5
     - __dirty: 1
     m_Colors:
