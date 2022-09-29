@@ -8,13 +8,13 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: RL_Template_Default_Eyelash_3D_T
-  m_Shader: {fileID: 4800000, guid: 1ecbed9d12f18de47a52c31a4e8c8e04, type: 3}
-  m_ShaderKeywords: _ALPHABLEND_ON _METALLICGLOSSMAP _METALLICSPECGLOSSMAP _NORMALMAP
-    _OCCLUSIONMAP
+  m_Shader: {fileID: 4800000, guid: 3a8cc8a65ba8a6d4b90498d2d3f8aa9c, type: 3}
+  m_ShaderKeywords: _ALPHABLEND_ON _GLOSSYREFLECTIONS_OFF _METALLICGLOSSMAP _METALLICSPECGLOSSMAP
+    _NORMALMAP _OCCLUSIONMAP _SPECULARHIGHLIGHTS_OFF
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 1
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 3001
   stringTagMap:
     MotionVector: User
   disabledShaderPasses:
@@ -72,15 +72,15 @@ Material:
     - _DetailNormalMapScale: 1
     - _DstBlend: 10
     - _EdgeLength: 15
-    - _GlossMapScale: 0.22
+    - _GlossMapScale: 0
     - _Glossiness: 0
-    - _GlossyReflections: 1
+    - _GlossyReflections: 0
     - _Metallic: 0
     - _Mode: 2
     - _OcclusionStrength: 1
     - _Parallax: 0.005
     - _SmoothnessTextureChannel: 0
-    - _SpecularHighlights: 1
+    - _SpecularHighlights: 0
     - _SrcBlend: 5
     - _TessPhongStrength: 0.5
     - _UVSec: 0
