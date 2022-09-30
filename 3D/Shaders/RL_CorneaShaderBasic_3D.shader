@@ -158,14 +158,14 @@ Shader "Reallusion/RL_CorneaShaderBasic_3D"
             half corneaTiling = 1.0 / lerp(_IrisScale, pupilScale, depthMask);
             half corneaOffset = half2(0.5, 0.5) * (1 - corneaTiling);
 
-            fixed4 cornea = HSV(tex2D(_CorneaDiffuseMap, uv * corneaTiling + corneaOffset), 
+            fixed4 cornea = HSV(tex2D(_CorneaDiffuseMap, uv * corneaTiling + corneaOffset) * _IrisColor,
                                 _IrisHue, _IrisSaturation, _IrisBrightness);
 
             half limbusDarkRadius = _LimbusDarkRadius * _IrisScale;
             half limbusDarkWidth = _LimbusDarkWidth * _IrisScale;
             half limbusMask = smoothstep(limbusDarkRadius, limbusDarkRadius + limbusDarkWidth, radial);
 
-            cornea = cornea * _IrisColor + (_IrisCloudyColor * 0.5);
+            cornea = cornea + (_IrisCloudyColor * 0.5);
             cornea = lerp(cornea, cornea * _LimbusColor, limbusMask);
 
             half scleraTiling = 1.0 / _ScleraScale;
