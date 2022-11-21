@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.0.1
+// Made with Amplify Shader Editor v1.9.1
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/RL_SkinShader_Variants_3D"
 {
@@ -24,8 +24,8 @@ Shader "Reallusion/Amplify/RL_SkinShader_Variants_3D"
 		_SubsurfaceScale("Subsurface Scale", Range( 0 , 1)) = 1
 		_SubsurfaceFalloff("Subsurface Falloff", Color) = (1,0.3686275,0.2980392,0)
 		_SubsurfaceNormalSoften("Subsurface Normal Soften", Range( 0 , 1)) = 0.65
-		_ThicknessMap("Thickness Map", 2D) = "black" {}
-		_ThicknessScale("ThicknessScale", Range( 0 , 2)) = 1
+		_ThicknessMap("Transmission Map", 2D) = "black" {}
+		_ThicknessScale("Transmission", Range( 0 , 2)) = 1
 		[Toggle(BOOLEAN_IS_HEAD_ON)] BOOLEAN_IS_HEAD("Is Head", Float) = 1
 		_MNAOMap("Cavity AO Map", 2D) = "white" {}
 		_MouthCavityAO("Mouth Cavity AO", Range( 0 , 5)) = 2.5
@@ -357,8 +357,7 @@ Shader "Reallusion/Amplify/RL_SkinShader_Variants_3D"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19001
-1913;48;1920;981;2397.883;2029.306;1;True;False
+Version=19100
 Node;AmplifyShaderEditor.CommentaryNode;229;-5908.021,48.08539;Inherit;False;3216.245;1858.522;;58;276;277;174;170;171;172;68;169;156;179;165;164;167;168;166;181;182;147;146;161;159;163;180;157;123;183;152;153;155;124;125;151;154;121;138;150;144;140;133;137;148;142;120;122;131;134;145;139;132;141;130;135;143;129;127;126;128;353;Micro-Smoothess/Scattering;0.4764151,1,0.9938402,1;0;0
 Node;AmplifyShaderEditor.RangedFloatNode;129;-5858.021,849.2174;Inherit;False;Property;_ASmoothnessMod;Inner Lid/A Smoothness Mod;34;0;Create;False;0;0;0;False;0;False;0;0;-1.5;1.5;0;1;FLOAT;0
 Node;AmplifyShaderEditor.RangedFloatNode;128;-5857.031,769.2485;Inherit;False;Property;_BSmoothnessMod;Upper Lid/B Smoothness Mod;33;0;Create;False;0;0;0;False;0;False;0;0;-1.5;1.5;0;1;FLOAT;0
@@ -496,7 +495,6 @@ Node;AmplifyShaderEditor.OneMinusNode;33;-419.5572,2268.659;Inherit;False;1;0;FL
 Node;AmplifyShaderEditor.GetLocalVarNode;267;-522.2372,2984.478;Inherit;False;266;baseColor;1;0;OBJECT;;False;1;COLOR;0
 Node;AmplifyShaderEditor.TextureCoordinatesNode;344;-1409.892,80.13995;Inherit;False;0;-1;2;3;2;SAMPLER2D;;False;0;FLOAT2;1,1;False;1;FLOAT2;0,0;False;5;FLOAT2;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.ColorNode;66;-553.8407,3074.174;Inherit;False;Property;_SubsurfaceFalloff;Subsurface Falloff;18;0;Create;True;0;0;0;False;0;False;1,0.3686275,0.2980392,0;1,0.3686274,0.2980391,0;True;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
-Node;AmplifyShaderEditor.TexturePropertyNode;29;-1342.003,2753.873;Inherit;True;Property;_ThicknessMap;Thickness Map;20;0;Create;True;0;0;0;False;0;False;None;None;False;black;Auto;Texture2D;-1;0;2;SAMPLER2D;0;SAMPLERSTATE;1
 Node;AmplifyShaderEditor.RangedFloatNode;43;-875.0477,1635.282;Inherit;False;Property;_SmoothnessMax;SmoothnessMax;6;0;Create;True;0;0;0;False;0;False;0;0.897;0;1;0;1;FLOAT;0
 Node;AmplifyShaderEditor.WireNode;351;-1147.294,2964.373;Inherit;False;1;0;SAMPLERSTATE;;False;1;SAMPLERSTATE;0
 Node;AmplifyShaderEditor.RangedFloatNode;261;-721.6152,3362.953;Inherit;False;Constant;_SubsurfaceWrapMax;Subsurface Wrap Max;53;0;Create;True;0;0;0;False;0;False;0.5;0.5;0;1;0;1;FLOAT;0
@@ -513,8 +511,6 @@ Node;AmplifyShaderEditor.SamplerNode;52;-1062.202,15.95127;Inherit;True;Property
 Node;AmplifyShaderEditor.StaticSwitch;71;-378.1487,-658.8517;Inherit;False;Property;BOOLEAN_IS_HEAD;Is Head;22;0;Create;False;0;0;0;False;0;False;0;1;1;True;BOOLEAN_IS_HEAD_ON;Toggle;2;Key0;Key1;Reference;-1;True;False;All;9;1;FLOAT3;0,0,0;False;0;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT3;0,0,0;False;4;FLOAT3;0,0,0;False;5;FLOAT3;0,0,0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT3;0,0,0;False;1;FLOAT3;0
 Node;AmplifyShaderEditor.ColorNode;233;-313.2517,777.3322;Inherit;False;Property;_EmissiveColor;Emissive Color;54;1;[HDR];Create;True;0;0;0;False;0;False;0,0,0,0;0,0,0,0;True;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;35;-198.9745,2262.323;Inherit;False;2;2;0;FLOAT;0;False;1;FLOAT;0;False;1;FLOAT;0
-Node;AmplifyShaderEditor.RangedFloatNode;114;-928.1096,2955.94;Inherit;False;Property;_ThicknessScale;ThicknessScale;21;0;Create;True;0;0;0;False;0;False;1;0.4;0;2;0;1;FLOAT;0
-Node;AmplifyShaderEditor.SamplerNode;30;-939.8237,2737.313;Inherit;True;Property;_TextureSample3;Texture Sample 3;2;0;Create;True;0;0;0;False;0;False;-1;None;None;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.SimpleMultiplyOpNode;333;-296.9436,3018.595;Inherit;False;2;2;0;COLOR;0,0,0,0;False;1;COLOR;0,0,0,0;False;1;COLOR;0
 Node;AmplifyShaderEditor.BlendNormalsNode;61;-75.69183,-462.3363;Inherit;False;0;3;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;1;FLOAT3;0
 Node;AmplifyShaderEditor.GetLocalVarNode;290;-35.24173,1274.675;Inherit;False;285;metallicMap;1;0;OBJECT;;False;1;FLOAT;0
@@ -532,7 +528,10 @@ Node;AmplifyShaderEditor.WireNode;347;896.9354,1761.175;Inherit;False;1;0;COLOR;
 Node;AmplifyShaderEditor.WireNode;325;881.9077,826.496;Inherit;False;1;0;COLOR;0,0,0,0;False;1;COLOR;0
 Node;AmplifyShaderEditor.WireNode;329;877.9216,1257.331;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.WireNode;346;884.6307,1707.031;Inherit;False;1;0;COLOR;0,0,0,0;False;1;COLOR;0
-Node;AmplifyShaderEditor.StandardSurfaceOutputNode;323;1340.147,1015.257;Half;False;True;-1;2;;0;0;Standard;Reallusion/Amplify/RL_SkinShader_Variants_3D;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;Back;0;False;;0;False;;False;0;False;;0;False;;False;0;Opaque;0.5;True;True;0;False;Opaque;;Geometry;ForwardOnly;18;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;2;15;10;25;False;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;-1;55;-1;-1;0;False;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;True;16;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
+Node;AmplifyShaderEditor.StandardSurfaceOutputNode;323;1340.147,1015.257;Half;False;True;-1;2;;0;0;Standard;Reallusion/Amplify/RL_SkinShader_Variants_3D;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;Back;0;False;;0;False;;False;0;False;;0;False;;False;0;Opaque;0.5;True;True;0;False;Opaque;;Geometry;ForwardOnly;12;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;2;15;10;25;False;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;-1;55;-1;-1;0;False;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;True;16;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
+Node;AmplifyShaderEditor.SamplerNode;30;-939.8237,2737.313;Inherit;True;Property;_TextureSample3;Texture Sample 3;2;0;Create;True;0;0;0;False;0;False;-1;None;None;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
+Node;AmplifyShaderEditor.TexturePropertyNode;29;-1342.003,2753.873;Inherit;True;Property;_ThicknessMap;Transmission Map;20;0;Create;False;0;0;0;False;0;False;None;None;False;black;Auto;Texture2D;-1;0;2;SAMPLER2D;0;SAMPLERSTATE;1
+Node;AmplifyShaderEditor.RangedFloatNode;114;-928.1096,2955.94;Inherit;False;Property;_ThicknessScale;Transmission;21;0;Create;False;0;0;0;False;0;False;1;0.4;0;2;0;1;FLOAT;0
 WireConnection;150;0;126;0
 WireConnection;150;1;127;0
 WireConnection;150;2;128;0
@@ -679,8 +678,6 @@ WireConnection;71;1;48;0
 WireConnection;71;0;54;0
 WireConnection;35;0;33;0
 WireConnection;35;1;36;0
-WireConnection;30;0;29;0
-WireConnection;30;7;351;0
 WireConnection;333;0;267;0
 WireConnection;333;1;66;0
 WireConnection;61;0;71;0
@@ -711,5 +708,7 @@ WireConnection;323;4;329;0
 WireConnection;323;5;330;0
 WireConnection;323;6;346;0
 WireConnection;323;7;347;0
+WireConnection;30;0;29;0
+WireConnection;30;7;351;0
 ASEEND*/
-//CHKSM=E4D144AE3686D3AD1B495D577F7DA4A8F68C068A
+//CHKSM=3BDF867CEE0CB192E167CBFDDA73F61A3BC40802
