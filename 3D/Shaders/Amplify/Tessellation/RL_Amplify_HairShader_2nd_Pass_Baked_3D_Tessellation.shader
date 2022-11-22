@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.0.1
+// Made with Amplify Shader Editor v1.9.1
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/RL_HairShader_2nd_Pass_Baked_3D_Tessellation"
 {
@@ -237,7 +237,7 @@ Shader "Reallusion/Amplify/RL_HairShader_2nd_Pass_Baked_3D_Tessellation"
 
 		ENDCG
 		CGPROGRAM
-		#pragma surface surf StandardCustomLighting keepalpha fullforwardshadows vertex:vertexDataFunc tessellate:tessFunction tessphong:_TessPhongStrength  alpha:blend
+		#pragma surface surf StandardCustomLighting keepalpha fullforwardshadows nometa vertex:vertexDataFunc tessellate:tessFunction tessphong:_TessPhongStrength  alpha:blend
 
 		ENDCG
 		Pass
@@ -331,8 +331,7 @@ Shader "Reallusion/Amplify/RL_HairShader_2nd_Pass_Baked_3D_Tessellation"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19001
-0;0;1680;981;1137.164;118.7025;1.295458;True;False
+Version=19100
 Node;AmplifyShaderEditor.CommentaryNode;121;-2209.837,-395.2434;Inherit;False;1295.191;809.48;;11;610;19;518;106;105;331;107;112;113;104;380;Final Color Blending;0.514151,1,0.6056049,1;0;0
 Node;AmplifyShaderEditor.VertexColorNode;104;-2146.046,182.9718;Inherit;False;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.RangedFloatNode;106;-1944.258,290.4149;Inherit;False;Property;_VertexColorStrength;Vertex Color Strength;10;0;Create;True;0;0;0;False;0;False;0.5;0.5;0;1;0;1;FLOAT;0
@@ -396,7 +395,7 @@ Node;AmplifyShaderEditor.GetLocalVarNode;521;495.1596,1439.007;Inherit;False;518
 Node;AmplifyShaderEditor.SimpleAddOpNode;574;638.7153,1173.22;Inherit;False;2;2;0;COLOR;0,0,0,0;False;1;COLOR;0,0,0,0;False;1;COLOR;0
 Node;AmplifyShaderEditor.RangedFloatNode;644;413.7899,1541.393;Inherit;False;Constant;_TransparencyAlphaClip0;Transparency Alpha Clip 0;49;0;Create;True;0;0;0;False;0;False;0.05;0;0;1;0;1;FLOAT;0
 Node;AmplifyShaderEditor.ClipNode;646;776.3019,1291.364;Inherit;False;3;0;COLOR;0,0,0,0;False;1;FLOAT;0;False;2;FLOAT;0;False;1;COLOR;0
-Node;AmplifyShaderEditor.StandardSurfaceOutputNode;645;1031.346,1247.088;Half;False;True;-1;6;;0;0;CustomLighting;Reallusion/Amplify/RL_HairShader_2nd_Pass_Baked_3D_Tessellation;False;False;False;False;False;False;False;False;False;False;False;False;False;False;True;True;False;False;False;False;False;Off;2;False;;1;False;;False;0;False;;0;False;;False;0;Custom;0.5;True;True;0;True;Transparent;;Transparent;All;18;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;2;15;10;25;True;0.5;True;2;5;False;;10;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;5;-1;-1;0;0;False;0;0;False;;-1;0;False;;0;1;alpha:blend;0;False;0.1;False;;0;False;;False;15;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT3;0,0,0;False;4;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
+Node;AmplifyShaderEditor.StandardSurfaceOutputNode;645;1031.346,1247.088;Half;False;True;-1;6;;0;0;CustomLighting;Reallusion/Amplify/RL_HairShader_2nd_Pass_Baked_3D_Tessellation;False;False;False;False;False;False;False;False;False;False;True;False;False;False;True;True;False;False;False;False;False;Off;2;False;;1;False;;False;0;False;;0;False;;False;0;Custom;0.5;True;True;0;True;Transparent;;Transparent;All;12;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;2;15;10;25;True;0.5;True;2;5;False;;10;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;5;-1;-1;0;0;False;0;0;False;;-1;0;False;;0;1;alpha:blend;0;False;0.1;False;;0;False;;False;15;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT3;0,0,0;False;4;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
 WireConnection;105;0;104;1
 WireConnection;107;0;105;0
 WireConnection;107;1;106;0
@@ -449,4 +448,4 @@ WireConnection;646;2;644;0
 WireConnection;645;9;521;0
 WireConnection;645;13;646;0
 ASEEND*/
-//CHKSM=BA9B4C0D8C5A035F28E95540E8A156BC72256EF0
+//CHKSM=5CEBF236EA8AA8A240B28EE7C2ED9F8FD3832473

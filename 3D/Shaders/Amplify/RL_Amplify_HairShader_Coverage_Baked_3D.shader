@@ -220,7 +220,7 @@ Shader "Reallusion/Amplify/RL_HairShader_Coverge_Baked_3D"
 
 		ENDCG
 		CGPROGRAM
-		#pragma surface surf StandardCustomLighting keepalpha fullforwardshadows 
+		#pragma surface surf StandardCustomLighting keepalpha fullforwardshadows nometa 
 
 		ENDCG
 		Pass
@@ -378,7 +378,7 @@ Node;AmplifyShaderEditor.GetLocalVarNode;645;481.2044,1409.81;Inherit;False;518;
 Node;AmplifyShaderEditor.RangedFloatNode;646;376.7883,1493.883;Inherit;False;Constant;_ConstAlphaClip;Const Alpha Clip;50;0;Create;True;0;0;0;False;0;False;0.05;0;0;1;0;1;FLOAT;0
 Node;AmplifyShaderEditor.SimpleAddOpNode;574;638.7153,1173.22;Inherit;False;2;2;0;COLOR;0,0,0,0;False;1;COLOR;0,0,0,0;False;1;COLOR;0
 Node;AmplifyShaderEditor.ClipNode;651;830.4156,1281.184;Inherit;False;3;0;COLOR;0,0,0,0;False;1;FLOAT;0;False;2;FLOAT;0;False;1;COLOR;0
-Node;AmplifyShaderEditor.StandardSurfaceOutputNode;650;1118.693,1230.645;Half;False;True;-1;2;;0;0;CustomLighting;Reallusion/Amplify/RL_HairShader_Coverge_Baked_3D;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;Off;0;False;;0;False;;False;0;False;;0;False;;False;0;Custom;0.5;True;True;0;True;Opaque;;AlphaTest;All;12;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;2;15;10;25;True;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;0;-1;-1;-1;0;True;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;False;15;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT3;0,0,0;False;4;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
+Node;AmplifyShaderEditor.StandardSurfaceOutputNode;650;1118.693,1230.645;Half;False;True;-1;2;;0;0;CustomLighting;Reallusion/Amplify/RL_HairShader_Coverge_Baked_3D;False;False;False;False;False;False;False;False;False;False;True;False;False;False;False;False;False;False;False;False;False;Off;0;False;;0;False;;False;0;False;;0;False;;False;0;Custom;0.5;True;True;0;True;Opaque;;AlphaTest;All;12;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;2;15;10;25;True;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;0;-1;-1;-1;0;True;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;False;15;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT3;0,0,0;False;4;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
 WireConnection;105;0;104;1
 WireConnection;610;0;19;0
 WireConnection;107;0;105;0
@@ -431,4 +431,4 @@ WireConnection;651;2;646;0
 WireConnection;650;9;645;0
 WireConnection;650;13;651;0
 ASEEND*/
-//CHKSM=DBC48D9F2B7E71EFB05A0504F44F82EB81532733
+//CHKSM=99F5D02195E8B49C860EDA5C884A7C356B382169
