@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1
+// Made with Amplify Shader Editor v1.9.1.2
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/RL_HairShader_1st_Pass_Baked_3D_Tessellation"
 {
@@ -329,7 +329,7 @@ Shader "Reallusion/Amplify/RL_HairShader_1st_Pass_Baked_3D_Tessellation"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19100
+Version=19102
 Node;AmplifyShaderEditor.CommentaryNode;121;-2209.837,-395.2434;Inherit;False;1295.191;809.48;;13;610;19;518;106;105;331;107;112;113;104;648;380;651;Final Color Blending;0.514151,1,0.6056049,1;0;0
 Node;AmplifyShaderEditor.VertexColorNode;104;-2146.046,182.9718;Inherit;False;0;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.RangedFloatNode;106;-1944.258,290.4149;Inherit;False;Property;_VertexColorStrength;Vertex Color Strength;10;0;Create;True;0;0;0;False;0;False;0.5;0.5;0;1;0;1;FLOAT;0
@@ -446,4 +446,4 @@ WireConnection;646;2;162;0
 WireConnection;644;9;521;0
 WireConnection;644;13;646;0
 ASEEND*/
-//CHKSM=A4E103B0A28E223C0964287F83D21602BC16E97D
+//CHKSM=8BB5C7B6DA3F8D0E5F36F4EC2EAB6297F95B2EFD

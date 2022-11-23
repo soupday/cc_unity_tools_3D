@@ -62,7 +62,7 @@ Material:
     m_Floats:
     - _BumpScale: 1
     - _DetailNormalMapScale: 1
-    - _GlossMapScale: 0.7
+    - _GlossMapScale: 0.897
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _SubsurfaceMask: 1

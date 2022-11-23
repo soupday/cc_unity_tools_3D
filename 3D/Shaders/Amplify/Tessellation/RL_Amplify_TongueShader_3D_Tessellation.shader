@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1
+// Made with Amplify Shader Editor v1.9.1.2
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/RL_TongueShader_3D_Tessellation"
 {
@@ -201,7 +201,7 @@ Shader "Reallusion/Amplify/RL_TongueShader_3D_Tessellation"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19100
+Version=19102
 Node;AmplifyShaderEditor.CommentaryNode;74;-3493.593,-1702.376;Inherit;False;2241.031;624.6102;;17;8;32;33;21;22;35;34;37;24;36;42;23;39;38;41;40;101;Base Color;0,1,0.1846018,1;0;0
 Node;AmplifyShaderEditor.TexturePropertyNode;8;-3443.593,-1607.289;Inherit;True;Property;_DiffuseMap;Diffuse Map;5;0;Create;True;0;0;0;False;0;False;None;None;False;white;Auto;Texture2D;-1;0;2;SAMPLER2D;0;SAMPLERSTATE;1
 Node;AmplifyShaderEditor.CommentaryNode;93;-4471.664,-192.7987;Inherit;False;667.9326;346.7067;Comment;2;12;31;Gradient AO Map;1,1,1,1;0;0
@@ -361,4 +361,4 @@ WireConnection;97;5;112;0
 WireConnection;97;6;113;0
 WireConnection;97;7;114;0
 ASEEND*/
-//CHKSM=BCE80B8A7DDEEA20D180B5DF4B83C9A8492D7A9B
+//CHKSM=1DB0B242ED71875B7C8A8A99F39055D21D26D2A6

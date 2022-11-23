@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1
+// Made with Amplify Shader Editor v1.9.1.2
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/Amplify Lit AlphaClipped 3D"
 {
@@ -86,7 +86,7 @@ Shader "Reallusion/Amplify/Amplify Lit AlphaClipped 3D"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19100
+Version=19102
 Node;AmplifyShaderEditor.CommentaryNode;179;-1648.736,1265.129;Inherit;False;1008.577;308.7186;Comment;5;151;170;169;171;172;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;176;-2020.17,-491.7789;Inherit;False;1374.699;518.4456;Comment;7;153;148;146;147;154;156;155;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;175;-1540.517,-1026.539;Inherit;False;886.6949;482.6302;Comment;6;200;174;145;173;210;212;;1,1,1,1;0;0
@@ -166,4 +166,4 @@ WireConnection;202;4;207;0
 WireConnection;202;5;208;0
 WireConnection;202;10;211;0
 ASEEND*/
-//CHKSM=7AF6A89AF0274E3ECEEA44076F1B4AF31FB9C822
+//CHKSM=BFF58C2E0189E3D31F8D89618BFD66A5390DEBD2

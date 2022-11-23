@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.0.1
+// Made with Amplify Shader Editor v1.9.1.2
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/RL_CorneaShaderParallax_Baked_3D"
 {
@@ -270,8 +270,7 @@ Shader "Reallusion/Amplify/RL_CorneaShaderParallax_Baked_3D"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19001
-1913;48;1920;981;2052.582;169.6019;1;True;False
+Version=19102
 Node;AmplifyShaderEditor.RangedFloatNode;72;-5475.112,-249.8526;Inherit;False;Property;_IrisDepth;Iris Depth;17;0;Create;True;0;0;0;False;0;False;0.3;0.2997;0.1;1;0;1;FLOAT;0
 Node;AmplifyShaderEditor.RegisterLocalVarNode;219;-5107.964,-248.4698;Inherit;False;irisDepth;-1;True;1;0;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.CommentaryNode;168;-5329.34,-1188.403;Inherit;False;1999.866;565.8079;;12;73;74;70;71;220;69;83;93;91;89;88;373;Pupil Scaling;1,0.9427493,0,1;0;0
@@ -367,7 +366,7 @@ Node;AmplifyShaderEditor.WireNode;433;-14.69804,1350.512;Inherit;False;1;0;COLOR
 Node;AmplifyShaderEditor.StickyNoteNode;371;-5785.751,-14.97292;Inherit;False;226;140;Detail Mask;;1,1,1,1;r = eye blend mask$g = pupil scale mask$b = parallax height mask$a = micro normal mask;0;0
 Node;AmplifyShaderEditor.WireNode;432;-16.65876,1426.983;Inherit;False;1;0;FLOAT3;0,0,0;False;1;FLOAT3;0
 Node;AmplifyShaderEditor.WireNode;427;-16.65872,1507.374;Inherit;False;1;0;COLOR;0,0,0,0;False;1;COLOR;0
-Node;AmplifyShaderEditor.StandardSurfaceOutputNode;426;368.3667,1468.948;Half;False;True;-1;2;;0;0;Standard;Reallusion/Amplify/RL_CorneaShaderParallax_Baked_3D;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;Back;0;False;;0;False;;False;0;False;;0;False;;False;0;Opaque;0.5;True;True;0;False;Opaque;;Geometry;ForwardOnly;18;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;2;15;10;25;False;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;-1;20;-1;-1;0;False;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;False;16;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
+Node;AmplifyShaderEditor.StandardSurfaceOutputNode;426;368.3667,1468.948;Half;False;True;-1;2;;0;0;Standard;Reallusion/Amplify/RL_CorneaShaderParallax_Baked_3D;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;Back;0;False;;0;False;;False;0;False;;0;False;;False;0;Opaque;0.5;True;True;0;False;Opaque;;Geometry;ForwardOnly;12;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;2;15;10;25;False;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;-1;20;-1;-1;0;False;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;False;16;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
 WireConnection;219;0;72;0
 WireConnection;71;0;69;0
 WireConnection;71;1;220;0
@@ -460,4 +459,4 @@ WireConnection;426;4;429;0
 WireConnection;426;5;430;0
 WireConnection;426;7;431;0
 ASEEND*/
-//CHKSM=7F7FDA09F08C668B8F48B78D9159A762000F966F
+//CHKSM=3D04C286466CB13D7D006F3C693CFC2DB98933C0
