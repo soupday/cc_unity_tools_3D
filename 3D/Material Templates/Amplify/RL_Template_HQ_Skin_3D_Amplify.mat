@@ -134,10 +134,10 @@ Material:
     - _ThicknessScale: 0.4
     - _TransAmbient: 0.2
     - _TransDirect: 1
-    - _TransNormalDistortion: 0.95
+    - _TransNormalDistortion: 0.9
     - _TransScattering: 2
     - _TransShadow: 0.9
-    - _Translucency: 1.5
+    - _Translucency: 5
     - _UnmaskedScatterScale: 1
     - _UnmaskedSmoothnessMod: 0
     - _UpperLipScatterScale: 1

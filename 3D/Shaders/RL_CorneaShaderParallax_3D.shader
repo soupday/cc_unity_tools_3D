@@ -18,7 +18,7 @@ Shader "Reallusion/RL_CorneaShaderParallax_3D"
         _IrisCloudyColor("Iris Cloudy Color", Color) = (0,0,0,0)
         _LimbusWidth("Limbus Width", Range(0.01,0.1)) = 0.055
         _LimbusDarkRadius("Limbus Dark Radius", Range(0.01,0.2)) = 0.1
-        _LimbusDarkWidth("Limbus Dark Width", Range(0.01,0.1)) = 0.025
+        _LimbusDarkWidth("Limbus Dark Width", Range(0.01,0.2)) = 0.025
         _LimbusColor("Limbus Color", Color) = (0,0,0,0)
         _ShadowRadius("Shadow Radius", Range(0,0.5)) = 0.275
         _ShadowHardness("Shadow Hardness", Range(0.01,0.99)) = 0.5

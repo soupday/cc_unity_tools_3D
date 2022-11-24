@@ -48,10 +48,6 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    - _NormalMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - _RootMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -86,7 +82,6 @@ Material:
     - _HighlightBStrength: 0
     - _HighlightBlend: 1
     - _InvertRootMap: 0
-    - _NormalStrength: 1
     - _RimPower: 4
     - _RimTransmissionIntensity: 10
     - _RootColorStrength: 1
