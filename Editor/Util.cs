@@ -280,8 +280,7 @@ namespace Reallusion.Import
                 fullSplit = fullPath.Split('\\');
                 baseSplit = basePath.Split('\\'); ;
             }
-
-            if (Application.platform == RuntimePlatform.OSXEditor)
+            else if (Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.LinuxEditor)
             {
                 fullSplit = fullPath.Split('/');
                 baseSplit = basePath.Split('/');
