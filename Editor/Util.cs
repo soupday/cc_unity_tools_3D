@@ -271,8 +271,26 @@ namespace Reallusion.Import
             fullPath = Path.GetFullPath(fullPath);
             string basePath = Path.GetFullPath(Path.GetDirectoryName(Application.dataPath));
 
-            string[] fullSplit = fullPath.Split('\\');
-            string[] baseSplit = basePath.Split('\\');
+            string[] fullSplit;
+            string[] baseSplit;
+
+            // check OS and split the path accordingly
+            if (Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                fullSplit = fullPath.Split('\\');
+                baseSplit = basePath.Split('\\'); ;
+            }
+
+            if (Application.platform == RuntimePlatform.OSXEditor)
+            {
+                fullSplit = fullPath.Split('/');
+                baseSplit = basePath.Split('/');
+            }
+            else
+            {
+                Debug.LogError("Unsupported Platform: " + Application.platform);
+                return fullPath;
+            }
 
             int sharedRootIndex = -1;
 
