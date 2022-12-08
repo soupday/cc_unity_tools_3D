@@ -1,6 +1,9 @@
 Changelog
 =========
 
+### v 1.4.2
+- OSX and Linux file path support.
+
 ### v 1.4.1
 - Traditional material glossiness fix.
 - High poly (sub-division) hair mesh extraction fix.
