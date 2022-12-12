@@ -120,8 +120,7 @@ Shader "Reallusion/RL_EyeOcclusionShader_3D"
             {
                 // sample the texture
                 half a = EyeOcclusionGradient(i.uv);
-                fixed4 col = _OcclusionColor * a;
-                col.a = a;
+                fixed4 col = _OcclusionColor * a;                
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, col);
                 return col;
