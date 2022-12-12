@@ -93,7 +93,35 @@ namespace Reallusion.Import
             }
 
             return false;
+        }        
+
+        public static bool IsSavedPrefabInSelection()
+        {
+            if (Selection.gameObjects.Length > 1)
+            {
+                foreach (GameObject sel in Selection.gameObjects)
+                {
+                    GameObject instanceRoot = GetScenePrefabInstanceRoot(sel);
+                    GameObject prefabSource = PrefabUtility.GetCorrespondingObjectFromSource(instanceRoot);
+                    if (prefabSource)
+                    {
+                        if (AssetDatabase.GetAssetPath(prefabSource).iEndsWith(".prefab")) return true;
+                    }
+                }
+            }
+            else if (Selection.gameObjects.Length == 1)
+            {
+                GameObject instanceRoot = GetScenePrefabInstanceRoot(Selection.gameObjects[0]);
+                GameObject prefabSource = PrefabUtility.GetCorrespondingObjectFromSource(instanceRoot);                
+                if (prefabSource)
+                {
+                    if (AssetDatabase.GetAssetPath(prefabSource).iEndsWith(".prefab")) return true;
+                }                
+            }
+
+            return false;
         }
+
 
         public static Color LinearTosRGBOld(Color c)
         {
