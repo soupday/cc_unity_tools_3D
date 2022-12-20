@@ -1,10 +1,7 @@
 {
     "name": "soupday.cc3_unity_tools.runtime",
     "rootNamespace": "Reallusion.Import",
-    "references": [
-        "GUID:a35efad8797223d499f8c68b1f545dbc",
-        "GUID:d60799ab2a985554ea1a39cd38695018"
-    ],
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
@@ -14,22 +11,6 @@
     ],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [
-        {
-            "name": "Unity",
-            "expression": "2021.2.0a17",
-            "define": "SCENEVIEW_OVERLAY_COMPATIBLE"
-        },
-        {
-            "name": "com.unity.postprocessing",
-            "expression": "3.1.1",
-            "define": "UNITY_POST_PROCESSING_3_1_1"
-        },
-        {
-            "name": "com.unity.formats.alembic",
-            "expression": "1.0.7",
-            "define": "UNITY_ALEMBIC_1_0_7"
-        }
-    ],
+    "versionDefines": [],
     "noEngineReferences": false
 }
