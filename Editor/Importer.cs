@@ -2348,8 +2348,8 @@ namespace Reallusion.Import
                 return false;
             }            
             return true;
-        }
-
+        } 
+          
         private void AddWrinkleManager(GameObject obj, SkinnedMeshRenderer smr, Material mat)
         {
             WrinkleManager wm = obj.AddComponent<WrinkleManager>();
@@ -2385,8 +2385,8 @@ namespace Reallusion.Import
         {
             string[] folders = new string[] { "Packages", fbmFolder, texFolder };
 
-            string[] maskNames = new string[] { "RL_Wrinkle_Set 1-1", "RL_Wrinkle_Set 1-2", "RL_Wrinkle_Set 2", "RL_Wrinkle_Set 3" };
-            string[] refNames = new string[] { "_WrinkleMaskSet11", "_WrinkleMaskSet12", "_WrinkleMaskSet2", "_WrinkleMaskSet3" };
+            string[] maskNames = new string[] { "RL_WrinkleMask_Set1A", "RL_WrinkleMask_Set1B", "RL_WrinkleMask_Set2", "RL_WrinkleMask_Set3", "RL_WrinkleMask_Set123" };
+            string[] refNames = new string[] { "_WrinkleMaskSet1A", "_WrinkleMaskSet1B", "_WrinkleMaskSet2", "_WrinkleMaskSet3", "_WrinkleMaskSet123" };
             
             for (int i = 0; i < maskNames.Length; i++)
             {
