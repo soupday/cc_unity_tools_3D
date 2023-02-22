@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1.2
+// Made with Amplify Shader Editor v1.9.1.3
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/RL_TeethShader_3D"
 {
@@ -209,7 +209,7 @@ Shader "Reallusion/Amplify/RL_TeethShader_3D"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19102
+Version=19103
 Node;AmplifyShaderEditor.CommentaryNode;139;-4829.458,363.6766;Inherit;False;842.6992;426.936;;4;12;131;31;132;Gradient AO Map;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;109;-3795.151,-2528.385;Inherit;False;2612.074;1058.53;;27;138;136;40;38;39;101;23;24;137;104;36;99;98;97;37;34;100;35;33;21;94;95;96;22;32;8;155;Base Color;0,1,0.194277,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;106;-5123.6,-894.2192;Inherit;False;666.9336;346.7067;Comment;2;102;103;Teeth Gums Mask Map;1,1,1,1;0;0
@@ -430,4 +430,4 @@ WireConnection;144;5;160;0
 WireConnection;144;6;166;0
 WireConnection;144;7;158;0
 ASEEND*/
-//CHKSM=B36AC33C4F44DF2D15C036C8FF104350A297A51A
+//CHKSM=875104E642738EAC8D679490324804F080E46349
