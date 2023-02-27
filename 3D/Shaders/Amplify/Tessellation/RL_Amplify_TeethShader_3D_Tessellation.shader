@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1.3
+// Made with Amplify Shader Editor v1.9.1.5
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/RL_TeethShader_3D_Tessellation"
 {
@@ -54,6 +54,13 @@ Shader "Reallusion/Amplify/RL_TeethShader_3D_Tessellation"
 		#include "UnityPBSLighting.cginc"
 		#include "Tessellation.cginc"
 		#pragma target 4.6
+		#define ASE_USING_SAMPLING_MACROS 1
+		#if defined(SHADER_API_D3D11) || defined(SHADER_API_XBOXONE) || defined(UNITY_COMPILER_HLSLCC) || defined(SHADER_API_PSSL) || (defined(SHADER_TARGET_SURFACE_ANALYSIS) && !defined(SHADER_TARGET_SURFACE_ANALYSIS_MOJOSHADER))//ASE Sampler Macros
+		#define SAMPLE_TEXTURE2D(tex,samplerTex,coord) tex.Sample(samplerTex,coord)
+		#else//ASE Sampling Macros
+		#define SAMPLE_TEXTURE2D(tex,samplerTex,coord) tex2D(tex,coord)
+		#endif//ASE Sampling Macros
+
 		#pragma surface surf StandardCustom keepalpha addshadow fullforwardshadows exclude_path:deferred vertex:vertexDataFunc tessellate:tessFunction tessphong:_TessPhongStrength 
 		struct Input
 		{
@@ -73,30 +80,37 @@ Shader "Reallusion/Amplify/RL_TeethShader_3D_Tessellation"
 			half3 Translucency;
 		};
 
-		uniform sampler2D _NormalMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_NormalMap);
 		uniform half4 _NormalMap_ST;
+		SamplerState sampler_NormalMap;
 		uniform half _NormalStrength;
-		uniform sampler2D _MicroNormalMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_MicroNormalMap);
 		uniform half _MicroNormalTiling;
+		SamplerState sampler_MicroNormalMap;
 		uniform half _MicroNormalStrength;
 		uniform half _RearAO;
-		uniform sampler2D _DiffuseMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_DiffuseMap);
 		uniform half4 _DiffuseMap_ST;
+		SamplerState sampler_DiffuseMap;
 		uniform half _GumsSaturation;
 		uniform half _GumsBrightness;
 		uniform half _TeethSaturation;
 		uniform half _TeethBrightness;
-		uniform sampler2D _GumsMaskMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_GumsMaskMap);
 		uniform half4 _GumsMaskMap_ST;
+		SamplerState sampler_GumsMaskMap;
 		uniform half _FrontAO;
-		uniform sampler2D _GradientAOMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_GradientAOMap);
 		uniform half4 _GradientAOMap_ST;
+		SamplerState sampler_GradientAOMap;
 		uniform half _IsUpperTeeth;
-		uniform sampler2D _EmissionMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_EmissionMap);
 		uniform half4 _EmissionMap_ST;
+		SamplerState sampler_EmissionMap;
 		uniform half4 _EmissiveColor;
-		uniform sampler2D _MaskMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_MaskMap);
 		uniform half4 _MaskMap_ST;
+		SamplerState sampler_MaskMap;
 		uniform half _SmoothnessRear;
 		uniform half _SmoothnessFront;
 		uniform half _SmoothnessMax;
@@ -185,25 +199,25 @@ Shader "Reallusion/Amplify/RL_TeethShader_3D_Tessellation"
 			float2 uv_NormalMap = i.uv_texcoord * _NormalMap_ST.xy + _NormalMap_ST.zw;
 			half2 temp_cast_0 = (_MicroNormalTiling).xx;
 			float2 uv_TexCoord77 = i.uv_texcoord * temp_cast_0;
-			o.Normal = BlendNormals( UnpackScaleNormal( tex2D( _NormalMap, uv_NormalMap ), _NormalStrength ) , UnpackScaleNormal( tex2D( _MicroNormalMap, uv_TexCoord77 ), _MicroNormalStrength ) );
+			o.Normal = BlendNormals( UnpackScaleNormal( SAMPLE_TEXTURE2D( _NormalMap, sampler_NormalMap, uv_NormalMap ), _NormalStrength ) , UnpackScaleNormal( SAMPLE_TEXTURE2D( _MicroNormalMap, sampler_MicroNormalMap, uv_TexCoord77 ), _MicroNormalStrength ) );
 			float2 uv_DiffuseMap = i.uv_texcoord * _DiffuseMap_ST.xy + _DiffuseMap_ST.zw;
-			half4 tex2DNode32 = tex2D( _DiffuseMap, uv_DiffuseMap );
+			half4 tex2DNode32 = SAMPLE_TEXTURE2D( _DiffuseMap, sampler_DiffuseMap, uv_DiffuseMap );
 			half3 hsvTorgb33 = RGBToHSV( tex2DNode32.rgb );
 			half3 hsvTorgb36 = HSVToRGB( half3(hsvTorgb33.x,( _GumsSaturation * hsvTorgb33.y ),( hsvTorgb33.z * _GumsBrightness )) );
 			half3 hsvTorgb96 = RGBToHSV( tex2DNode32.rgb );
 			half3 hsvTorgb99 = HSVToRGB( half3(hsvTorgb96.x,( _TeethSaturation * hsvTorgb96.y ),( hsvTorgb96.z * _TeethBrightness )) );
 			float2 uv_GumsMaskMap = i.uv_texcoord * _GumsMaskMap_ST.xy + _GumsMaskMap_ST.zw;
-			half4 tex2DNode103 = tex2D( _GumsMaskMap, uv_GumsMaskMap );
+			half4 tex2DNode103 = SAMPLE_TEXTURE2D( _GumsMaskMap, sampler_GumsMaskMap, uv_GumsMaskMap );
 			half3 lerpResult101 = lerp( hsvTorgb36 , hsvTorgb99 , tex2DNode103.g);
 			float2 uv_GradientAOMap = i.uv_texcoord * _GradientAOMap_ST.xy + _GradientAOMap_ST.zw;
-			half4 tex2DNode31 = tex2D( _GradientAOMap, uv_GradientAOMap );
+			half4 tex2DNode31 = SAMPLE_TEXTURE2D( _GradientAOMap, sampler_GradientAOMap, uv_GradientAOMap );
 			half lerpResult132 = lerp( tex2DNode31.r , tex2DNode31.g , _IsUpperTeeth);
 			half3 lerpResult40 = lerp( ( _RearAO * lerpResult101 ) , ( lerpResult101 * _FrontAO ) , lerpResult132);
 			o.Albedo = lerpResult40;
 			float2 uv_EmissionMap = i.uv_texcoord * _EmissionMap_ST.xy + _EmissionMap_ST.zw;
-			o.Emission = ( tex2D( _EmissionMap, uv_EmissionMap ) * _EmissiveColor ).rgb;
+			o.Emission = ( SAMPLE_TEXTURE2D( _EmissionMap, sampler_EmissionMap, uv_EmissionMap ) * _EmissiveColor ).rgb;
 			float2 uv_MaskMap = i.uv_texcoord * _MaskMap_ST.xy + _MaskMap_ST.zw;
-			half4 tex2DNode52 = tex2D( _MaskMap, uv_MaskMap );
+			half4 tex2DNode52 = SAMPLE_TEXTURE2D( _MaskMap, sampler_MaskMap, uv_MaskMap );
 			o.Metallic = tex2DNode52.r;
 			half lerpResult58 = lerp( _SmoothnessFront , _SmoothnessMax , tex2DNode52.a);
 			half lerpResult60 = lerp( _SmoothnessRear , lerpResult58 , lerpResult132);
@@ -223,7 +237,7 @@ Shader "Reallusion/Amplify/RL_TeethShader_3D_Tessellation"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19103
+Version=19105
 Node;AmplifyShaderEditor.CommentaryNode;139;-4829.458,363.6766;Inherit;False;842.6992;426.936;;4;12;131;31;132;Gradient AO Map;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;109;-3795.151,-2528.385;Inherit;False;2612.074;1058.53;;27;138;136;40;38;39;101;23;24;137;104;36;99;98;97;37;34;100;35;33;21;94;95;96;22;32;8;155;Base Color;0,1,0.194277,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;106;-5123.6,-894.2192;Inherit;False;666.9336;346.7067;Comment;2;102;103;Teeth Gums Mask Map;1,1,1,1;0;0
@@ -331,7 +345,7 @@ Node;AmplifyShaderEditor.WireNode;166;-521.7424,264.0499;Inherit;False;1;0;COLOR
 Node;AmplifyShaderEditor.WireNode;160;-525.5538,170.9873;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.WireNode;163;-529.7709,-4.592896;Inherit;False;1;0;COLOR;0,0,0,0;False;1;COLOR;0
 Node;AmplifyShaderEditor.WireNode;161;-525.358,98.4462;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
-Node;AmplifyShaderEditor.StandardSurfaceOutputNode;144;-153.9204,-76.92043;Half;False;True;-1;6;;0;0;Standard;Reallusion/Amplify/RL_TeethShader_3D_Tessellation;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;Back;0;False;;0;False;;False;0;False;;0;False;;False;0;Opaque;0.5;True;True;0;False;Opaque;;Geometry;ForwardOnly;12;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;2;15;10;25;True;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;-1;13;-1;0;0;False;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;False;16;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
+Node;AmplifyShaderEditor.StandardSurfaceOutputNode;144;-153.9204,-76.92043;Half;False;True;-1;6;;0;0;Standard;Reallusion/Amplify/RL_TeethShader_3D_Tessellation;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;Back;0;False;;0;False;;False;0;False;;0;False;;False;0;Opaque;0.5;True;True;0;False;Opaque;;Geometry;ForwardOnly;12;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;2;15;10;25;True;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;-1;13;-1;0;0;False;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;True;16;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
 WireConnection;32;0;8;0
 WireConnection;31;0;12;0
 WireConnection;103;0;102;0
@@ -444,4 +458,4 @@ WireConnection;144;5;160;0
 WireConnection;144;6;166;0
 WireConnection;144;7;158;0
 ASEEND*/
-//CHKSM=BB05A52AAF72CDB6429ABA624BCBE0ABC6A92CA2
+//CHKSM=273092D38EDD6AD44FEA72743F12FCB9A9CD2098
