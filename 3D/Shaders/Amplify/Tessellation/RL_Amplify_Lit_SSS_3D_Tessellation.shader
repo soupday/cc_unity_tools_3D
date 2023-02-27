@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1.3
+// Made with Amplify Shader Editor v1.9.1.5
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/LitSSSRL_Amplify_Lit_SSS_3D_Tessellation"
 {
@@ -45,6 +45,13 @@ Shader "Reallusion/Amplify/LitSSSRL_Amplify_Lit_SSS_3D_Tessellation"
 		#include "UnityPBSLighting.cginc"
 		#include "Tessellation.cginc"
 		#pragma target 4.6
+		#define ASE_USING_SAMPLING_MACROS 1
+		#if defined(SHADER_API_D3D11) || defined(SHADER_API_XBOXONE) || defined(UNITY_COMPILER_HLSLCC) || defined(SHADER_API_PSSL) || (defined(SHADER_TARGET_SURFACE_ANALYSIS) && !defined(SHADER_TARGET_SURFACE_ANALYSIS_MOJOSHADER))//ASE Sampler Macros
+		#define SAMPLE_TEXTURE2D(tex,samplerTex,coord) tex.Sample(samplerTex,coord)
+		#else//ASE Sampling Macros
+		#define SAMPLE_TEXTURE2D(tex,samplerTex,coord) tex2D(tex,coord)
+		#endif//ASE Sampling Macros
+
 		#pragma surface surf StandardCustom keepalpha addshadow fullforwardshadows exclude_path:deferred vertex:vertexDataFunc tessellate:tessFunction tessphong:_TessPhongStrength 
 		struct Input
 		{
@@ -64,30 +71,38 @@ Shader "Reallusion/Amplify/LitSSSRL_Amplify_Lit_SSS_3D_Tessellation"
 			half3 Translucency;
 		};
 
-		uniform sampler2D _BumpMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_BumpMap);
 		uniform half4 _BumpMap_ST;
+		SamplerState sampler_BumpMap;
 		uniform half _BumpScale;
-		uniform sampler2D _DetailNormalMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_DetailNormalMap);
 		uniform half4 _DetailNormalMap_ST;
+		SamplerState sampler_DetailNormalMap;
 		uniform half _DetailNormalMapScale;
-		uniform sampler2D _DetailMask;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_DetailMask);
 		uniform half4 _DetailMask_ST;
+		SamplerState sampler_DetailMask;
 		uniform half4 _Color;
-		uniform sampler2D _MainTex;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_MainTex);
 		uniform half4 _MainTex_ST;
-		uniform sampler2D _EmissionMap;
+		SamplerState sampler_MainTex;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_EmissionMap);
 		uniform half4 _EmissionMap_ST;
+		SamplerState sampler_EmissionMap;
 		uniform half4 _EmissionColor;
 		uniform half _Metallic;
-		uniform sampler2D _MetallicGlossMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_MetallicGlossMap);
 		uniform half4 _MetallicGlossMap_ST;
+		SamplerState sampler_MetallicGlossMap;
 		uniform half _GlossMapScale;
 		uniform half _OcclusionStrength;
-		uniform sampler2D _OcclusionMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_OcclusionMap);
 		uniform half4 _OcclusionMap_ST;
+		SamplerState sampler_OcclusionMap;
 		uniform half _Thickness;
-		uniform sampler2D _ThicknessMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_ThicknessMap);
 		uniform half4 _ThicknessMap_ST;
+		SamplerState sampler_ThicknessMap;
 		uniform half4 _SubsurfaceFalloff;
 		uniform half _Translucency;
 		uniform half _TransNormalDistortion;
@@ -96,8 +111,9 @@ Shader "Reallusion/Amplify/LitSSSRL_Amplify_Lit_SSS_3D_Tessellation"
 		uniform half _TransAmbient;
 		uniform half _TransShadow;
 		uniform half _SubsurfaceMask;
-		uniform sampler2D _SubsurfaceMaskMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_SubsurfaceMaskMap);
 		uniform half4 _SubsurfaceMaskMap_ST;
+		SamplerState sampler_SubsurfaceMaskMap;
 		uniform float _EdgeLength;
 		uniform float _TessPhongStrength;
 
@@ -151,23 +167,23 @@ Shader "Reallusion/Amplify/LitSSSRL_Amplify_Lit_SSS_3D_Tessellation"
 			float2 uv_BumpMap = i.uv_texcoord * _BumpMap_ST.xy + _BumpMap_ST.zw;
 			float2 uv_DetailNormalMap = i.uv_texcoord * _DetailNormalMap_ST.xy + _DetailNormalMap_ST.zw;
 			float2 uv_DetailMask = i.uv_texcoord * _DetailMask_ST.xy + _DetailMask_ST.zw;
-			o.Normal = BlendNormals( UnpackScaleNormal( tex2D( _BumpMap, uv_BumpMap ), _BumpScale ) , UnpackScaleNormal( tex2D( _DetailNormalMap, uv_DetailNormalMap ), ( _DetailNormalMapScale * tex2D( _DetailMask, uv_DetailMask ).g ) ) );
+			o.Normal = BlendNormals( UnpackScaleNormal( SAMPLE_TEXTURE2D( _BumpMap, sampler_BumpMap, uv_BumpMap ), _BumpScale ) , UnpackScaleNormal( SAMPLE_TEXTURE2D( _DetailNormalMap, sampler_DetailNormalMap, uv_DetailNormalMap ), ( _DetailNormalMapScale * SAMPLE_TEXTURE2D( _DetailMask, sampler_DetailMask, uv_DetailMask ).g ) ) );
 			float2 uv_MainTex = i.uv_texcoord * _MainTex_ST.xy + _MainTex_ST.zw;
-			half4 baseColor200 = ( _Color * tex2D( _MainTex, uv_MainTex ) );
+			half4 baseColor200 = ( _Color * SAMPLE_TEXTURE2D( _MainTex, sampler_MainTex, uv_MainTex ) );
 			o.Albedo = baseColor200.rgb;
 			float2 uv_EmissionMap = i.uv_texcoord * _EmissionMap_ST.xy + _EmissionMap_ST.zw;
-			o.Emission = ( tex2D( _EmissionMap, uv_EmissionMap ) * _EmissionColor ).rgb;
+			o.Emission = ( SAMPLE_TEXTURE2D( _EmissionMap, sampler_EmissionMap, uv_EmissionMap ) * _EmissionColor ).rgb;
 			float2 uv_MetallicGlossMap = i.uv_texcoord * _MetallicGlossMap_ST.xy + _MetallicGlossMap_ST.zw;
-			half4 tex2DNode150 = tex2D( _MetallicGlossMap, uv_MetallicGlossMap );
+			half4 tex2DNode150 = SAMPLE_TEXTURE2D( _MetallicGlossMap, sampler_MetallicGlossMap, uv_MetallicGlossMap );
 			o.Metallic = ( _Metallic * tex2DNode150.g );
 			o.Smoothness = ( tex2DNode150.a * _GlossMapScale );
 			float2 uv_OcclusionMap = i.uv_texcoord * _OcclusionMap_ST.xy + _OcclusionMap_ST.zw;
-			o.Occlusion = ( 1.0 - ( _OcclusionStrength * ( 1.0 - tex2D( _OcclusionMap, uv_OcclusionMap ).g ) ) );
+			o.Occlusion = ( 1.0 - ( _OcclusionStrength * ( 1.0 - SAMPLE_TEXTURE2D( _OcclusionMap, sampler_OcclusionMap, uv_OcclusionMap ).g ) ) );
 			float2 uv_ThicknessMap = i.uv_texcoord * _ThicknessMap_ST.xy + _ThicknessMap_ST.zw;
 			half4 temp_output_214_0 = ( _SubsurfaceFalloff * baseColor200 );
-			o.Transmission = ( _Thickness * tex2D( _ThicknessMap, uv_ThicknessMap ) * temp_output_214_0 ).rgb;
+			o.Transmission = ( _Thickness * SAMPLE_TEXTURE2D( _ThicknessMap, sampler_ThicknessMap, uv_ThicknessMap ) * temp_output_214_0 ).rgb;
 			float2 uv_SubsurfaceMaskMap = i.uv_texcoord * _SubsurfaceMaskMap_ST.xy + _SubsurfaceMaskMap_ST.zw;
-			o.Translucency = ( _SubsurfaceMask * 0.5 * tex2D( _SubsurfaceMaskMap, uv_SubsurfaceMaskMap ) * temp_output_214_0 ).rgb;
+			o.Translucency = ( _SubsurfaceMask * 0.5 * SAMPLE_TEXTURE2D( _SubsurfaceMaskMap, sampler_SubsurfaceMaskMap, uv_SubsurfaceMaskMap ) * temp_output_214_0 ).rgb;
 			o.Alpha = 1;
 		}
 
@@ -176,7 +192,7 @@ Shader "Reallusion/Amplify/LitSSSRL_Amplify_Lit_SSS_3D_Tessellation"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19103
+Version=19105
 Node;AmplifyShaderEditor.CommentaryNode;179;-1648.736,1265.129;Inherit;False;1008.577;308.7186;Comment;5;151;170;169;171;172;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;176;-2020.17,-491.7789;Inherit;False;1374.699;518.4456;Comment;7;153;148;146;147;154;156;155;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;175;-1540.517,-1026.539;Inherit;False;886.6949;482.6302;Comment;4;200;174;145;173;;1,1,1,1;0;0
@@ -225,7 +241,7 @@ Node;AmplifyShaderEditor.RangedFloatNode;194;-1187.487,2115.57;Inherit;False;Con
 Node;AmplifyShaderEditor.SamplerNode;189;-1205.472,2203.485;Inherit;True;Property;_SubsurfaceMaskMap;Subsurface Mask Map;16;0;Create;True;0;0;0;False;0;False;-1;None;None;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.RangedFloatNode;195;-1176.749,1725.444;Inherit;False;Property;_Thickness;Transmission;19;0;Create;False;0;0;0;False;0;False;1;0;0;2;0;1;FLOAT;0
 Node;AmplifyShaderEditor.SamplerNode;190;-1196.935,1821.459;Inherit;True;Property;_ThicknessMap;Tramsission Map;18;0;Create;False;0;0;0;False;0;False;-1;None;None;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
-Node;AmplifyShaderEditor.StandardSurfaceOutputNode;202;322.3807,257.9512;Half;False;True;-1;6;;0;0;Standard;Reallusion/Amplify/LitSSSRL_Amplify_Lit_SSS_3D_Tessellation;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;Back;0;False;;0;False;;False;0;False;;0;False;;False;0;Opaque;0.5;True;True;0;False;Opaque;;Geometry;ForwardOnly;12;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;2;15;10;25;True;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;-1;24;-1;0;0;False;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;False;16;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
+Node;AmplifyShaderEditor.StandardSurfaceOutputNode;202;322.3807,257.9512;Half;False;True;-1;6;;0;0;Standard;Reallusion/Amplify/LitSSSRL_Amplify_Lit_SSS_3D_Tessellation;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;Back;0;False;;0;False;;False;0;False;;0;False;;False;0;Opaque;0.5;True;True;0;False;Opaque;;Geometry;ForwardOnly;12;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;2;15;10;25;True;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;-1;24;-1;0;0;False;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;True;16;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
 WireConnection;170;0;151;2
 WireConnection;156;0;154;0
 WireConnection;156;1;147;2
@@ -271,4 +287,4 @@ WireConnection;202;5;208;0
 WireConnection;202;6;209;0
 WireConnection;202;7;210;0
 ASEEND*/
-//CHKSM=CA9BA71D08C26EF4053AB1624B1F52FE69726D0F
+//CHKSM=CF695ABAE5BE017AA4EFE50F7A95D10062D85CC7

@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1.3
+// Made with Amplify Shader Editor v1.9.1.5
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/RL_HairShader_Clipped_3D_Tessellation"
 {
@@ -80,6 +80,19 @@ Shader "Reallusion/Amplify/RL_HairShader_Clipped_3D_Tessellation"
 		#pragma shader_feature_local _CLIPQUALITY_STANDARD _CLIPQUALITY_DITHERED
 		#pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
 		#pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
+		#define ASE_USING_SAMPLING_MACROS 1
+		#if defined(SHADER_API_D3D11) || defined(SHADER_API_XBOXONE) || defined(UNITY_COMPILER_HLSLCC) || defined(SHADER_API_PSSL) || (defined(SHADER_TARGET_SURFACE_ANALYSIS) && !defined(SHADER_TARGET_SURFACE_ANALYSIS_MOJOSHADER))//ASE Sampler Macros
+		#define SAMPLE_TEXTURE2D(tex,samplerTex,coord) tex.Sample(samplerTex,coord)
+		#define SAMPLE_TEXTURE2D_LOD(tex,samplerTex,coord,lod) tex.SampleLevel(samplerTex,coord, lod)
+		#define SAMPLE_TEXTURE2D_BIAS(tex,samplerTex,coord,bias) tex.SampleBias(samplerTex,coord,bias)
+		#define SAMPLE_TEXTURE2D_GRAD(tex,samplerTex,coord,ddx,ddy) tex.SampleGrad(samplerTex,coord,ddx,ddy)
+		#else//ASE Sampling Macros
+		#define SAMPLE_TEXTURE2D(tex,samplerTex,coord) tex2D(tex,coord)
+		#define SAMPLE_TEXTURE2D_LOD(tex,samplerTex,coord,lod) tex2Dlod(tex,float4(coord,0,lod))
+		#define SAMPLE_TEXTURE2D_BIAS(tex,samplerTex,coord,bias) tex2Dbias(tex,float4(coord,0,bias))
+		#define SAMPLE_TEXTURE2D_GRAD(tex,samplerTex,coord,ddx,ddy) tex2Dgrad(tex,coord,ddx,ddy)
+		#endif//ASE Sampling Macros
+
 		#ifdef UNITY_PASS_SHADOWCASTER
 			#undef INTERNAL_DATA
 			#undef WorldReflectionVector
@@ -111,39 +124,40 @@ Shader "Reallusion/Amplify/RL_HairShader_Clipped_3D_Tessellation"
 			UnityGIInput GIData;
 		};
 
-		uniform sampler2D _DiffuseMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_DiffuseMap);
 		uniform half4 _DiffuseMap_ST;
+		SamplerState sampler_DiffuseMap;
 		uniform half _AlphaRemap;
 		uniform half _AlphaPower;
-		uniform sampler2D _FlowMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_FlowMap);
 		uniform half4 _FlowMap_ST;
 		uniform half _FlowMapFlipGreen;
-		uniform sampler2D _NormalMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_NormalMap);
 		uniform half4 _NormalMap_ST;
 		uniform half _NormalStrength;
 		uniform half _SpecularShiftMin;
 		uniform half _SpecularShiftMax;
-		uniform sampler2D _IDMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_IDMap);
 		uniform half4 _IDMap_ST;
 		uniform half _SmoothnessMin;
 		uniform half _SmoothnessMax;
-		uniform sampler2D _MaskMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_MaskMap);
 		uniform half4 _MaskMap_ST;
 		uniform half _SmoothnessPower;
 		uniform half _SpecularPowerScale;
-		uniform sampler2D _SpecularMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_SpecularMap);
 		uniform half4 _SpecularMap_ST;
 		uniform half _SpecularMultiplier;
 		uniform half _Translucency;
 		uniform half4 _SpecularTint;
 		uniform half4 _DiffuseColor;
-		uniform sampler2D _BlendMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_BlendMap);
 		uniform half4 _BlendMap_ST;
 		uniform half _DiffuseStrength;
 		uniform half _BaseColorStrength;
 		uniform half4 _RootColor;
 		uniform half4 _EndColor;
-		uniform sampler2D _RootMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_RootMap);
 		uniform half4 _RootMap_ST;
 		uniform half _InvertRootMap;
 		uniform half _RootColorStrength;
@@ -168,8 +182,9 @@ Shader "Reallusion/Amplify/RL_HairShader_Clipped_3D_Tessellation"
 		uniform half _RimTransmissionIntensity;
 		uniform half _AOStrength;
 		uniform half _AOOccludeAll;
-		uniform sampler2D _EmissionMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_EmissionMap);
 		uniform half4 _EmissionMap_ST;
+		SamplerState sampler_EmissionMap;
 		uniform half4 _EmissiveColor;
 		uniform half _AlphaClip;
 		uniform float _EdgeLength;
@@ -228,19 +243,19 @@ Shader "Reallusion/Amplify/RL_HairShader_Clipped_3D_Tessellation"
 			ase_lightAtten = UnityMixRealtimeAndBakedShadows(data.atten, bakedAtten, UnityComputeShadowFade(fadeDist));
 			#endif
 			float2 uv_DiffuseMap = i.uv_texcoord * _DiffuseMap_ST.xy + _DiffuseMap_ST.zw;
-			half4 tex2DNode19 = tex2D( _DiffuseMap, uv_DiffuseMap );
+			half4 tex2DNode19 = SAMPLE_TEXTURE2D( _DiffuseMap, sampler_DiffuseMap, uv_DiffuseMap );
 			half saferPower23 = abs( saturate( ( tex2DNode19.a / _AlphaRemap ) ) );
 			half alpha518 = pow( saferPower23 , _AlphaPower );
 			float2 uv_FlowMap = i.uv_texcoord * _FlowMap_ST.xy + _FlowMap_ST.zw;
-			half4 break109_g1030 = tex2D( _FlowMap, uv_FlowMap );
+			half4 break109_g1030 = SAMPLE_TEXTURE2D( _FlowMap, sampler_DiffuseMap, uv_FlowMap );
 			half lerpResult123_g1030 = lerp( break109_g1030.g , ( 1.0 - break109_g1030.g ) , _FlowMapFlipGreen);
 			half3 appendResult98_g1030 = (half3(break109_g1030.r , lerpResult123_g1030 , break109_g1030.b));
 			half3 flowTangent107_g1030 = (WorldNormalVector( i , ( ( appendResult98_g1030 * float3( 2,2,2 ) ) - float3( 1,1,1 ) ) ));
 			float2 uv_NormalMap = i.uv_texcoord * _NormalMap_ST.xy + _NormalMap_ST.zw;
-			half3 normal282 = UnpackScaleNormal( tex2D( _NormalMap, uv_NormalMap ), _NormalStrength );
+			half3 normal282 = UnpackScaleNormal( SAMPLE_TEXTURE2D( _NormalMap, sampler_DiffuseMap, uv_NormalMap ), _NormalStrength );
 			half3 worldNormal86_g1030 = normalize( (WorldNormalVector( i , normal282 )) );
 			float2 uv_IDMap = i.uv_texcoord * _IDMap_ST.xy + _IDMap_ST.zw;
-			half idMap383 = tex2D( _IDMap, uv_IDMap ).r;
+			half idMap383 = SAMPLE_TEXTURE2D( _IDMap, sampler_DiffuseMap, uv_IDMap ).r;
 			half lerpResult81_g1030 = lerp( _SpecularShiftMin , _SpecularShiftMax , idMap383);
 			half3 normalizeResult10_g1033 = normalize( ( flowTangent107_g1030 + ( worldNormal86_g1030 * lerpResult81_g1030 ) ) );
 			half3 shiftedTangent119_g1030 = normalizeResult10_g1033;
@@ -258,7 +273,7 @@ Shader "Reallusion/Amplify/RL_HairShader_Clipped_3D_Tessellation"
 			half dotResult16_g1032 = dot( shiftedTangent119_g1030 , normalizeResult14_g1032 );
 			half smoothstepResult22_g1032 = smoothstep( -1.0 , 0.0 , dotResult16_g1032);
 			float2 uv_MaskMap = i.uv_texcoord * _MaskMap_ST.xy + _MaskMap_ST.zw;
-			half4 tex2DNode115 = tex2D( _MaskMap, uv_MaskMap );
+			half4 tex2DNode115 = SAMPLE_TEXTURE2D( _MaskMap, sampler_DiffuseMap, uv_MaskMap );
 			half saferPower126 = abs( tex2DNode115.a );
 			half lerpResult128 = lerp( _SmoothnessMin , _SmoothnessMax , pow( saferPower126 , _SmoothnessPower ));
 			half smoothness594 = lerpResult128;
@@ -269,12 +284,12 @@ Shader "Reallusion/Amplify/RL_HairShader_Clipped_3D_Tessellation"
 			half translucencyWrap283_g1030 = _Translucency;
 			half lambertMask290_g1030 = saturate( ( ( dotResult266_g1030 * ( 1.0 - translucencyWrap283_g1030 ) ) + translucencyWrap283_g1030 ) );
 			half temp_output_84_0_g1031 = lambertMask290_g1030;
-			half4 temp_output_13_0_g1031 = ( ( smoothstepResult22_g1032 * pow( saturate( ( 1.0 - ( dotResult16_g1032 * dotResult16_g1032 ) ) ) , specularPower237_g1030 ) ) * ( tex2D( _SpecularMap, uv_SpecularMap ).g * _SpecularMultiplier ) * temp_output_84_0_g1031 * _SpecularTint * alpha518 );
+			half4 temp_output_13_0_g1031 = ( ( smoothstepResult22_g1032 * pow( saturate( ( 1.0 - ( dotResult16_g1032 * dotResult16_g1032 ) ) ) , specularPower237_g1030 ) ) * ( SAMPLE_TEXTURE2D( _SpecularMap, sampler_DiffuseMap, uv_SpecularMap ).g * _SpecularMultiplier ) * temp_output_84_0_g1031 * _SpecularTint * alpha518 );
 			float2 uv_BlendMap = i.uv_texcoord * _BlendMap_ST.xy + _BlendMap_ST.zw;
 			half4 diffuseMap517 = tex2DNode19;
 			half4 lerpResult41_g786 = lerp( float4( 1,1,1,0 ) , diffuseMap517 , _BaseColorStrength);
 			float2 uv_RootMap = i.uv_texcoord * _RootMap_ST.xy + _RootMap_ST.zw;
-			half root58 = tex2D( _RootMap, uv_RootMap ).r;
+			half root58 = SAMPLE_TEXTURE2D( _RootMap, sampler_DiffuseMap, uv_RootMap ).r;
 			half temp_output_55_0_g786 = root58;
 			half lerpResult50_g786 = lerp( temp_output_55_0_g786 , ( 1.0 - temp_output_55_0_g786 ) , _InvertRootMap);
 			half4 lerpResult44_g786 = lerp( _RootColor , _EndColor , lerpResult50_g786);
@@ -299,7 +314,7 @@ Shader "Reallusion/Amplify/RL_HairShader_Clipped_3D_Tessellation"
 			#else
 				half4 staticSwitch95 = diffuseMap517;
 			#endif
-			half4 blendOpSrc101 = tex2D( _BlendMap, uv_BlendMap );
+			half4 blendOpSrc101 = SAMPLE_TEXTURE2D( _BlendMap, sampler_DiffuseMap, uv_BlendMap );
 			half4 blendOpDest101 = ( _DiffuseStrength * staticSwitch95 );
 			half4 lerpBlendMode101 = lerp(blendOpDest101,( blendOpSrc101 * blendOpDest101 ),_BlendStrength);
 			half4 lerpResult112 = lerp( ( saturate( lerpBlendMode101 )) , _VertexBaseColor , ( ( 1.0 - i.vertexColor.r ) * _VertexColorStrength ));
@@ -346,7 +361,7 @@ Shader "Reallusion/Amplify/RL_HairShader_Clipped_3D_Tessellation"
 				half staticSwitch528 = _AlphaClip;
 			#endif
 			clip( alpha518 - staticSwitch528);
-			c.rgb = ( staticSwitch250_g1030 + ( tex2D( _EmissionMap, uv_EmissionMap ) * _EmissiveColor ) ).rgb;
+			c.rgb = ( staticSwitch250_g1030 + ( SAMPLE_TEXTURE2D( _EmissionMap, sampler_EmissionMap, uv_EmissionMap ) * _EmissiveColor ) ).rgb;
 			c.a = alpha518;
 			return c;
 		}
@@ -462,7 +477,7 @@ Shader "Reallusion/Amplify/RL_HairShader_Clipped_3D_Tessellation"
 	CustomEditor "Reallusion.Import.CustomHairShaderGUI"
 }
 /*ASEBEGIN
-Version=19103
+Version=19105
 Node;AmplifyShaderEditor.CommentaryNode;25;-5721.536,873.5989;Inherit;False;1176.518;561.6434;;8;518;517;23;22;24;21;20;19;Diffuse & Alpha;0.5235849,1,0.631946,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;512;-5718.366,1661.348;Inherit;False;696.6748;494.7862;;4;26;58;383;50;Maps;0.504717,0.9903985,1,1;0;0
 Node;AmplifyShaderEditor.SamplerNode;19;-5671.535,923.5991;Inherit;True;Property;_DiffuseMap;Diffuse Map;6;0;Create;True;0;0;0;False;0;False;-1;None;None;True;0;False;white;Auto;False;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;COLOR;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
@@ -576,7 +591,7 @@ Node;AmplifyShaderEditor.WireNode;619;843.0594,1511.796;Inherit;False;1;0;FLOAT;
 Node;AmplifyShaderEditor.RangedFloatNode;140;-1810.923,789.8129;Inherit;False;Property;_NormalStrength;Normal Strength;23;0;Create;True;0;0;0;False;0;False;1;1;0;2;0;1;FLOAT;0
 Node;AmplifyShaderEditor.RegisterLocalVarNode;282;-1114.089,709.7084;Inherit;False;normal;-1;True;1;0;FLOAT3;0,0,0;False;1;FLOAT3;0
 Node;AmplifyShaderEditor.ClipNode;608;808.0734,1249.929;Inherit;False;3;0;COLOR;0,0,0,0;False;1;FLOAT;0;False;2;FLOAT;0;False;1;COLOR;0
-Node;AmplifyShaderEditor.StandardSurfaceOutputNode;597;1076.754,1073.793;Half;False;True;-1;6;Reallusion.Import.CustomHairShaderGUI;0;0;CustomLighting;Reallusion/Amplify/RL_HairShader_Clipped_3D_Tessellation;False;False;False;False;False;False;False;False;False;False;True;False;False;False;False;False;False;False;False;False;False;Off;0;False;;0;False;;False;0;False;;0;False;;False;0;Custom;1;True;True;0;True;Opaque;;AlphaTest;All;12;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;2;15;10;25;True;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;5;-1;-1;0;0;False;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;False;15;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT3;0,0,0;False;4;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
+Node;AmplifyShaderEditor.StandardSurfaceOutputNode;597;1076.754,1073.793;Half;False;True;-1;6;Reallusion.Import.CustomHairShaderGUI;0;0;CustomLighting;Reallusion/Amplify/RL_HairShader_Clipped_3D_Tessellation;False;False;False;False;False;False;False;False;False;False;True;False;False;False;False;False;False;False;False;False;False;Off;0;False;;0;False;;False;0;False;;0;False;;False;0;Custom;1;True;True;0;True;Opaque;;AlphaTest;All;12;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;True;2;15;10;25;True;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;5;-1;-1;0;0;False;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;True;15;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT3;0,0,0;False;4;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
 Node;AmplifyShaderEditor.GetLocalVarNode;569;-590.8998,-125.8811;Inherit;False;282;normal;1;0;OBJECT;;False;1;FLOAT3;0
 Node;AmplifyShaderEditor.SamplerNode;139;-1484.06,640.5557;Inherit;True;Property;_NormalMap;Normal Map;22;0;Create;True;0;0;0;False;0;False;19;None;None;True;0;False;bump;Auto;True;Object;-1;Auto;Texture2D;8;0;SAMPLER2D;;False;1;FLOAT2;0,0;False;2;FLOAT;0;False;3;FLOAT2;0,0;False;4;FLOAT2;0,0;False;5;FLOAT;1;False;6;FLOAT;0;False;7;SAMPLERSTATE;;False;5;FLOAT3;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
 Node;AmplifyShaderEditor.CustomExpressionNode;175;101.3107,1748.551;Inherit;False;half2 uv = ScreenPosition.xy * _ScreenParams.xy@$half DITHER_THRESHOLDS[16] =${$                1.0 / 17.0,  9.0 / 17.0,  3.0 / 17.0, 11.0 / 17.0,$                13.0 / 17.0,  5.0 / 17.0, 15.0 / 17.0,  7.0 / 17.0,$                4.0 / 17.0, 12.0 / 17.0,  2.0 / 17.0, 10.0 / 17.0,$                16.0 / 17.0,  8.0 / 17.0, 14.0 / 17.0,  6.0 / 17.0$}@$uint index = (uint(uv.x) % 4) * 4 + uint(uv.y) % 4@$return In - DITHER_THRESHOLDS[index]@;1;Create;2;True;In;FLOAT;0;In;;Inherit;False;True;ScreenPosition;FLOAT2;0,0;In;;Inherit;False;Unity HDRP Dither;True;False;0;;False;2;0;FLOAT;0;False;1;FLOAT2;0,0;False;1;FLOAT;0
@@ -684,4 +699,4 @@ WireConnection;687;207;265;0
 WireConnection;687;208;263;0
 WireConnection;687;310;686;0
 ASEEND*/
-//CHKSM=DD4F59C56D20143C22061138356C26128E0F5C66
+//CHKSM=E0806F285CC96B32FB3FDC67B4A323E215C3D9E9

@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1.3
+// Made with Amplify Shader Editor v1.9.1.5
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/RL_CorneaShaderParallax_3D"
 {
@@ -67,6 +67,13 @@ Shader "Reallusion/Amplify/RL_CorneaShaderParallax_3D"
 		#include "Lighting.cginc"
 		#pragma target 3.0
 		#pragma shader_feature_local BOOLEAN_ISCORNEA_ON
+		#define ASE_USING_SAMPLING_MACROS 1
+		#if defined(SHADER_API_D3D11) || defined(SHADER_API_XBOXONE) || defined(UNITY_COMPILER_HLSLCC) || defined(SHADER_API_PSSL) || (defined(SHADER_TARGET_SURFACE_ANALYSIS) && !defined(SHADER_TARGET_SURFACE_ANALYSIS_MOJOSHADER))//ASE Sampler Macros
+		#define SAMPLE_TEXTURE2D(tex,samplerTex,coord) tex.Sample(samplerTex,coord)
+		#else//ASE Sampling Macros
+		#define SAMPLE_TEXTURE2D(tex,samplerTex,coord) tex2D(tex,coord)
+		#endif//ASE Sampling Macros
+
 		#ifdef UNITY_PASS_SHADOWCASTER
 			#undef INTERNAL_DATA
 			#undef WorldReflectionVector
@@ -96,24 +103,27 @@ Shader "Reallusion/Amplify/RL_CorneaShaderParallax_3D"
 		};
 
 		uniform half _IsLeftEye;
-		uniform sampler2D _ScleraNormalMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_ScleraNormalMap);
 		uniform half _ScleraNormalTiling;
+		SamplerState sampler_ScleraNormalMap;
 		uniform half _ScleraNormalStrength;
 		uniform half _IrisRadius;
 		uniform half _IrisScale;
 		uniform half _LimbusWidth;
-		uniform sampler2D _ColorBlendMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_ColorBlendMap);
 		uniform half4 _ColorBlendMap_ST;
+		SamplerState sampler_ColorBlendMap;
 		uniform half4 _LimbusColor;
 		uniform half4 _IrisCloudyColor;
 		uniform half _IrisHue;
-		uniform sampler2D _CorneaDiffuseMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_CorneaDiffuseMap);
 		uniform half _IrisDepth;
 		uniform half _PupilScale;
 		uniform half _DepthRadius;
 		uniform half _IOR;
 		uniform half _PMod;
 		uniform half _ParallaxRadius;
+		SamplerState sampler_CorneaDiffuseMap;
 		uniform half4 _IrisColor;
 		uniform half _IrisSaturation;
 		uniform half _IrisBrightness;
@@ -121,21 +131,24 @@ Shader "Reallusion/Amplify/RL_CorneaShaderParallax_3D"
 		uniform half _LimbusDarkWidth;
 		uniform half4 _CornerShadowColor;
 		uniform half _ScleraHue;
-		uniform sampler2D _ScleraDiffuseMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_ScleraDiffuseMap);
 		uniform half _ScleraScale;
+		SamplerState sampler_ScleraDiffuseMap;
 		uniform half _ScleraSaturation;
 		uniform half _ScleraBrightness;
 		uniform half _ShadowHardness;
 		uniform half _ShadowRadius;
 		uniform half _ColorBlendStrength;
-		uniform sampler2D _EmissionMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_EmissionMap);
 		uniform half4 _EmissionMap_ST;
+		SamplerState sampler_EmissionMap;
 		uniform half4 _EmissiveColor;
 		uniform half _CorneaSmoothness;
 		uniform half _ScleraSmoothness;
 		uniform half _AOStrength;
-		uniform sampler2D _MaskMap;
+		UNITY_DECLARE_TEX2D_NOSAMPLER(_MaskMap);
 		uniform half4 _MaskMap_ST;
+		SamplerState sampler_MaskMap;
 		uniform half _Translucency;
 		uniform half _TransNormalDistortion;
 		uniform half _TransScattering;
@@ -207,7 +220,7 @@ Shader "Reallusion/Amplify/RL_CorneaShaderParallax_3D"
 			half radial203 = length( ( i.uv_texcoord - float2( 0.5,0.5 ) ) );
 			half smoothstepResult28 = smoothstep( ( scaledIrisRadius209 - ( irisScale208 * _LimbusWidth ) ) , scaledIrisRadius209 , radial203);
 			half irisMask213 = smoothstepResult28;
-			o.Normal = UnpackScaleNormal( tex2D( _ScleraNormalMap, uv_TexCoord294 ), ( _ScleraNormalStrength * irisMask213 ) );
+			o.Normal = UnpackScaleNormal( SAMPLE_TEXTURE2D( _ScleraNormalMap, sampler_ScleraNormalMap, uv_TexCoord294 ), ( _ScleraNormalStrength * irisMask213 ) );
 			float2 uv_ColorBlendMap = i.uv_texcoord * _ColorBlendMap_ST.xy + _ColorBlendMap_ST.zw;
 			half irisDepth219 = _IrisDepth;
 			half temp_output_1_0_g1 = ( _DepthRadius * scaledIrisRadius209 );
@@ -225,7 +238,7 @@ Shader "Reallusion/Amplify/RL_CorneaShaderParallax_3D"
 			half temp_output_152_0 = ( irisScale208 * _ParallaxRadius );
 			half saferPower157 = abs( saturate( ( ( temp_output_152_0 - radial203 ) / temp_output_152_0 ) ) );
 			half2 lerpResult136 = lerp( uv_TexCoord93 , (( uv_TexCoord93 - ( (normalizeResult117).xy * _IrisDepth ) )*temp_output_122_0 + ( ( 1.0 - temp_output_122_0 ) * 0.5 )) , pow( saferPower157 , 0.25 ));
-			half3 hsvTorgb174 = RGBToHSV( ( tex2D( _CorneaDiffuseMap, lerpResult136 ) * _IrisColor ).rgb );
+			half3 hsvTorgb174 = RGBToHSV( ( SAMPLE_TEXTURE2D( _CorneaDiffuseMap, sampler_CorneaDiffuseMap, lerpResult136 ) * _IrisColor ).rgb );
 			half3 hsvTorgb184 = HSVToRGB( half3(( ( _IrisHue - 0.5 ) + hsvTorgb174.x ),( hsvTorgb174.y * _IrisSaturation ),( hsvTorgb174.z * _IrisBrightness )) );
 			half4 blendOpSrc201 = _LimbusColor;
 			half4 blendOpDest201 = ( ( _IrisCloudyColor * float4( 0.5,0.5,0.5,1 ) ) + half4( hsvTorgb184 , 0.0 ) );
@@ -236,7 +249,7 @@ Shader "Reallusion/Amplify/RL_CorneaShaderParallax_3D"
 			half2 temp_cast_5 = (temp_output_223_0).xx;
 			half2 temp_cast_6 = (( ( 1.0 - temp_output_223_0 ) * 0.5 )).xx;
 			float2 uv_TexCoord228 = i.uv_texcoord * temp_cast_5 + temp_cast_6;
-			half3 hsvTorgb231 = RGBToHSV( tex2D( _ScleraDiffuseMap, uv_TexCoord228 ).rgb );
+			half3 hsvTorgb231 = RGBToHSV( SAMPLE_TEXTURE2D( _ScleraDiffuseMap, sampler_ScleraDiffuseMap, uv_TexCoord228 ).rgb );
 			half3 hsvTorgb232 = HSVToRGB( half3(( ( _ScleraHue - 0.5 ) + hsvTorgb231.x ),( hsvTorgb231.y * _ScleraSaturation ),( hsvTorgb231.z * _ScleraBrightness )) );
 			half4 blendOpSrc23 = _CornerShadowColor;
 			half4 blendOpDest23 = half4( hsvTorgb232 , 0.0 );
@@ -244,17 +257,17 @@ Shader "Reallusion/Amplify/RL_CorneaShaderParallax_3D"
 			half temp_output_1_0_g13 = ( ( _ShadowHardness * _ScleraScale ) * temp_output_247_0 );
 			half4 lerpBlendMode23 = lerp(blendOpDest23,( blendOpSrc23 * blendOpDest23 ),saturate( ( ( radial203 - temp_output_1_0_g13 ) / ( temp_output_247_0 - temp_output_1_0_g13 ) ) ));
 			half4 lerpResult261 = lerp( ( saturate( lerpBlendMode201 )) , ( saturate( lerpBlendMode23 )) , irisMask213);
-			half4 blendOpSrc21 = tex2D( _ColorBlendMap, uv_ColorBlendMap );
+			half4 blendOpSrc21 = SAMPLE_TEXTURE2D( _ColorBlendMap, sampler_ColorBlendMap, uv_ColorBlendMap );
 			half4 blendOpDest21 = lerpResult261;
 			half4 lerpBlendMode21 = lerp(blendOpDest21,( blendOpSrc21 * blendOpDest21 ),_ColorBlendStrength);
 			half4 temp_output_21_0 = ( saturate( lerpBlendMode21 ));
 			o.Albedo = temp_output_21_0.rgb;
 			float2 uv_EmissionMap = i.uv_texcoord * _EmissionMap_ST.xy + _EmissionMap_ST.zw;
-			o.Emission = ( tex2D( _EmissionMap, uv_EmissionMap ) * _EmissiveColor ).rgb;
+			o.Emission = ( SAMPLE_TEXTURE2D( _EmissionMap, sampler_EmissionMap, uv_EmissionMap ) * _EmissiveColor ).rgb;
 			half lerpResult271 = lerp( _CorneaSmoothness , _ScleraSmoothness , irisMask213);
 			o.Smoothness = lerpResult271;
 			float2 uv_MaskMap = i.uv_texcoord * _MaskMap_ST.xy + _MaskMap_ST.zw;
-			o.Occlusion = ( 1.0 - ( _AOStrength * ( 1.0 - tex2D( _MaskMap, uv_MaskMap ).g ) ) );
+			o.Occlusion = ( 1.0 - ( _AOStrength * ( 1.0 - SAMPLE_TEXTURE2D( _MaskMap, sampler_MaskMap, uv_MaskMap ).g ) ) );
 			half lerpResult315 = lerp( _IrisSubsurfaceScale , _ScleraSubsurfaceScale , irisMask213);
 			half4 baseColor370 = temp_output_21_0;
 			o.Translucency = ( lerpResult315 * 0.5 * ( _SubsurfaceFalloff * baseColor370 ) ).rgb;
@@ -347,7 +360,7 @@ Shader "Reallusion/Amplify/RL_CorneaShaderParallax_3D"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19103
+Version=19105
 Node;AmplifyShaderEditor.CommentaryNode;204;-6596.911,-3587.629;Inherit;False;1134.455;323.4619;Comment;5;37;36;40;38;203;Radial Gradient;1,0,0.9132481,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;59;-6599.231,-2888.385;Inherit;False;755.1367;301.8584;;5;27;26;25;208;209;Scaled Iris Radius;1,0,0.8158517,1;0;0
 Node;AmplifyShaderEditor.TextureCoordinatesNode;36;-6546.911,-3537.629;Inherit;False;0;-1;2;3;2;SAMPLER2D;;False;0;FLOAT2;1,1;False;1;FLOAT2;0,0;False;5;FLOAT2;0;FLOAT;1;FLOAT;2;FLOAT;3;FLOAT;4
@@ -539,7 +552,7 @@ Node;AmplifyShaderEditor.WireNode;374;498.9136,712.3886;Inherit;False;1;0;FLOAT3
 Node;AmplifyShaderEditor.WireNode;375;495.321,817.2252;Inherit;False;1;0;COLOR;0,0,0,0;False;1;COLOR;0
 Node;AmplifyShaderEditor.WireNode;377;499.1292,1050.968;Inherit;False;1;0;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.WireNode;378;499.403,1174.896;Inherit;False;1;0;COLOR;0,0,0,0;False;1;COLOR;0
-Node;AmplifyShaderEditor.StandardSurfaceOutputNode;369;996.8561,720.2521;Half;False;True;-1;2;;0;0;Standard;Reallusion/Amplify/RL_CorneaShaderParallax_3D;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;Back;0;False;;0;False;;False;0;False;;0;False;;False;0;Opaque;0.5;True;True;0;False;Opaque;;Geometry;ForwardOnly;12;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;2;15;10;25;False;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;-1;7;-1;-1;0;False;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;False;16;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
+Node;AmplifyShaderEditor.StandardSurfaceOutputNode;369;996.8561,720.2521;Half;False;True;-1;2;;0;0;Standard;Reallusion/Amplify/RL_CorneaShaderParallax_3D;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;False;Back;0;False;;0;False;;False;0;False;;0;False;;False;0;Opaque;0.5;True;True;0;False;Opaque;;Geometry;ForwardOnly;12;all;True;True;True;True;0;False;;False;0;False;;255;False;;255;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;0;False;;False;2;15;10;25;False;0.5;True;0;0;False;;0;False;;0;0;False;;0;False;;0;False;;0;False;;0;False;0;0,0,0,0;VertexOffset;True;False;Cylindrical;False;True;Relative;0;;-1;7;-1;-1;0;False;0;0;False;;-1;0;False;;0;0;0;False;0.1;False;;0;False;;True;16;0;FLOAT3;0,0,0;False;1;FLOAT3;0,0,0;False;2;FLOAT3;0,0,0;False;3;FLOAT;0;False;4;FLOAT;0;False;5;FLOAT;0;False;6;FLOAT3;0,0,0;False;7;FLOAT3;0,0,0;False;8;FLOAT;0;False;9;FLOAT;0;False;10;FLOAT;0;False;13;FLOAT3;0,0,0;False;11;FLOAT3;0,0,0;False;12;FLOAT3;0,0,0;False;14;FLOAT4;0,0,0,0;False;15;FLOAT3;0,0,0;False;0
 Node;AmplifyShaderEditor.RangedFloatNode;112;-6203.872,-120.0343;Inherit;False;Property;_IOR;Cornea IOR;17;0;Create;False;0;0;0;False;0;False;1.4;1.4;1;2;0;1;FLOAT;0
 Node;AmplifyShaderEditor.RangedFloatNode;43;-7572.302,-566.9115;Inherit;False;Property;_DepthRadius;Pupil Outer Radius;28;0;Create;False;0;0;0;False;0;False;0.8;0.8;0;1;0;1;FLOAT;0
 WireConnection;37;0;36;0
@@ -731,4 +744,4 @@ WireConnection;369;4;376;0
 WireConnection;369;5;377;0
 WireConnection;369;7;378;0
 ASEEND*/
-//CHKSM=E69D6D445520493EB7BF90E147954DD09488DA0F
+//CHKSM=568B0C379F1C93F6A378C1B8EF5FAAF3F0E3C7C8
