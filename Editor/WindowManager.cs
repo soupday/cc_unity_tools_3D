@@ -44,6 +44,14 @@ namespace Reallusion.Import
         public static OnTimer onTimer;
         private static float timer = 0f;
 
+        //unique editorprefs key names
+        public const string sceneFocus = "RL_Scene_Focus_Key_0000";
+        public const string clipKey = "RL_Animation_Asset_Key_0000";
+        public const string animatorControllerKey = "RL_Character_Animator_Ctrl_Key_0000";
+        public const string controlStateHash = "RL_Animator_Ctrl_Hash_Key_0000";
+        public const string timeKey = "RL_Animation_Play_Position_Key_0000";
+
+
         static WindowManager()
         {
             EditorApplication.playModeStateChanged += WindowManager.OnPlayModeStateChanged;
@@ -82,6 +90,39 @@ namespace Reallusion.Import
                 showRetarget = false;
                 AnimPlayerGUI.ClosePlayer();
                 AnimRetargetGUI.CloseRetargeter();
+
+                /*
+                // original
+                Debug.Log(state);
+                showPlayerAfterPlayMode = showPlayer;
+                showRetargetAfterPlayMode = showRetarget;
+                showPlayer = false;
+                showRetarget = false;
+                AnimPlayerGUI.ClosePlayer();
+                AnimRetargetGUI.CloseRetargeter();
+                */
+
+                if (Util.TryDeSerializeBoolFromEditorPrefs(out bool val, WindowManager.sceneFocus))
+                {
+                    if (val)
+                    {
+                        Debug.Log("Reverting Scene Focus");
+                        SceneView.lastActiveSceneView.Focus();
+                        Util.SerializeBoolToEditorPrefs(false, WindowManager.sceneFocus);
+                        ShowAnimationPlayer();
+                        if (Util.TryDeSerializeFloatFromEditorPrefs(out float timeCode, WindowManager.timeKey))
+                        {
+                            //set the play position
+                            AnimPlayerGUI.time = timeCode;
+                            //slightly delay startup to allow the animator to initialize
+                            AnimPlayerGUI.delayFrames = 10;
+                        }
+                    }
+                    else //no scene view focus grab - replace the oringinal runtime animator controller
+                    {
+
+                    }
+                }
             }
             else if (state == PlayModeStateChange.EnteredEditMode)
             {

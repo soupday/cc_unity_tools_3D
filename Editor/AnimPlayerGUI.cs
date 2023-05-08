@@ -20,6 +20,8 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using Object = UnityEngine.Object;
+using UnityEditor.Animations;
+using System;
 
 namespace Reallusion.Import
 {
@@ -27,8 +29,8 @@ namespace Reallusion.Import
     {
         #region AnimPlayer  
 
-        private static bool play = false;        
-        private static float time, prev, current = 0f;
+        //private static bool play = false;        
+        //private static float time, prev, current = 0f;
         public static bool AnimFoldOut { get; private set; } = true;
         public static FacialProfile MeshFacialProfile { get; private set; }
         public static FacialProfile ClipFacialProfile { get; private set; }        
@@ -36,9 +38,10 @@ namespace Reallusion.Import
         public static AnimationClip WorkingClip { get ; set; }
         public static Animator CharacterAnimator { get; set; }
 
-        private static double updateTime = 0f;
-        private static double deltaTime = 0f;
-        private static double frameTime = 1f;
+        //private static double updateTime = 0f;
+        //private static double deltaTime = 0f;
+        //private static double frameTime = 1f;
+        
         private static bool forceUpdate = false;
         private static FacialProfile defaultProfile = new FacialProfile(ExpressionProfile.ExPlus, VisemeProfile.PairsCC3);
 
@@ -64,7 +67,10 @@ namespace Reallusion.Import
                 //Common            
                 SceneView.RepaintAll();
 
-                EditorApplication.update += UpdateDelegate;
+                EditorApplication.update -= UpdateCallback;
+                EditorApplication.update += UpdateCallback;
+                EditorApplication.playModeStateChanged -= PlayStateChangeCallback;
+                EditorApplication.playModeStateChanged += PlayStateChangeCallback;
             }
         }
 
@@ -72,7 +78,8 @@ namespace Reallusion.Import
         {
             if (IsPlayerShown())
             {
-                EditorApplication.update -= UpdateDelegate;
+                EditorApplication.update -= UpdateCallback;
+                EditorApplication.playModeStateChanged -= PlayStateChangeCallback;
 
                 WindowManager.StopAnimationMode();
 
@@ -112,6 +119,11 @@ namespace Reallusion.Import
 
         public static void SetCharacter(GameObject scenePrefab)
         {
+            if (scenePrefab)
+                Debug.Log("scenePrefab.name: " + scenePrefab.name + " " + PrefabUtility.IsPartOfPrefabInstance(scenePrefab));
+
+            
+
             if (!scenePrefab && WindowManager.IsPreviewScene)
                 scenePrefab = WindowManager.GetPreviewScene().GetPreviewCharacter();
 
@@ -119,16 +131,64 @@ namespace Reallusion.Import
             {                                
                 Animator animator = scenePrefab.GetComponent<Animator>();
                 if (!animator) animator = scenePrefab.GetComponentInChildren<Animator>();
-                GameObject sceneFbx = Util.FindRootPrefabAssetFromSceneObject(scenePrefab);
-                AnimationClip clip = Util.GetFirstAnimationClipFromCharacter(sceneFbx);
-                if (sceneFbx && clip)
-                    clip = AnimRetargetGUI.TryGetRetargetedAnimationClip(sceneFbx, clip);
-                UpdateAnimatorClip(animator, clip);
+                if (PrefabUtility.IsPartOfPrefabInstance(scenePrefab))
+                {
+                    GameObject sceneFbx = Util.FindRootPrefabAssetFromSceneObject(scenePrefab);
+                    AnimationClip clip = Util.GetFirstAnimationClipFromCharacter(sceneFbx);
+                    if (sceneFbx && clip)
+                        clip = AnimRetargetGUI.TryGetRetargetedAnimationClip(sceneFbx, clip);
+                    UpdateAnimatorClip(animator, clip);
+                }
+                else
+                {
+                    if (EditorApplication.isPlaying)
+                    {
+                        // in play mode - try to recover the stored last played animation
+                        if (Util.TryDeSerializeAssetFromEditorPrefs<AnimationClip>(out Object obj, WindowManager.clipKey))
+                        {
+                            UpdateAnimatorClip(animator, obj as AnimationClip);
+                        }
+                    }
+                }
             }         
         }
 
         static public void UpdateAnimatorClip(Animator animator, AnimationClip clip)
         {
+            if (doneInitFace) ResetFace(true, true);
+
+            // stop animation mode
+            WindowManager.StopAnimationMode();
+
+            if (!animator || CharacterAnimator != animator) doneInitFace = false;
+
+            CharacterAnimator = animator;
+            OriginalClip = clip;
+            SetupCharacterAndAnimation();
+            //WorkingClip = CloneClip(OriginalClip);
+
+            AnimRetargetGUI.RebuildClip();
+
+            MeshFacialProfile = FacialProfileMapper.GetMeshFacialProfile(animator ? animator.gameObject : null);
+            ClipFacialProfile = FacialProfileMapper.GetAnimationClipFacialProfile(clip);
+            
+            time = 0f;
+            play = false;            
+
+            // intitialise the face refs if needed
+            if (!doneInitFace) InitFace();
+
+            // finally, apply the face
+            //ApplyFace();
+
+            if (WorkingClip && CharacterAnimator)
+            {
+                // also restarts animation mode
+                //SampleOnce();
+            }
+
+            /*  Original Code:
+             
             if (doneInitFace) ResetFace(true, true);
 
             // stop animation mode
@@ -158,8 +218,260 @@ namespace Reallusion.Import
             {
                 // also restarts animation mode
                 SampleOnce();
-            }                        
+            }
+             
+            */
         }
+
+        #region Animator Setup
+        // ----------------------------------------------------------------------------
+        public static bool showMessages = false;
+        public static bool sceneFocus = false;
+
+        // initial selection
+        [SerializeField]
+        private static AnimatorController originalAnimatorController;
+
+        // Animaton Controller
+        [SerializeField]
+        private static AnimatorController playbackAnimatorController;
+        private static string controllerName = "--Temp-CCiC-Animator-Controller";
+        private static string overrideName = "--Temp-CCiC-Override-Controller";
+        private static string dirString = "Assets/";
+        private static string controllerPath;
+        private static string defaultState = "default_state";
+        [SerializeField]
+        private static int defaultStateNameHash;
+        private static string paramDirection = "param_direction";
+        [SerializeField]
+        private static AnimatorState playingState;
+        [SerializeField]
+        private static int controlStateHash;
+
+        // animator/animation settings
+        public static bool FootIK = true;
+        [Flags]
+        enum AnimatorFlags
+        {
+            None = 0,
+            AnimateOnTheSpot = 1,
+            ShowMirrorImage = 2,
+            AutoLoopPlayback = 4,
+            Everything = ~0
+        }
+
+        static AnimatorFlags flagSettings;
+
+        // Animaton Override Controller
+        [SerializeField]
+        private static AnimatorOverrideController animatorOverrideController;
+        
+
+        // Playback
+        private static bool play = false;
+        private static float playbackSpeed = 1f;
+
+        [SerializeField]
+        public static float time = 0f;
+        private static string realTime = "";
+
+        // Update
+        private static double updateTime = 0f;
+        private static double deltaTime = 0f;
+        private static double frameTime = 1f;
+        private static double current = 0f;
+
+        [SerializeField]
+        private static bool wasPlaying;
+
+        // GUIStyles
+        private static Styles guiStyles;
+
+        [SerializeField]
+        private static List<BoneItem> boneItemList;
+        [SerializeField]
+        private static bool isTracking = false;
+        [SerializeField]
+        private static GameObject lastTracked;
+
+        // ----------------------------------------------------------------------------
+
+        public static void SetupCharacterAndAnimation()
+        {
+            // retain the original AnimatorController from the scene model
+            originalAnimatorController = GetControllerFromAnimator(CharacterAnimator);
+
+            // construct and use a new controller with specific parameters
+            playbackAnimatorController = CreateAnimatiorController();
+            CharacterAnimator.runtimeAnimatorController = playbackAnimatorController;
+
+            // create an animation override controller from the new controller
+            animatorOverrideController = CreateAnimatorOverrideController();
+            CharacterAnimator.runtimeAnimatorController = animatorOverrideController;
+
+            // defaults contain some flags that must be set in the selected animation
+            ApplyDefaultSettings();
+
+            // select the original clip using the override controller
+            // this method is normally used to switch animations during play mode            
+            SelectOverrideAnimation(OriginalClip, animatorOverrideController);
+
+            // reset the animation player
+            ResetAnimationPlayer();
+        }
+
+        private static AnimatorController RestoreBaseAnimatorController()
+        {
+            GameObject basePrefab = GetBasePrefab();
+            if(basePrefab != null)
+            {
+                Animator baseAnimator = basePrefab.GetComponent<Animator>();
+                return GetControllerFromAnimator(baseAnimator);
+            }
+            return null;
+        }
+
+        private static GameObject GetBasePrefab()
+        {
+            GameObject characterPrefab, basePrefab = null;
+
+            characterPrefab = WindowManager.GetPreviewScene().GetPreviewCharacter();
+            if (characterPrefab != null)
+            {
+                basePrefab = Util.GetScenePrefabInstanceRoot(characterPrefab);
+                return basePrefab;
+            }
+            return null;
+        }
+
+        private static AnimatorController GetControllerFromAnimator(Animator animator)
+        {
+            if (animator.runtimeAnimatorController != null)
+            {
+                return AssetDatabase.LoadAssetAtPath<AnimatorController>(AssetDatabase.GetAssetPath(animator.runtimeAnimatorController));
+            }
+            return null;
+        }
+
+        private static AnimatorController CreateAnimatiorController()
+        {
+            controllerPath = dirString + controllerName + ".controller";
+
+            if (showMessages) Debug.Log("Creating Temporary file " + controllerPath);
+            AnimatorController a = AnimatorController.CreateAnimatorControllerAtPath(controllerPath);
+            a.name = controllerName;
+            // play mode parameters
+            a.AddParameter(paramDirection, AnimatorControllerParameterType.Float);
+            AnimatorStateMachine rootStateMachine = a.layers[0].stateMachine;
+            AnimatorState baseState = rootStateMachine.AddState(defaultState);
+            controlStateHash = baseState.nameHash;
+            baseState.iKOnFeet = FootIK;
+            // play mode parameters
+            baseState.speedParameter = paramDirection;
+            baseState.speedParameterActive = true;
+            baseState.motion = OriginalClip;
+            playingState = baseState;
+            controlStateHash = baseState.nameHash;
+            return a;
+        }
+
+        private static AnimatorOverrideController CreateAnimatorOverrideController()
+        {
+            var aoc = new AnimatorOverrideController(CharacterAnimator.runtimeAnimatorController);
+            aoc.name = overrideName;
+            return aoc;
+        }
+
+        private static void ApplyDefaultSettings()
+        {
+            flagSettings = AnimatorFlags.AutoLoopPlayback;
+            FootIK = true;
+            CharacterAnimator.SetFloat(paramDirection, 0f);
+            if (CharacterAnimator != null)
+            {
+                CharacterAnimator.applyRootMotion = true;
+            }
+        }
+
+        private static void SelectOverrideAnimation(AnimationClip clip, AnimatorOverrideController aoc)
+        {
+            ResetAnimationPlayer();            
+            var clone = GameObject.Instantiate(clip);
+            clone.name = clip.name;
+            SetClipSettings(clone);  // update the bake flags in AnimationClipSettings
+                                     // origingal clipsettings are untouched and should be copied
+                                     // directly into any saved animations from the retargeter
+            WorkingClip = clone;
+
+            List<KeyValuePair<AnimationClip, AnimationClip>> overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>(aoc.overridesCount);
+            aoc.GetOverrides(overrides);
+
+            foreach (var v in overrides)
+            {
+                if (showMessages) Debug.Log("Overrides: " + " Key: " + v.Key + " Value: " + v.Value);
+            }
+
+            overrides[0] = new KeyValuePair<AnimationClip, AnimationClip>(overrides[0].Key, WorkingClip);
+            aoc.ApplyOverrides(overrides);
+            FirstFrameButton();
+        }
+
+        private static void ResetAnimationPlayer()
+        {
+            play = false;
+            time = 0f;
+            playbackSpeed = 1f;
+
+            if (EditorApplication.isPlaying)
+            {
+                CharacterAnimator.SetFloat(paramDirection, 0f);
+                CharacterAnimator.Play(controlStateHash, 0, time);
+            }
+            else
+            {
+                CharacterAnimator.Update(time);
+            }
+            CharacterAnimator.gameObject.transform.localPosition = Vector3.zero;
+            CharacterAnimator.gameObject.transform.rotation = Quaternion.identity;
+        }
+
+        private static void SetClipSettings(AnimationClip clip)
+        {
+            AnimationClipSettings clipSettings = AnimationUtility.GetAnimationClipSettings(clip);
+            clipSettings.mirror = flagSettings.HasFlag(AnimatorFlags.ShowMirrorImage);
+            clipSettings.loopBlendPositionXZ = !flagSettings.HasFlag(AnimatorFlags.AnimateOnTheSpot);
+            clipSettings.loopBlendPositionY = !flagSettings.HasFlag(AnimatorFlags.AnimateOnTheSpot);
+            clipSettings.loopBlendOrientation = !flagSettings.HasFlag(AnimatorFlags.AnimateOnTheSpot);
+            AnimationUtility.SetAnimationClipSettings(clip, clipSettings);
+            CharacterAnimator.applyRootMotion = !flagSettings.HasFlag(AnimatorFlags.AnimateOnTheSpot);
+        }
+
+        private static void DestroyAnimationController()
+        {
+            if (CharacterAnimator != null)
+            {
+                if (originalAnimatorController != null)
+                {
+                    CharacterAnimator.runtimeAnimatorController = originalAnimatorController;
+                }
+                else
+                {
+                    if (CharacterAnimator.runtimeAnimatorController.GetType() == typeof(AnimatorOverrideController) && CharacterAnimator.runtimeAnimatorController.name == overrideName)
+                    {
+                        CharacterAnimator.runtimeAnimatorController = null;
+                    }
+                }
+            }
+
+            if (AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath) != null)
+            {
+                if (showMessages) Debug.Log(controllerPath + " exists -- removing");
+                AssetDatabase.DeleteAsset(controllerPath);
+            }
+        }
+
+
+        #endregion Animator Setup
 
         public static void ReCloneClip()
         {
@@ -181,9 +493,11 @@ namespace Reallusion.Import
             }
             
             return null;            
-        }        
+        }
 
-        public static void DrawPlayer()
+        #region IMGUI
+        /* //Original DrawPlayer() method
+        public static void ORIGINALDrawPlayer()
         {            
             GUILayout.BeginVertical();
             EditorGUI.BeginChangeCheck();
@@ -278,7 +592,752 @@ namespace Reallusion.Import
             }
             GUILayout.EndVertical();
         }
+        //
+        */
 
+        public class Styles
+        {
+            public GUIStyle settingsButton;
+            public GUIStyle playbackLabelStyle;
+            public GUIStyle playIconStyle;
+            public GUIStyle trackIconStyle;
+
+            public Styles()
+            {
+                settingsButton = new GUIStyle("toolbarbutton");
+                playbackLabelStyle = new GUIStyle("label");
+                playbackLabelStyle.alignment = TextAnchor.MiddleRight;
+
+                playIconStyle = new GUIStyle("label");
+                playIconStyle.contentOffset = new Vector2(5f, -4f);
+
+                trackIconStyle = new GUIStyle("label");
+                trackIconStyle.contentOffset = new Vector2(-6f, -4f);
+
+            }
+        }
+
+        public static void DrawPlayer()
+        {
+            if (guiStyles == null)
+                guiStyles = new Styles();
+
+            GUILayout.BeginVertical();
+            EditorGUI.BeginChangeCheck();
+            AnimFoldOut = EditorGUILayout.Foldout(AnimFoldOut, "Animation Playback", EditorStyles.foldout);
+            if (EditorGUI.EndChangeCheck())
+            {
+                //if (foldOut && FacialMorphIMGUI.FoldOut)
+                //    FacialMorphIMGUI.FoldOut = false;
+                doOnceCatchMouse = true;
+            }
+            if (AnimFoldOut)
+            {
+                EditorGUI.BeginChangeCheck();
+                Animator selectedAnimator = (Animator)EditorGUILayout.ObjectField(new GUIContent("Scene Model", "Animated model in scene"), CharacterAnimator, typeof(Animator), true);
+                AnimationClip selectedClip = (AnimationClip)EditorGUILayout.ObjectField(new GUIContent("Animation", "Animation to play and manipulate"), OriginalClip, typeof(AnimationClip), false);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    UpdateAnimatorClip(selectedAnimator, selectedClip);
+                }
+
+                GUI.enabled = WorkingClip && CharacterAnimator;
+
+
+
+
+                // BEGIN PREFS AREA
+
+                EditorGUILayout.Space();
+                var rect = EditorGUILayout.BeginHorizontal();
+                Handles.color = Color.gray * 0.2f;
+                Handles.DrawLine(new Vector2(rect.x + 15, rect.y), new Vector2(rect.width - 15, rect.y));
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.Space();
+
+                GUILayout.BeginHorizontal();
+
+                GUILayout.Space(4f);
+
+                EditorGUI.BeginChangeCheck();
+                FootIK = GUILayout.Toggle(FootIK, new GUIContent("IK", "Toggle feet IK"), guiStyles.settingsButton, GUILayout.Width(24f), GUILayout.Height(24f));
+                if (EditorGUI.EndChangeCheck())
+                {
+                    ToggleIKButton();
+                }
+
+                // Camera Bone Tracker
+
+                if (!CheckTackingStatus())
+                    CancelBoneTracking(false); //object focus lost - arrange ui to reflect that, but dont fight with the scene camera
+
+                if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("Camera Gizmo").image, "Select individual bone to track with the scene camera."), guiStyles.settingsButton, GUILayout.Width(24f), GUILayout.Height(24f)))
+                {
+                    GenerateBoneMenu();
+                }
+                Texture cancelTrack = isTracking ? EditorGUIUtility.IconContent("toolbarsearchCancelButtonActive").image : EditorGUIUtility.IconContent("toolbarsearchCancelButtonOff").image;
+                string cancelTrackTxt = isTracking ? "Cancel camera tracking" : "Camera tracking controls.";
+
+                EditorGUI.BeginDisabledGroup(!isTracking);
+                if (GUILayout.Button(new GUIContent(cancelTrack, cancelTrackTxt), guiStyles.trackIconStyle, GUILayout.Width(24f), GUILayout.Height(24f)))
+                {
+                    CancelBoneTracking(true); //tracking deliberately cancelled - leave scene camera in last position with last tracked object still selected
+                }
+                EditorGUI.EndDisabledGroup();
+                GUILayout.FlexibleSpace();
+
+                EditorGUI.BeginChangeCheck();
+                playbackSpeed = GUILayout.HorizontalSlider(playbackSpeed, -1f, 2f, GUILayout.Width(130f));
+                if (Math.Abs(1 - playbackSpeed) < 0.1f)
+                    playbackSpeed = 1f;
+                if (EditorGUI.EndChangeCheck())
+                {
+                    PlaybackSpeedSlider();
+                }
+                GUILayout.Label(new GUIContent(PlaybackText(), "Playback Speed"), guiStyles.playbackLabelStyle, GUILayout.MaxWidth(43f));
+
+                GUILayout.FlexibleSpace();
+
+                if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d_UndoHistory").image, "Reset model to T-Pose and player to defaults"), guiStyles.settingsButton, GUILayout.Width(24f), GUILayout.Height(24f)))
+                {
+                    ResetCharacterAndPlayer();
+                }
+
+                if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d__Menu").image, "Animation Clip Preferences"), guiStyles.settingsButton, GUILayout.Width(20f), GUILayout.Height(20f)))
+                {
+                    ShowPrefsGenericMenu();
+                }
+
+
+                GUILayout.Space(4f);
+
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+
+                GUILayout.EndHorizontal();
+
+                EditorGUILayout.Space();
+                var rect2 = EditorGUILayout.BeginHorizontal();
+                Handles.color = Color.gray * 0.2f; //new Color(0.1372f, 0.1372f, 0.1372f, 1.0f);
+                Handles.DrawLine(new Vector2(rect2.x + 15f, rect2.y), new Vector2(rect2.width - 15f, rect2.y));
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.Space();
+                // END PREFS AREA
+
+                GUILayout.BeginHorizontal();
+                if (CharacterAnimator && WorkingClip)
+                {
+                    EditorGUI.BeginChangeCheck();
+                    time = GUILayout.HorizontalSlider(time, 0f, 1f, GUILayout.Height(24f));
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        ScrubTimeline();
+                    }
+
+                    realTime = TimeText();
+                    EditorGUI.BeginChangeCheck();
+                    realTime = EditorGUILayout.DelayedTextField(new GUIContent("", "Time index. Accepts numerical input."), realTime, GUILayout.MaxWidth(42f));
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        ParseTimeInput();
+                    }
+                }
+                else
+                {
+                    EditorGUI.BeginDisabledGroup(true);
+                    GUILayout.HorizontalSlider(0f, 0f, 1f, GUILayout.Height(24f));
+                    EditorGUILayout.DelayedTextField(new GUIContent("", "Time index. Accepts numerical input."), "", GUILayout.MaxWidth(42f));
+                    EditorGUI.EndDisabledGroup();
+                }
+
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUI.BeginDisabledGroup(!(CharacterAnimator && WorkingClip));
+                GUILayout.BeginHorizontal(EditorStyles.toolbar);
+                // "Animation.FirstKey"
+                if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("Animation.FirstKey").image, "First Frame"), EditorStyles.toolbarButton))
+                {
+                    FirstFrameButton();
+                }
+                // "Animation.PrevKey"
+                if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("Animation.PrevKey").image, "Previous Frame"), EditorStyles.toolbarButton))
+                {
+                    PrevFrameButton();
+                }
+                // "Animation.Play"
+                Texture playButton = playbackSpeed > 0 ? EditorGUIUtility.IconContent("d_forward@2x").image : EditorGUIUtility.IconContent("d_back@2x").image;
+                Texture pauseButton = EditorGUIUtility.IconContent("PauseButton").image;
+                /*
+                if (GUILayout.Button(new GUIContent(playButton, "Play"), EditorStyles.toolbarButton, GUILayout.Height(30f)))            
+                {
+                    PlayButton();
+                }
+                // "PauseButton"
+                if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("PauseButton").image, "Pause"), EditorStyles.toolbarButton))
+                {
+                    PauseButton();
+                }
+                */
+                // play/pause: "Animation.Play" / "PauseButton"
+
+                if (GUILayout.Button(new GUIContent(play ? pauseButton : playButton, play ? "Pause" : "Play"), EditorStyles.toolbarButton, GUILayout.Height(30f)))
+                {
+                    PlayPauseButton();
+                }
+
+                // "Animation.NextKey"
+                if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("Animation.NextKey").image, "Next Frame"), EditorStyles.toolbarButton))
+                {
+                    NextFrameButton();
+                }
+                // "Animation.LastKey"
+                if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("Animation.LastKey").image, "Last Frame"), EditorStyles.toolbarButton))
+                {
+                    LastFrameButton();
+                }
+                EditorGUI.EndDisabledGroup();
+
+                GUILayout.Space(10f);
+                GUILayout.Label(new GUIContent(EditorGUIUtility.IconContent("d_UnityEditor.GameView").image, "Controls for 'Play Mode'"), guiStyles.playIconStyle, GUILayout.Width(24f), GUILayout.Height(24f));
+
+                Texture bigPlayButton = EditorApplication.isPlaying ? EditorGUIUtility.IconContent("preAudioPlayOn").image : EditorGUIUtility.IconContent("preAudioPlayOff").image;
+                string playToggleTxt = EditorApplication.isPlaying ? "Exit 'Play Mode'." : "Enter 'Play Mode' and focus on the scene view window. This is to be used to evaluate play mode physics whilst allowing visualization of objects such as colliders.";
+                if (GUILayout.Button(new GUIContent(bigPlayButton, playToggleTxt), EditorStyles.toolbarButton, GUILayout.Height(24f), GUILayout.Width(60f)))
+                {
+                    ApplicationPlayToggle();
+                }
+
+
+                GUILayout.EndHorizontal();
+
+                /*
+                EditorGUILayout.Space(28f);
+                GUILayout.BeginHorizontal(EditorStyles.toolbar);
+                GUILayout.FlexibleSpace();
+
+                Texture bigPlayButton = EditorApplication.isPlaying ? EditorGUIUtility.IconContent("preAudioPlayOn").image : EditorGUIUtility.IconContent("preAudioPlayOff").image;
+                string playToggleTxt = EditorApplication.isPlaying ? "Exit 'Play Mode'." : "Enter 'Play Mode' and focus on the scene view window. This is to be used to evaluate play mode physics whilst allowing visualization of objects such as colliders.";
+                if (GUILayout.Button(new GUIContent(bigPlayButton, playToggleTxt), EditorStyles.toolbarButton, GUILayout.Height(100f), GUILayout.Width(100f)))
+                {
+                    ApplicationPlayToggle();
+                }
+
+                GUILayout.FlexibleSpace();
+                GUILayout.EndHorizontal();
+                 */
+            }
+            GUILayout.EndVertical();
+        }
+
+        #endregion IMGUI
+        #region Button Events/Functions
+        // Button functions
+
+        // "Toggle feet IK"
+        private static void ToggleIKButton()
+        {
+            // Alternative method - retrieve a copy of the layers - modify then reapply
+            // find the controlstate by nameHash
+            AnimatorControllerLayer[] allLayer = playbackAnimatorController.layers;
+            for (int i = 0; i < allLayer.Length; i++)
+            {
+                ChildAnimatorState[] states = allLayer[i].stateMachine.states;
+                for (int j = 0; j < states.Length; j++)
+                {
+                    if (states[j].state.nameHash == controlStateHash)
+                    {
+                        states[j].state.iKOnFeet = FootIK;
+                        allLayer[i].iKPass = FootIK;
+                    }
+                }
+            }
+            if (EditorApplication.isPlaying) CharacterAnimator.gameObject.SetActive(false);
+            playbackAnimatorController.layers = allLayer;
+            if (EditorApplication.isPlaying) CharacterAnimator.gameObject.SetActive(true);
+
+            // originally using the cached default state directly ...
+            // both methods encounter errors when changing foot ik during runtime
+            // unless the gameObject is disabled/re-enabled
+            /*
+            if (EditorApplication.isPlaying) sceneAnimator.gameObject.SetActive(false);
+            playingState.iKOnFeet = FootIK;
+            if (EditorApplication.isPlaying) sceneAnimator.gameObject.SetActive(true);
+            */
+            if (EditorApplication.isPlaying)
+            {
+                //ResetAnimationPlayer();
+                CharacterAnimator.Play(controlStateHash, 0, time);
+                CharacterAnimator.SetFloat(paramDirection, play ? playbackSpeed : 0f);
+            }
+            else
+            {
+                CharacterAnimator.Update(time);
+            }
+        }
+
+        // playback speed slider sets speed multiplier directly in edit mode but requires an update in play mode
+        private static void PlaybackSpeedSlider()
+        {
+            if (EditorApplication.isPlaying)
+            {
+                CharacterAnimator.SetFloat(paramDirection, playbackSpeed);
+                CharacterAnimator.Play(controlStateHash, 0, time);
+            }
+        }
+
+        // "Reset Model to T-Pose and player to defaults"
+        public static void ResetCharacterAndPlayer()
+        {
+            // re-apply all defaults
+            ApplyDefaultSettings();
+
+            // reset the player
+            ResetAnimationPlayer();
+
+            // clear all the animation data  ==============================================================
+            // ============================================================================================
+            WorkingClip = null;
+            OriginalClip = null;
+            // ENSURE RESET OF SELECTION FIELDS TOO
+            // ============================================================================================
+
+            // clear the animation controller + override controller
+            // remove the on-disk temporary controller
+            // re-apply the original [Serialized]AnimationController 
+            DestroyAnimationController();
+
+            // revert character pose to original T-Pose
+            ResetCharacterPose();
+
+            // user can now select a new animation for playing
+        }
+
+        // "Animation Clip Preferences"
+        private static void ShowPrefsGenericMenu()
+        {
+            GenericMenu menu = new GenericMenu();
+            menu.AddItem(new GUIContent("Animate On The Spot"), flagSettings.HasFlag(AnimatorFlags.AnimateOnTheSpot), OnPrefSelected, AnimatorFlags.AnimateOnTheSpot);
+            menu.AddItem(new GUIContent("Show Mirror Image"), flagSettings.HasFlag(AnimatorFlags.ShowMirrorImage), OnPrefSelected, AnimatorFlags.ShowMirrorImage);
+            menu.AddItem(new GUIContent("Auto Loop Playback"), flagSettings.HasFlag(AnimatorFlags.AutoLoopPlayback), OnPrefSelected, AnimatorFlags.AutoLoopPlayback);
+            menu.ShowAsContext();
+        }
+
+        private static void OnPrefSelected(object obj)
+        {
+            AnimatorFlags f = (AnimatorFlags)obj;
+            if (flagSettings.HasFlag(f))
+                flagSettings ^= f;
+            else
+                flagSettings |= f;
+
+            if (WorkingClip)
+            {
+                if (f == AnimatorFlags.AnimateOnTheSpot || f == AnimatorFlags.ShowMirrorImage)
+                {
+                    SetClipSettings(WorkingClip);
+                    ResetAnimationPlayer();
+                }
+            }
+        }
+
+        // Time Slider
+        public static void ScrubTimeline()
+        {
+            if (EditorApplication.isPlaying)
+            {
+                CharacterAnimator.Play(controlStateHash, 0, time);
+            }
+            else
+            {
+                UpdateAnimator();
+            }
+        }
+
+        // "Time index. Accepts numerical input."
+        private static void ParseTimeInput()
+        {
+            float parsedTime;
+            if (float.TryParse(realTime, out parsedTime))
+            {
+                if (parsedTime > WorkingClip.length)
+                    parsedTime = WorkingClip.length;
+                if (parsedTime < 0f)
+                    parsedTime = 0f;
+
+                time = parsedTime / WorkingClip.length;
+            }
+            else
+            {
+                realTime = TimeText();
+            }
+            if (EditorApplication.isPlaying)
+            {
+                CharacterAnimator.Play(controlStateHash, 0, time);
+            }
+        }
+
+        // "Animation.FirstKey"
+        private static void FirstFrameButton()
+        {
+            play = false;
+            time = 0f;
+
+            if (EditorApplication.isPlaying)
+            {
+                CharacterAnimator.Play(controlStateHash, 0, time);
+                CharacterAnimator.SetFloat(paramDirection, 0f);
+            }
+            else
+            {
+                UpdateAnimator();
+            }
+        }
+
+        // "Animation.PrevKey"
+        private static void PrevFrameButton()
+        {
+            play = false;
+            time -= 0.0166f / WorkingClip.length;
+
+            if (EditorApplication.isPlaying)
+            {
+                CharacterAnimator.Play(controlStateHash, 0, time);
+                CharacterAnimator.SetFloat(paramDirection, 0f);
+            }
+            else
+            {
+                UpdateAnimator();
+            }
+        }
+
+        // "Animation.Play"
+        private static void PlayButton()
+        {
+            play = true;
+            if (EditorApplication.isPlaying)
+            {
+                CharacterAnimator.Play(controlStateHash, 0, time);
+                CharacterAnimator.SetFloat(paramDirection, playbackSpeed);
+            }
+        }
+
+        // "PauseButton"
+        private static void PauseButton()
+        {
+            play = false;
+            if (EditorApplication.isPlaying)
+            {
+                CharacterAnimator.SetFloat(paramDirection, 0f);
+            }
+        }
+
+        // "Animation.Play" / "PauseButton"
+        private static void PlayPauseButton()
+        {
+            if (play)
+                PauseButton();
+            else
+                PlayButton();
+        }
+
+        // "Animation.NextKey"
+        private static void NextFrameButton()
+        {
+            play = false;
+            time += 0.0166f / WorkingClip.length;
+
+            if (EditorApplication.isPlaying)
+            {
+                CharacterAnimator.Play(controlStateHash, 0, time);
+                CharacterAnimator.SetFloat(paramDirection, 0f);
+            }
+            else
+            {
+                UpdateAnimator();
+            }
+        }
+
+        // "Animation.LastKey"
+        private static void LastFrameButton()
+        {
+            play = false;
+            time = 1f;
+
+            if (EditorApplication.isPlaying)
+            {
+                CharacterAnimator.Play(controlStateHash, 0, time);
+                CharacterAnimator.SetFloat(paramDirection, 0f);
+            }
+            else
+            {
+                UpdateAnimator();
+            }
+        }
+
+        private static void ApplicationPlayToggle()
+        {
+            // button to enter play mode and retain scene view
+            //
+            // if the application is not playing and will enter play mode:
+            //                              set the flag to true 
+            //                              callback will focus the view back to the scene window
+            // if the application is playing:
+            //                              set the flag to false
+            //                              entering play mode maually wont cause callback to refocus on the scene
+
+            Util.SerializeBoolToEditorPrefs(true, WindowManager.sceneFocus);
+            EditorApplication.isPlaying = !EditorApplication.isPlaying;
+        }
+
+        public static void UpdateAnimator()
+        {
+            if (EditorApplication.isPlaying) return;
+            CharacterAnimator.Play(controlStateHash, 0, time);
+            CharacterAnimator.Update(time);
+        }
+
+        private static string TimeText()
+        {
+            return string.Format("{0}s", (time * WorkingClip.length).ToString("0.00"));
+        }
+
+        private static string PlaybackText()
+        {
+            return string.Format("{0}x", playbackSpeed.ToString("0.00"));
+        }
+
+        #endregion Button Events/Functions
+
+        #region Pose reset and bone tracking
+        public static void ResetCharacterPose()
+        {
+            bool canFindAvatar = false;
+            if (CharacterAnimator != null)
+            {
+                if (CharacterAnimator.avatar != null)
+                {
+                    canFindAvatar = true;
+                }
+            }
+            if (!canFindAvatar)
+            {
+                if (showMessages) Debug.LogWarning("No Avatar found to reset pose to.");
+                return;
+            }
+
+            Avatar characterAvatar = CharacterAnimator.avatar;
+            SkeletonBone[] characterBones = characterAvatar.humanDescription.skeleton; // array of all imported objects now in the prefab (has CC names) in T-pose
+            Transform[] prefabObjects = CharacterAnimator.gameObject.GetComponentsInChildren<Transform>();
+
+            int boneIndex;
+
+            foreach (string humanBoneName in HumanTrait.BoneName)
+            {
+                // find the characaterBones array indices corresponding to the mechanim bones (listed in HumanTrait.BoneName    
+                boneIndex = FindSkeletonBoneIndex(FindSkeletonBoneName(humanBoneName, characterAvatar), characterBones);
+
+                // iterate through all the transforms in the prefab and when a mechanim bone is matched - set it's transform to that in the correspoding skeletonbone struct (obtained from the avatar)
+                if (boneIndex != -1)
+                {
+                    foreach (Transform t in prefabObjects)
+                    {
+                        if (t.name == characterBones[boneIndex].name)
+                        {
+                            t.localPosition = characterBones[boneIndex].position;
+                            t.localRotation = characterBones[boneIndex].rotation;
+                            t.localScale = characterBones[boneIndex].scale;
+                        }
+                    }
+                }
+            }
+        }
+
+        private static int FindSkeletonBoneIndex(string skeletonBoneName, SkeletonBone[] bones)
+        {
+            for (int i = 0; i < bones.Length; i++)
+            {
+                if (bones[i].name.Equals(skeletonBoneName, System.StringComparison.InvariantCultureIgnoreCase))
+                    return i;
+            }
+            return -1;
+        }
+
+        public static string FindSkeletonBoneName(string humanBoneName, Avatar avatar)
+        {
+            for (int i = 0; i < avatar.humanDescription.human.Length; i++)
+            {
+                if (avatar.humanDescription.human[i].humanName.Equals(humanBoneName, System.StringComparison.InvariantCultureIgnoreCase))
+                    return avatar.humanDescription.human[i].boneName;
+            }
+            return "not found";
+        }
+
+        public class BoneItem
+        {
+            public string humanBoneName;
+            public string skeletonBoneName;
+            public bool selected;
+
+            public BoneItem(string humanBoneName, string skeletonBoneName)
+            {
+                this.humanBoneName = humanBoneName;
+                this.skeletonBoneName = skeletonBoneName;
+                this.selected = false;
+            }
+        }
+
+        private static void MakeBoneMenuList()
+        {
+            boneItemList = new List<BoneItem>();
+
+            foreach (string boneName in orderedHumanBones)
+            {
+                boneItemList.Add(new BoneItem(boneName, FindSkeletonBoneName(boneName, CharacterAnimator.avatar)));
+            }
+        }
+
+        private static void GenerateBoneMenu()
+        {
+            if (boneItemList == null)
+                MakeBoneMenuList();
+
+            GenericMenu menu = new GenericMenu();
+            foreach (BoneItem boneItem in boneItemList)
+            {
+                menu.AddItem(new GUIContent(boneItem.humanBoneName), boneItem.selected, BoneMenuCallback, boneItem);
+            }
+            menu.ShowAsContext();
+        }
+
+        private static void BoneMenuCallback(object obj)
+        {
+            DeselectAllBones();
+
+            BoneItem item = obj as BoneItem;
+            if (TrySelectBone(item))
+            {
+                isTracking = true;
+                TrackBone(item);
+            }
+        }
+
+        private static void TrackBone(BoneItem boneItem)
+        {
+            SceneView scene = SceneView.lastActiveSceneView;
+            GameObject g = GameObject.Find(boneItem.skeletonBoneName);
+            Selection.activeGameObject = g;
+            lastTracked = g;
+            scene.FrameSelected(true, true);
+            scene.FrameSelected(true, true);
+            scene.Repaint();
+        }
+
+        private static bool TrySelectBone(BoneItem boneSelection)
+        {
+            int idx = boneItemList.FindIndex(x => x.humanBoneName == boneSelection.humanBoneName);
+            bool select = (idx != -1);
+            if (select)
+                boneItemList[idx].selected = true;
+
+            return select;
+        }
+
+        private static bool CheckTackingStatus()
+        {
+            return Selection.activeGameObject == lastTracked;
+        }
+
+        private static void CancelBoneTracking(bool refocusScene)
+        {
+            if (refocusScene)
+                StopTracking();
+
+            DeselectAllBones();
+            isTracking = false;
+        }
+
+        private static void StopTracking()
+        {
+            if (isTracking)
+            {
+                SceneView scene = SceneView.lastActiveSceneView;
+                scene.FrameSelected(false, false);
+                scene.FrameSelected(false, false);
+            }
+        }
+
+        private static void DeselectAllBones()
+        {
+            if (boneItemList == null) return;
+            foreach (BoneItem boneItem in boneItemList)
+            {
+                boneItem.selected = false;
+            }
+        }
+
+        private static string[] orderedHumanBones =
+        {
+            "LeftEye",
+            "RightEye",
+            "Jaw",
+            "Head",
+            "Neck",
+            "LeftShoulder",
+            "RightShoulder",
+            "LeftUpperArm",
+            "RightUpperArm",
+            "LeftLowerArm",
+            "RightLowerArm",
+            "LeftHand",
+            "RightHand",
+            "UpperChest",
+            "Chest",
+            "Spine",
+            "Hips",
+            "LeftUpperLeg",
+            "RightUpperLeg",
+            "LeftLowerLeg",
+            "RightLowerLeg",
+            "LeftFoot",
+            "RightFoot",
+            "LeftToes",
+            "RightToes"
+            /*
+            "Left Thumb Proximal",
+            "Left Thumb Intermediate",
+            "Left Thumb Distal",
+            "Left Index Proximal",
+            "Left Index Intermediate",
+            "Left Index Distal",
+            "Left Middle Proximal",
+            "Left Middle Intermediate",
+            "Left Middle Distal",
+            "Left Ring Proximal",
+            "Left Ring Intermediate",
+            "Left Ring Distal",
+            "Left Little Proximal",
+            "Left Little Intermediate",
+            "Left Little Distal",
+            "Right Thumb Proximal",
+            "Right Thumb Intermediate",
+            "Right Thumb Distal",
+            "Right Index Proximal",
+            "Right Index Intermediate",
+            "Right Index Distal",
+            "Right Middle Proximal",
+            "Right Middle Intermediate",
+            "Right Middle Distal",
+            "Right Ring Proximal",
+            "Right Ring Intermediate",
+            "Right Ring Distal",
+            "Right Little Proximal",
+            "Right Little Intermediate",
+            "Right Little Distal"
+            */
+        };
+
+        #endregion Pose reset and bone tracking
         public static void SampleOnce()
         {
             if (CharacterAnimator && WorkingClip)
@@ -289,7 +1348,109 @@ namespace Reallusion.Import
                 AnimationMode.EndSampling();
             }
         }
+
+        #region Update
+        private static void PlayStateChangeCallback(PlayModeStateChange state)
+        {
+            wasPlaying = play;
+            switch (state)
+            {
+                case PlayModeStateChange.ExitingEditMode:
+                    {
+                        play = false;
+                        Util.TrySerializeAssetToEditorPrefs(OriginalClip, WindowManager.clipKey);
+                        Util.SerializeFloatToEditorPrefs(time, WindowManager.timeKey);
+
+                        break;
+                    }
+                case PlayModeStateChange.EnteredPlayMode:
+                    {
+                        //if (sceneFocus)
+                        //{
+                        //    SceneView.lastActiveSceneView.Focus();
+                        //    sceneFocus = false;
+                        //}
+                        //UnityEditor.SceneView.FocusWindowIfItsOpen(typeof(UnityEditor.SceneView));
+                        //ResetAnimationPlayer();
+                        play = false;
+                        CharacterAnimator.Play(controlStateHash, 0, time);
+                        CharacterAnimator.SetFloat(paramDirection, play ? playbackSpeed : 0f);
+
+                        break;
+                    }
+                case PlayModeStateChange.ExitingPlayMode:
+                    {
+                        break;
+                    }
+                case PlayModeStateChange.EnteredEditMode:
+                    {
+                        break;
+                    }
+            }
+        }
+        public static int delayFrames = 0;
+        private static void UpdateCallback()
+        {
+            if (delayFrames > 0)
+            {
+                delayFrames--;
+                if (delayFrames == 0)
+                    AnimPlayerGUI.ScrubTimeline();
+
+                return;
+            }
+
+            if (updateTime == 0f) updateTime = EditorApplication.timeSinceStartup;
+            deltaTime = EditorApplication.timeSinceStartup - updateTime;
+            updateTime = EditorApplication.timeSinceStartup;
+
+            AdjustEyes();
+
+            if (WorkingClip && CharacterAnimator)
+            {
+                if (play)
+                {
+                    double frameDuration = 1.0f / WorkingClip.frameRate;
+
+                    time += ((float)deltaTime / WorkingClip.length) * playbackSpeed;
+                    frameTime += deltaTime;
+                    if (time >= 1)
+                    {
+                        time = flagSettings.HasFlag(AnimatorFlags.AutoLoopPlayback) ? 0f : 1f;
+                        if (EditorApplication.isPlaying)
+                            CharacterAnimator.Play(controlStateHash, 0, time);
+                    }
+
+                    if (time < 0)
+                    {
+                        time = flagSettings.HasFlag(AnimatorFlags.AutoLoopPlayback) ? 1f : 0f;
+                        if (EditorApplication.isPlaying)
+                            CharacterAnimator.Play(controlStateHash, 0, time);
+                    }
+
+                    if (frameTime < frameDuration)
+                        return;
+
+                    frameTime = 0f;
+                }
+                else
+                {
+                    frameTime = 1f;
+                }
+
+                if (current != time)
+                {
+                    UpdateAnimator();
+                    //Repaint();  // repaint the gui to smooth the timer + slider display
+                    current = time;
+                }
+            }
+        }
+
         
+        #endregion Update
+
+
         private static void UpdateDelegate()
         {
             if (updateTime == 0f) updateTime = EditorApplication.timeSinceStartup;
