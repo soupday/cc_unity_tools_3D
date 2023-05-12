@@ -41,7 +41,7 @@ namespace Reallusion.Import
             }
             else
             {
-                WindowManager.ShowAnimationPlayer();
+                WindowManager.ShowAnimationPlayer();                
             }
         }
 

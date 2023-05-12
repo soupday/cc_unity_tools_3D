@@ -24,6 +24,9 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEditor.Compilation;
 using System;
+using UnityEditor.SearchService;
+using Scene = UnityEngine.SceneManagement.Scene;
+
 
 namespace Reallusion.Import
 {
@@ -80,7 +83,63 @@ namespace Reallusion.Import
         }
 
         public static void OnPlayModeStateChanged(PlayModeStateChange state)
-        {            
+        {
+            switch (state)
+            {
+                case PlayModeStateChange.ExitingEditMode:
+                    {
+                        Debug.Log(state);
+                        
+
+                        break;
+                    }
+                case PlayModeStateChange.EnteredPlayMode:
+                    {
+                        Debug.Log(state);
+                        
+                        showPlayerAfterPlayMode = showPlayer;
+                        showRetargetAfterPlayMode = showRetarget;
+                        showPlayer = false;
+                        showRetarget = false;
+                        AnimPlayerGUI.ClosePlayer();
+                        AnimRetargetGUI.CloseRetargeter();
+                        
+
+                        if (Util.TryDeSerializeBoolFromEditorPrefs(out bool val, WindowManager.sceneFocus))
+                        {
+                            if (val)
+                            {
+                                Debug.Log("Reverting Scene Focus");
+                                //GrabLastSceneFocus();                                
+                                Util.SerializeBoolToEditorPrefs(false, WindowManager.sceneFocus);
+                                ShowAnimationPlayer();
+                                if (Util.TryDeSerializeFloatFromEditorPrefs(out float timeCode, WindowManager.timeKey))
+                                {
+                                    //set the play position
+                                    AnimPlayerGUI.time = timeCode;
+                                    //slightly delay startup to allow the animator to initialize
+                                    AnimPlayerGUI.delayFrames = 2;
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+                case PlayModeStateChange.ExitingPlayMode:
+                    {
+
+                        break;
+                    }
+                case PlayModeStateChange.EnteredEditMode:
+                    {
+                        Debug.Log(state);
+                        showPlayer = showPlayerAfterPlayMode;
+                        showRetarget = showRetargetAfterPlayMode;
+
+                        break;
+                    }
+            }
+            /*
             if (state == PlayModeStateChange.EnteredPlayMode)
             {
                 Debug.Log(state);
@@ -101,7 +160,7 @@ namespace Reallusion.Import
                 AnimPlayerGUI.ClosePlayer();
                 AnimRetargetGUI.CloseRetargeter();
                 */
-
+            /*
                 if (Util.TryDeSerializeBoolFromEditorPrefs(out bool val, WindowManager.sceneFocus))
                 {
                     if (val)
@@ -120,7 +179,13 @@ namespace Reallusion.Import
                     }
                     else //no scene view focus grab - replace the oringinal runtime animator controller
                     {
-
+                        if (Util.TryDeSerializeBoolFromEditorPrefs(out bool restore, WindowManager.animatorControllerKey))
+                        {
+                            if (restore)
+                            {
+                                AnimPlayerGUI.RestoreBaseAnimatorController();
+                            }
+                        }
                     }
                 }
             }
@@ -130,6 +195,7 @@ namespace Reallusion.Import
                 showPlayer = showPlayerAfterPlayMode;
                 showRetarget = showRetargetAfterPlayMode;
             }
+            */
         }
 
         public static void OnBeforeAssemblyReload()
@@ -152,7 +218,7 @@ namespace Reallusion.Import
             if (!prefab) return default;
             if (!IsPreviewScene && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return default;
 
-            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
+            UnityEngine.SceneManagement.Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
             GameObject.Instantiate(Util.FindPreviewScenePrefab(), Vector3.zero, Quaternion.identity);
 
             previewSceneHandle = scene;
@@ -375,10 +441,16 @@ namespace Reallusion.Import
 
             if (Selection.activeGameObject)
             {
-                GameObject selectedPrefab = Util.GetScenePrefabInstanceRoot(Selection.activeGameObject);
-                if (selectedPrefab && selectedPrefab.GetComponent<Animator>())
+                string s = AssetDatabase.GetAssetPath(Selection.activeObject);
+                if (string.IsNullOrEmpty(s))
                 {
-                    characterPrefab = selectedPrefab;
+                    Debug.Log("SELECTED PATH: IsNullOrEmpty");
+
+                    GameObject selectedPrefab = Util.GetScenePrefabInstanceRoot(Selection.activeGameObject);
+                    if (selectedPrefab && selectedPrefab.GetComponent<Animator>())
+                    {
+                        characterPrefab = selectedPrefab;
+                    }
                 }
             }
 
@@ -388,6 +460,11 @@ namespace Reallusion.Import
             }
 
             return characterPrefab;
+        }
+
+        public static void GrabLastSceneFocus()
+        {
+            SceneView.lastActiveSceneView.Focus();
         }
 
         public static void ShowAnimationPlayer()
@@ -402,6 +479,10 @@ namespace Reallusion.Import
                 if (showRetarget) ShowAnimationRetargeter();
 
                 showPlayer = true;
+                if (EditorApplication.isPlaying)
+                {
+                    WindowManager.GrabLastSceneFocus();
+                }
             }
             else
             {

@@ -49,7 +49,7 @@ namespace Reallusion.Import
         {
             if (scenePrefab)
             {
-                scenePrefab = Util.TryResetScenePrefab(scenePrefab);
+                scenePrefab = Util.TryResetScenePrefab(scenePrefab);                
                 SetCharacter(scenePrefab);
             }
 
@@ -78,6 +78,9 @@ namespace Reallusion.Import
         {
             if (IsPlayerShown())
             {
+                //clean up controller here
+                ResetToBaseAnimatorController();
+
                 EditorApplication.update -= UpdateCallback;
                 EditorApplication.playModeStateChanged -= PlayStateChangeCallback;
 
@@ -131,22 +134,26 @@ namespace Reallusion.Import
             {                                
                 Animator animator = scenePrefab.GetComponent<Animator>();
                 if (!animator) animator = scenePrefab.GetComponentInChildren<Animator>();
-                if (PrefabUtility.IsPartOfPrefabInstance(scenePrefab))
+                if (animator != null)
                 {
-                    GameObject sceneFbx = Util.FindRootPrefabAssetFromSceneObject(scenePrefab);
-                    AnimationClip clip = Util.GetFirstAnimationClipFromCharacter(sceneFbx);
-                    if (sceneFbx && clip)
-                        clip = AnimRetargetGUI.TryGetRetargetedAnimationClip(sceneFbx, clip);
-                    UpdateAnimatorClip(animator, clip);
-                }
-                else
-                {
-                    if (EditorApplication.isPlaying)
+                    if (PrefabUtility.IsPartOfPrefabInstance(scenePrefab))
                     {
-                        // in play mode - try to recover the stored last played animation
-                        if (Util.TryDeSerializeAssetFromEditorPrefs<AnimationClip>(out Object obj, WindowManager.clipKey))
+                        GameObject sceneFbx = Util.FindRootPrefabAssetFromSceneObject(scenePrefab);
+                        // in edit mode - find the first animation clip
+                        AnimationClip clip = Util.GetFirstAnimationClipFromCharacter(sceneFbx);
+                        if (sceneFbx && clip)
+                            clip = AnimRetargetGUI.TryGetRetargetedAnimationClip(sceneFbx, clip);
+                        UpdateAnimatorClip(animator, clip);
+                    }
+                    else
+                    {
+                        if (EditorApplication.isPlaying)
                         {
-                            UpdateAnimatorClip(animator, obj as AnimationClip);
+                            // in play mode - try to recover the stored last played animation
+                            if (Util.TryDeSerializeAssetFromEditorPrefs<AnimationClip>(out Object obj, WindowManager.clipKey))
+                            {
+                                UpdateAnimatorClip(animator, obj as AnimationClip);
+                            }
                         }
                     }
                 }
@@ -164,6 +171,7 @@ namespace Reallusion.Import
 
             CharacterAnimator = animator;
             OriginalClip = clip;
+            
             SetupCharacterAndAnimation();
             //WorkingClip = CloneClip(OriginalClip);
 
@@ -298,8 +306,10 @@ namespace Reallusion.Import
 
         public static void SetupCharacterAndAnimation()
         {
+            if (CharacterAnimator == null) return; // don't try and set up an override controller if the char has no animator
+
             // retain the original AnimatorController from the scene model
-            originalAnimatorController = GetControllerFromAnimator(CharacterAnimator);
+            //originalAnimatorController = GetControllerFromAnimator(CharacterAnimator);
 
             // construct and use a new controller with specific parameters
             playbackAnimatorController = CreateAnimatiorController();
@@ -319,40 +329,7 @@ namespace Reallusion.Import
             // reset the animation player
             ResetAnimationPlayer();
         }
-
-        private static AnimatorController RestoreBaseAnimatorController()
-        {
-            GameObject basePrefab = GetBasePrefab();
-            if(basePrefab != null)
-            {
-                Animator baseAnimator = basePrefab.GetComponent<Animator>();
-                return GetControllerFromAnimator(baseAnimator);
-            }
-            return null;
-        }
-
-        private static GameObject GetBasePrefab()
-        {
-            GameObject characterPrefab, basePrefab = null;
-
-            characterPrefab = WindowManager.GetPreviewScene().GetPreviewCharacter();
-            if (characterPrefab != null)
-            {
-                basePrefab = Util.GetScenePrefabInstanceRoot(characterPrefab);
-                return basePrefab;
-            }
-            return null;
-        }
-
-        private static AnimatorController GetControllerFromAnimator(Animator animator)
-        {
-            if (animator.runtimeAnimatorController != null)
-            {
-                return AssetDatabase.LoadAssetAtPath<AnimatorController>(AssetDatabase.GetAssetPath(animator.runtimeAnimatorController));
-            }
-            return null;
-        }
-
+        
         private static AnimatorController CreateAnimatiorController()
         {
             controllerPath = dirString + controllerName + ".controller";
@@ -446,30 +423,75 @@ namespace Reallusion.Import
             CharacterAnimator.applyRootMotion = !flagSettings.HasFlag(AnimatorFlags.AnimateOnTheSpot);
         }
 
-        private static void DestroyAnimationController()
+
+        public static void ResetToBaseAnimatorController()
         {
-            if (CharacterAnimator != null)
+            // look up the original prefab corresponding to the model in the preview scene
+            // extract the path reference to the animator controller being used by the original prefab
+            // check the scene model is using the override controller created above
+            // replace the runtime animator controller of the scene model with the animatorcontroller asset at path
+            // destroy the disk asset temp override controller (that was created above)
+
+            GameObject characterPrefab = WindowManager.GetPreviewScene().GetPreviewCharacter();
+            Debug.Log(("Attempting to reset: " + characterPrefab.name));
+
+            GameObject basePrefab = PrefabUtility.GetCorrespondingObjectFromSource(characterPrefab);
+
+            if (basePrefab != null)
             {
-                if (originalAnimatorController != null)
+                if (PrefabUtility.IsAnyPrefabInstanceRoot(basePrefab))
                 {
-                    CharacterAnimator.runtimeAnimatorController = originalAnimatorController;
-                }
-                else
-                {
-                    if (CharacterAnimator.runtimeAnimatorController.GetType() == typeof(AnimatorOverrideController) && CharacterAnimator.runtimeAnimatorController.name == overrideName)
+                    string prefabPath = AssetDatabase.GetAssetPath(basePrefab);
+                    Debug.Log((basePrefab.name + "Prefab instance root found: " + prefabPath));
+
+                    Debug.Log("Loaded Prefab: " + basePrefab.name);
+                    Animator baseAnimator = basePrefab.GetComponent<Animator>();
+                    if (baseAnimator != null)
                     {
-                        CharacterAnimator.runtimeAnimatorController = null;
+                        Debug.Log("Prefab Animator: " + baseAnimator.name);
+                        if (baseAnimator.runtimeAnimatorController)
+                        {
+                            Debug.Log("Prefab Animator Controller: " + baseAnimator.runtimeAnimatorController.name);
+                            string controllerpath = AssetDatabase.GetAssetPath(baseAnimator.runtimeAnimatorController);
+                            Debug.Log("Prefab Animator Controller Path: " + controllerpath);
+                            AnimatorController baseController = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerpath);
+
+                            if (CharacterAnimator.runtimeAnimatorController != null)
+                            {
+                                // ensure the created override controller is the one on the animator
+                                // to avoid wiping user generated controller (it will have to be a disk asset - but nevertheless)
+                                Debug.Log("Current controller on character: " + CharacterAnimator.runtimeAnimatorController.name);
+                                if (CharacterAnimator.runtimeAnimatorController.GetType() == typeof(AnimatorOverrideController) && CharacterAnimator.runtimeAnimatorController.name == overrideName)
+                                {
+                                    Debug.Log("Created override controller found: can reset");
+                                    CharacterAnimator.runtimeAnimatorController = baseController;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Debug.Log("NO Prefab Animator Controller");
+                        }
                     }
                 }
             }
-
-            if (AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath) != null)
-            {
-                if (showMessages) Debug.Log(controllerPath + " exists -- removing");
-                AssetDatabase.DeleteAsset(controllerPath);
-            }
+            DestroyAnimationController();
         }
 
+        private static void DestroyAnimationController()
+        {
+            Object tempControllerAsset = AssetDatabase.LoadAssetAtPath<AnimatorController>(controllerPath);
+            if (tempControllerAsset != null)
+            {
+                if (tempControllerAsset.GetType() == typeof(AnimatorController))
+                {
+                    //if (showMessages) 
+
+                    Debug.Log("Override controller: " + controllerPath + " exists -- removing");
+                    AssetDatabase.DeleteAsset(controllerPath);
+                }
+            }
+        }
 
         #endregion Animator Setup
 
@@ -698,7 +720,7 @@ namespace Reallusion.Import
 
                 GUILayout.FlexibleSpace();
 
-                if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d_UndoHistory").image, "Reset model to T-Pose and player to defaults"), guiStyles.settingsButton, GUILayout.Width(24f), GUILayout.Height(24f)))
+                if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("Refresh").image, "Reset model to T-Pose and player to defaults"), guiStyles.settingsButton, GUILayout.Width(24f), GUILayout.Height(24f)))
                 {
                     ResetCharacterAndPlayer();
                 }
@@ -904,12 +926,11 @@ namespace Reallusion.Import
 
             // clear the animation controller + override controller
             // remove the on-disk temporary controller
-            // re-apply the original [Serialized]AnimationController 
-            DestroyAnimationController();
-
+            ResetToBaseAnimatorController();
+            
+            //DestroyAnimationController();
             // revert character pose to original T-Pose
             ResetCharacterPose();
-
             // user can now select a new animation for playing
         }
 
@@ -1361,6 +1382,9 @@ namespace Reallusion.Import
                         Util.TrySerializeAssetToEditorPrefs(OriginalClip, WindowManager.clipKey);
                         Util.SerializeFloatToEditorPrefs(time, WindowManager.timeKey);
 
+                        //replace original animator controller
+                        ResetToBaseAnimatorController();
+
                         break;
                     }
                 case PlayModeStateChange.EnteredPlayMode:
@@ -1372,9 +1396,10 @@ namespace Reallusion.Import
                         //}
                         //UnityEditor.SceneView.FocusWindowIfItsOpen(typeof(UnityEditor.SceneView));
                         //ResetAnimationPlayer();
-                        play = false;
-                        CharacterAnimator.Play(controlStateHash, 0, time);
-                        CharacterAnimator.SetFloat(paramDirection, play ? playbackSpeed : 0f);
+                        //Debug.LogWarning("ENTERED PLAY MODE - ANIMPLAYERGUI DELEGATE");
+                        //play = false;
+                        //CharacterAnimator.Play(controlStateHash, 0, time);
+                        //CharacterAnimator.SetFloat(paramDirection, play ? playbackSpeed : 0f);
 
                         break;
                     }
