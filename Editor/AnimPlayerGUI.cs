@@ -187,7 +187,7 @@ namespace Reallusion.Import
             if (!doneInitFace) InitFace();
 
             // finally, apply the face
-            //ApplyFace();
+            ApplyFace();
 
             if (WorkingClip && CharacterAnimator)
             {
@@ -254,7 +254,7 @@ namespace Reallusion.Import
         [SerializeField]
         private static AnimatorState playingState;
         [SerializeField]
-        private static int controlStateHash;
+        public static int controlStateHash { get; set; }
 
         // animator/animation settings
         public static bool FootIK = true;
@@ -298,9 +298,10 @@ namespace Reallusion.Import
         [SerializeField]
         private static List<BoneItem> boneItemList;
         [SerializeField]
-        private static bool isTracking = false;
+        public static bool isTracking = false;
         [SerializeField]
         private static GameObject lastTracked;
+        private static string boneNotFound = "not found";
 
         // ----------------------------------------------------------------------------
 
@@ -1106,16 +1107,20 @@ namespace Reallusion.Import
             // if the application is playing:
             //                              set the flag to false
             //                              entering play mode maually wont cause callback to refocus on the scene
-
-            Util.SerializeBoolToEditorPrefs(true, WindowManager.sceneFocus);
+            if (!EditorApplication.isPlaying)
+                Util.SerializeBoolToEditorPrefs(true, WindowManager.sceneFocus);
+            
             EditorApplication.isPlaying = !EditorApplication.isPlaying;
         }
 
         public static void UpdateAnimator()
         {
-            if (EditorApplication.isPlaying) return;
-            CharacterAnimator.Play(controlStateHash, 0, time);
-            CharacterAnimator.Update(time);
+            if (EditorApplication.isPlaying || CharacterAnimator == null) return;
+            if (CharacterAnimator.runtimeAnimatorController.name == overrideName)
+            {
+                CharacterAnimator.Play(controlStateHash, 0, time);
+                CharacterAnimator.Update(time);
+            }
         }
 
         private static string TimeText()
@@ -1185,13 +1190,13 @@ namespace Reallusion.Import
         }
 
         public static string FindSkeletonBoneName(string humanBoneName, Avatar avatar)
-        {
+        {            
             for (int i = 0; i < avatar.humanDescription.human.Length; i++)
             {
                 if (avatar.humanDescription.human[i].humanName.Equals(humanBoneName, System.StringComparison.InvariantCultureIgnoreCase))
                     return avatar.humanDescription.human[i].boneName;
             }
-            return "not found";
+            return boneNotFound;
         }
 
         public class BoneItem
@@ -1214,7 +1219,10 @@ namespace Reallusion.Import
 
             foreach (string boneName in orderedHumanBones)
             {
-                boneItemList.Add(new BoneItem(boneName, FindSkeletonBoneName(boneName, CharacterAnimator.avatar)));
+                string skeletonBoneName = FindSkeletonBoneName(boneName, CharacterAnimator.avatar);
+                if (skeletonBoneName != boneNotFound)
+                    boneItemList.Add(new BoneItem(boneName, skeletonBoneName));
+                //boneItemList.Add(new BoneItem(boneName, FindSkeletonBoneName(boneName, CharacterAnimator.avatar)));
             }
         }
 
@@ -1252,6 +1260,22 @@ namespace Reallusion.Import
             scene.FrameSelected(true, true);
             scene.FrameSelected(true, true);
             scene.Repaint();
+        }
+
+        public static void ReEstablishTracking(string humanBoneName)
+        {
+            //if (boneItemList == null)
+            MakeBoneMenuList();
+            foreach (BoneItem boneItem in boneItemList)
+            {
+                if (boneItem.humanBoneName == humanBoneName)
+                {
+                    boneItem.selected = true;
+                    isTracking = true;
+                    TrackBone(boneItem);
+                    return;
+                }
+            }
         }
 
         private static bool TrySelectBone(BoneItem boneSelection)
@@ -1380,7 +1404,20 @@ namespace Reallusion.Import
                     {
                         play = false;
                         Util.TrySerializeAssetToEditorPrefs(OriginalClip, WindowManager.clipKey);
+                        Util.SerializeIntToEditorPrefs(controlStateHash, WindowManager.controlStateHashKey);
                         Util.SerializeFloatToEditorPrefs(time, WindowManager.timeKey);
+                        Util.SerializeBoolToEditorPrefs(isTracking, WindowManager.trackingStatusKey);
+                        if (isTracking)
+                        {                            
+                            foreach (BoneItem boneItem in boneItemList)
+                            {
+                                if (boneItem.selected)
+                                {
+                                    Util.SerializeStringToEditorPrefs(boneItem.humanBoneName, WindowManager.lastTrackedBoneKey);
+                                }
+
+                            }
+                        }
 
                         //replace original animator controller
                         ResetToBaseAnimatorController();
@@ -1388,19 +1425,7 @@ namespace Reallusion.Import
                         break;
                     }
                 case PlayModeStateChange.EnteredPlayMode:
-                    {
-                        //if (sceneFocus)
-                        //{
-                        //    SceneView.lastActiveSceneView.Focus();
-                        //    sceneFocus = false;
-                        //}
-                        //UnityEditor.SceneView.FocusWindowIfItsOpen(typeof(UnityEditor.SceneView));
-                        //ResetAnimationPlayer();
-                        //Debug.LogWarning("ENTERED PLAY MODE - ANIMPLAYERGUI DELEGATE");
-                        //play = false;
-                        //CharacterAnimator.Play(controlStateHash, 0, time);
-                        //CharacterAnimator.SetFloat(paramDirection, play ? playbackSpeed : 0f);
-
+                    {                        
                         break;
                     }
                 case PlayModeStateChange.ExitingPlayMode:

@@ -51,7 +51,9 @@ namespace Reallusion.Import
         public const string sceneFocus = "RL_Scene_Focus_Key_0000";
         public const string clipKey = "RL_Animation_Asset_Key_0000";
         public const string animatorControllerKey = "RL_Character_Animator_Ctrl_Key_0000";
-        public const string controlStateHash = "RL_Animator_Ctrl_Hash_Key_0000";
+        public const string trackingStatusKey = "RL_Bone_Tracking_Key_0000";
+        public const string lastTrackedBoneKey = "RL_Last_Tracked_Bone_Key_0000";
+        public const string controlStateHashKey = "RL_Animator_Ctrl_Hash_Key_0000";
         public const string timeKey = "RL_Animation_Play_Position_Key_0000";
 
 
@@ -123,6 +125,25 @@ namespace Reallusion.Import
                             }
                         }
 
+                        if (Util.TryDeserializeIntFromEditorPrefs(out int hash, WindowManager.controlStateHashKey))
+                        {
+                            AnimPlayerGUI.controlStateHash = hash;
+                        }
+
+                        
+                        if (Util.TryDeSerializeBoolFromEditorPrefs(out bool track, WindowManager.trackingStatusKey))
+                        {
+                            AnimPlayerGUI.isTracking = track;
+                            if (track)
+                            {
+                                if (Util.TryDeserializeStringFromEditorPrefs(out string bone, WindowManager.lastTrackedBoneKey))
+                                {
+                                    AnimPlayerGUI.ReEstablishTracking(bone);
+                                }
+                            }
+                            Util.SerializeBoolToEditorPrefs(false, WindowManager.trackingStatusKey);
+                        }
+                       
                         break;
                     }
                 case PlayModeStateChange.ExitingPlayMode:

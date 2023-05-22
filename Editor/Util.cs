@@ -22,6 +22,7 @@ using UnityEngine;
 using UnityEditor;
 using Object = UnityEngine.Object;
 using System.Linq;
+using Unity.Plastic.Newtonsoft.Json.Linq;
 
 namespace Reallusion.Import
 {
@@ -1302,5 +1303,44 @@ namespace Reallusion.Import
                 return true;
             }
         }
+
+        public static void SerializeStringToEditorPrefs(string value, string editorPrefsKey)
+        {
+            EditorPrefs.SetString(editorPrefsKey, value);
+        }
+
+        public static bool TryDeserializeStringFromEditorPrefs(out string value, string editorPrefsKey)
+        {
+            if (!EditorPrefs.HasKey(editorPrefsKey))
+            {
+                value = null;
+                return false;
+            }
+            else
+            {
+                value = EditorPrefs.GetString(editorPrefsKey);
+                return true;
+            }
+        }
+
+        public static void SerializeIntToEditorPrefs(int value, string editorPrefsKey)
+        {
+            EditorPrefs.SetInt(editorPrefsKey, value);
+        }
+
+        public static bool TryDeserializeIntFromEditorPrefs(out int value, string editorPrefsKey)
+        {
+            if (!EditorPrefs.HasKey(editorPrefsKey))
+            {
+                value = 0;
+                return false;
+            }
+            else
+            {
+                value = EditorPrefs.GetInt(editorPrefsKey);
+                return true;
+            }
+        }
+
     }    
 }
