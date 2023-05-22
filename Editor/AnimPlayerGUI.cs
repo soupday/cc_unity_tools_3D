@@ -329,6 +329,9 @@ namespace Reallusion.Import
 
             // reset the animation player
             ResetAnimationPlayer();
+
+
+            
         }
         
         private static AnimatorController CreateAnimatiorController()
@@ -341,8 +344,7 @@ namespace Reallusion.Import
             // play mode parameters
             a.AddParameter(paramDirection, AnimatorControllerParameterType.Float);
             AnimatorStateMachine rootStateMachine = a.layers[0].stateMachine;
-            AnimatorState baseState = rootStateMachine.AddState(defaultState);
-            controlStateHash = baseState.nameHash;
+            AnimatorState baseState = rootStateMachine.AddState(defaultState);            
             baseState.iKOnFeet = FootIK;
             // play mode parameters
             baseState.speedParameter = paramDirection;
@@ -1042,6 +1044,11 @@ namespace Reallusion.Import
                 CharacterAnimator.Play(controlStateHash, 0, time);
                 CharacterAnimator.SetFloat(paramDirection, playbackSpeed);
             }
+            else
+            {
+                CharacterAnimator.Update(time);
+                CharacterAnimator.Play(controlStateHash, 0, time);
+            }
         }
 
         // "PauseButton"
@@ -1118,8 +1125,8 @@ namespace Reallusion.Import
             if (EditorApplication.isPlaying || CharacterAnimator == null) return;
             if (CharacterAnimator.runtimeAnimatorController.name == overrideName)
             {
+                CharacterAnimator.Update(0f);
                 CharacterAnimator.Play(controlStateHash, 0, time);
-                CharacterAnimator.Update(time);
             }
         }
 
