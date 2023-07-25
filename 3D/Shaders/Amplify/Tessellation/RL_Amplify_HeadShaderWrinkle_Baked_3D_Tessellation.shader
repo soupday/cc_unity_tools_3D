@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1.5
+// Made with Amplify Shader Editor v1.9.1.8
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/RL_HeadShaderWrinkle_Baked_3D_Tessellation"
 {
@@ -387,7 +387,7 @@ Shader "Reallusion/Amplify/RL_HeadShaderWrinkle_Baked_3D_Tessellation"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19105
+Version=19108
 Node;AmplifyShaderEditor.CommentaryNode;179;-1654.055,1265.129;Inherit;False;1013.896;323.3456;Comment;5;172;171;169;170;151;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;176;-2396.917,-618.7704;Inherit;False;1740.638;654.7353;Comment;11;219;218;220;146;153;156;147;154;155;148;259;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;175;-2017.212,-1175.145;Inherit;False;1360.688;491.4623;Comment;7;200;174;173;145;215;216;217;;1,1,1,1;0;0
@@ -590,4 +590,4 @@ WireConnection;259;0;153;0
 WireConnection;252;7;251;0
 WireConnection;260;7;251;0
 ASEEND*/
-//CHKSM=3F8FCB15FEE77B696269CEAD6C20FBAB8B8CD15D
+//CHKSM=F5C9EFF8B036D5E94084A1AD2A2BA18428152932

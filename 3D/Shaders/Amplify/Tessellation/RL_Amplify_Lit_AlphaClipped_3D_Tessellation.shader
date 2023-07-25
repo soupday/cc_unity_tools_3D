@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1.5
+// Made with Amplify Shader Editor v1.9.1.8
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/Amplify Lit AlphaClipped 3D Tessellation"
 {
@@ -114,7 +114,7 @@ Shader "Reallusion/Amplify/Amplify Lit AlphaClipped 3D Tessellation"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19105
+Version=19108
 Node;AmplifyShaderEditor.CommentaryNode;179;-1648.736,1265.129;Inherit;False;1008.577;308.7186;Comment;5;151;170;169;171;172;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;176;-2020.17,-491.7789;Inherit;False;1374.699;518.4456;Comment;7;153;148;146;147;154;156;155;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;175;-1540.517,-1026.539;Inherit;False;886.6949;482.6302;Comment;6;200;174;145;173;210;212;;1,1,1,1;0;0
@@ -194,4 +194,4 @@ WireConnection;202;4;207;0
 WireConnection;202;5;208;0
 WireConnection;202;10;211;0
 ASEEND*/
-//CHKSM=9E3F956E47A0CC4DFBE522ED38791224BCFF1F08
+//CHKSM=A670F51B9EE8E50773EABACDDAAF3260178854C7
