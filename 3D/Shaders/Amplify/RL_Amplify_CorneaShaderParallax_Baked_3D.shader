@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1.5
+// Made with Amplify Shader Editor v1.9.1.8
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/RL_CorneaShaderParallax_Baked_3D"
 {
@@ -285,7 +285,7 @@ Shader "Reallusion/Amplify/RL_CorneaShaderParallax_Baked_3D"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19105
+Version=19108
 Node;AmplifyShaderEditor.RangedFloatNode;72;-5475.112,-249.8526;Inherit;False;Property;_IrisDepth;Iris Depth;17;0;Create;True;0;0;0;False;0;False;0.3;0.2997;0.1;1;0;1;FLOAT;0
 Node;AmplifyShaderEditor.RegisterLocalVarNode;219;-5107.964,-248.4698;Inherit;False;irisDepth;-1;True;1;0;FLOAT;0;False;1;FLOAT;0
 Node;AmplifyShaderEditor.CommentaryNode;168;-5329.34,-1188.403;Inherit;False;1999.866;565.8079;;12;73;74;70;71;220;69;83;93;91;89;88;373;Pupil Scaling;1,0.9427493,0,1;0;0
@@ -474,4 +474,4 @@ WireConnection;426;4;429;0
 WireConnection;426;5;430;0
 WireConnection;426;7;431;0
 ASEEND*/
-//CHKSM=9771D4C0689D7B9F6609AF4E2F633A910027AEC9
+//CHKSM=FD979840663A5A8C320760BA27BE1F391A85EAB3

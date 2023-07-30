@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1.5
+// Made with Amplify Shader Editor v1.9.1.8
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/Amplify Lit DblSided 3D"
 {
@@ -96,7 +96,7 @@ Shader "Reallusion/Amplify/Amplify Lit DblSided 3D"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19105
+Version=19108
 Node;AmplifyShaderEditor.CommentaryNode;179;-1648.736,1265.129;Inherit;False;1008.577;308.7186;Comment;5;151;170;169;171;172;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;176;-2020.17,-491.7789;Inherit;False;1374.699;518.4456;Comment;7;153;148;146;147;154;156;155;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;175;-1540.517,-1026.539;Inherit;False;886.6949;482.6302;Comment;4;200;174;145;173;;1,1,1,1;0;0
@@ -165,4 +165,4 @@ WireConnection;202;3;206;0
 WireConnection;202;4;207;0
 WireConnection;202;5;208;0
 ASEEND*/
-//CHKSM=26D14D4C9D299700D2A058D7970B93B0D5FF13C2
+//CHKSM=968FDFEEC4152D652A2E7783846D50E21BC180EE

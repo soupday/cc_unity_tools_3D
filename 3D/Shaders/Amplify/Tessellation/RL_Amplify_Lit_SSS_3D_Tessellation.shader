@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1.5
+// Made with Amplify Shader Editor v1.9.1.8
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/LitSSSRL_Amplify_Lit_SSS_3D_Tessellation"
 {
@@ -192,7 +192,7 @@ Shader "Reallusion/Amplify/LitSSSRL_Amplify_Lit_SSS_3D_Tessellation"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19105
+Version=19108
 Node;AmplifyShaderEditor.CommentaryNode;179;-1648.736,1265.129;Inherit;False;1008.577;308.7186;Comment;5;151;170;169;171;172;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;176;-2020.17,-491.7789;Inherit;False;1374.699;518.4456;Comment;7;153;148;146;147;154;156;155;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;175;-1540.517,-1026.539;Inherit;False;886.6949;482.6302;Comment;4;200;174;145;173;;1,1,1,1;0;0
@@ -287,4 +287,4 @@ WireConnection;202;5;208;0
 WireConnection;202;6;209;0
 WireConnection;202;7;210;0
 ASEEND*/
-//CHKSM=CF695ABAE5BE017AA4EFE50F7A95D10062D85CC7
+//CHKSM=BDE1D257ED3096779FE2BE2A61AFF3D272E3D2AE

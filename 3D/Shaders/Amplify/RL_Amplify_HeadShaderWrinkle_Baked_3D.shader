@@ -1,4 +1,4 @@
-// Made with Amplify Shader Editor v1.9.1.5
+// Made with Amplify Shader Editor v1.9.1.8
 // Available at the Unity Asset Store - http://u3d.as/y3X 
 Shader "Reallusion/Amplify/RL_HeadShaderWrinkle_Baked_3D"
 {
@@ -373,7 +373,7 @@ Shader "Reallusion/Amplify/RL_HeadShaderWrinkle_Baked_3D"
 	Fallback "Diffuse"
 }
 /*ASEBEGIN
-Version=19105
+Version=19108
 Node;AmplifyShaderEditor.CommentaryNode;179;-1654.055,1265.129;Inherit;False;1013.896;323.3456;Comment;5;172;171;169;170;151;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;176;-2369.917,-618.7704;Inherit;False;1713.638;647.7353;Comment;11;153;219;218;220;146;156;147;154;155;148;258;;1,1,1,1;0;0
 Node;AmplifyShaderEditor.CommentaryNode;175;-2017.212,-1175.145;Inherit;False;1360.688;491.4623;Comment;7;200;174;173;145;215;216;217;;1,1,1,1;0;0
@@ -576,4 +576,4 @@ WireConnection;258;0;153;0
 WireConnection;252;7;251;0
 WireConnection;259;7;251;0
 ASEEND*/
-//CHKSM=3E6E6366B682C115A4F52B5EF6609627B8422BB9
+//CHKSM=3DC1CBA083358C1DCC7DA0FE5B0408E420B9E90E
