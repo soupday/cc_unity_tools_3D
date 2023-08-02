@@ -112,9 +112,6 @@ namespace Reallusion.Import
             {
                 //EditorApplication.update -= UpdateDelegate;
 
-                //if (AnimationMode.InAnimationMode())
-                //    AnimationMode.StopAnimationMode();
-
 #if SCENEVIEW_OVERLAY_COMPATIBLE
                 //2021.2.0a17+          
                 AnimRetargetOverlay.HideAll();
@@ -271,7 +268,6 @@ namespace Reallusion.Import
             // All retarget controls
             GUILayout.BeginVertical();
             // Horizontal Group of 3 controls `Hand` `Jaw` and `Blendshapes`
-            //EditorGUI.BeginDisabledGroup(!AnimationMode.InAnimationMode());
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical("box", GUILayout.Width(baseControlWidth));  // Hand control box - Width used to impose layout footprint for overlay
             GUILayout.BeginHorizontal();
@@ -279,8 +275,7 @@ namespace Reallusion.Import
             {
                 handPose++;
                 if (handPose > 2) handPose = 0;
-                ApplyPose(handPose);
-                AnimPlayerGUI.SampleOnce();
+                ApplyPose(handPose);                
             }
             GUILayout.BeginVertical();
 
@@ -297,7 +292,6 @@ namespace Reallusion.Import
             if (EditorGUI.EndChangeCheck())
             {
                 ApplyPose(handPose);
-                AnimPlayerGUI.SampleOnce();
             }
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
@@ -309,7 +303,6 @@ namespace Reallusion.Import
             {
                 closeMouth = !closeMouth;
                 CloseMouthToggle(closeMouth);
-                AnimPlayerGUI.SampleOnce();
             }
             GUILayout.EndVertical(); // End of Jaw control
             
@@ -353,7 +346,7 @@ namespace Reallusion.Import
             if (GUILayout.Button(new GUIContent(blendshapeImage, "Copy all BlendShape animations from the selected animation clip to all of the relevant objects (e.g. facial hair) in the selected Scene Model."), GUILayout.Width(largeIconDim), GUILayout.Height(largeIconDim)))
             {
                 RetargetBlendShapes(OriginalClip, WorkingClip, CharacterAnimator.gameObject);
-                AnimPlayerGUI.SampleOnce();
+                AnimPlayerGUI.UpdateAnimator();
             }
             GUI.backgroundColor = backgroundColor;
             GUI.enabled = true;
@@ -371,9 +364,6 @@ namespace Reallusion.Import
             if (EditorGUI.EndChangeCheck())
             {
                 OffsetShoulders();
-                CharacterAnimator.gameObject.transform.position = animatorPosition;
-                CharacterAnimator.gameObject.transform.rotation = animatorRotation;
-                AnimPlayerGUI.SampleOnce();
             }
 
             EditorGUI.BeginChangeCheck();
@@ -384,9 +374,6 @@ namespace Reallusion.Import
             if (EditorGUI.EndChangeCheck())
             {
                 OffsetArms();
-                CharacterAnimator.gameObject.transform.position = animatorPosition;
-                CharacterAnimator.gameObject.transform.rotation = animatorRotation;
-                AnimPlayerGUI.SampleOnce();
             }
 
             EditorGUI.BeginChangeCheck();
@@ -396,10 +383,7 @@ namespace Reallusion.Import
             GUILayout.EndHorizontal();
             if (EditorGUI.EndChangeCheck())
             {
-                OffsetArmsFB();
-                CharacterAnimator.gameObject.transform.position = animatorPosition;
-                CharacterAnimator.gameObject.transform.rotation = animatorRotation;
-                AnimPlayerGUI.SampleOnce();
+                OffsetArmsFB();                
             }
 
             EditorGUI.BeginChangeCheck();
@@ -409,10 +393,7 @@ namespace Reallusion.Import
             GUILayout.EndHorizontal();
             if (EditorGUI.EndChangeCheck())
             {
-                OffsetLegs();
-                CharacterAnimator.gameObject.transform.position = animatorPosition;
-                CharacterAnimator.gameObject.transform.rotation = animatorRotation;
-                AnimPlayerGUI.SampleOnce();
+                OffsetLegs();                
             }
 
             EditorGUI.BeginChangeCheck();
@@ -422,10 +403,7 @@ namespace Reallusion.Import
             GUILayout.EndHorizontal();
             if (EditorGUI.EndChangeCheck())
             {
-                OffsetHeel();
-                CharacterAnimator.gameObject.transform.position = animatorPosition;
-                CharacterAnimator.gameObject.transform.rotation = animatorRotation;
-                AnimPlayerGUI.SampleOnce();
+                OffsetHeel();                
             }
 
             EditorGUI.BeginChangeCheck();
@@ -435,10 +413,7 @@ namespace Reallusion.Import
             GUILayout.EndHorizontal();
             if (EditorGUI.EndChangeCheck())
             {
-                OffsetHeight();                
-                CharacterAnimator.gameObject.transform.position = animatorPosition;
-                CharacterAnimator.gameObject.transform.rotation = animatorRotation;
-                AnimPlayerGUI.SampleOnce();
+                OffsetHeight();
             }
             GUILayout.EndVertical(); // End of animation curve adjustment sliders
 
@@ -461,9 +436,6 @@ namespace Reallusion.Import
             if (GUILayout.Button(new GUIContent(resetImage, "Reset all slider settings and applied modifications."), GUILayout.Width(smallIconDim), GUILayout.Height(smallIconDim)))
             {                
                 ResetClip();
-                CharacterAnimator.gameObject.transform.position = animatorPosition;
-                CharacterAnimator.gameObject.transform.rotation = animatorRotation;
-                AnimPlayerGUI.SampleOnce();
             }
             GUILayout.EndVertical();
             GUILayout.BeginVertical("box"); // save button
@@ -545,8 +517,10 @@ namespace Reallusion.Import
                 }
                 jawCurve.keys = jawKeys;
             }
-
-            AnimationUtility.SetEditorCurve(WorkingClip, targetBinding, jawCurve);
+            AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
+            AnimationUtility.SetEditorCurve(swapClip, targetBinding, jawCurve);
+            AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);
+            AnimPlayerGUI.UpdateAnimator();
         }
 
 
@@ -571,13 +545,14 @@ namespace Reallusion.Import
                         SetPose(closedHandPose);
                         break;
                     }
-
             }
         }
 
         static void SetPose(Dictionary<string, float> pose)
         {
             if (!(OriginalClip && WorkingClip)) return;
+
+            AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
 
             EditorCurveBinding[] curveBindings = AnimationUtility.GetCurveBindings(OriginalClip);
             foreach (EditorCurveBinding binding in curveBindings)
@@ -593,15 +568,19 @@ namespace Reallusion.Import
                             keys[i].value = p.Value;
                         }
                         curve.keys = keys;
-                        AnimationUtility.SetEditorCurve(WorkingClip, binding, curve);
+                        AnimationUtility.SetEditorCurve(swapClip, binding, curve);
                     }
                 }
             }
+            AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);
+            AnimPlayerGUI.UpdateAnimator();
         }
 
         static void ResetPose()
         {
             if (!(OriginalClip && WorkingClip)) return;
+
+            AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
 
             EditorCurveBinding[] curveBindings = AnimationUtility.GetCurveBindings(OriginalClip);
             foreach (EditorCurveBinding binding in curveBindings)
@@ -609,9 +588,11 @@ namespace Reallusion.Import
                 if (handCurves.Contains(binding.propertyName))
                 {
                     AnimationCurve curve = AnimationUtility.GetEditorCurve(OriginalClip, binding);
-                    AnimationUtility.SetEditorCurve(WorkingClip, binding, curve);
+                    AnimationUtility.SetEditorCurve(swapClip, binding, curve);
                 }
             }
+            AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);
+            AnimPlayerGUI.UpdateAnimator();
         }
 
         static void OffsetALL()
@@ -625,9 +606,13 @@ namespace Reallusion.Import
             CloseMouthToggle(closeMouth);
             ApplyPose(handPose);            
         }
+
         static void OffsetShoulders()
         {
             if (!(OriginalClip && WorkingClip)) return;
+                        
+            List<EditorCurveBinding> applicableBindings = new List<EditorCurveBinding>();
+            List<AnimationCurve> applicableCurves = new List<AnimationCurve>();
 
             foreach (KeyValuePair<string, EditorCurveBinding> bind in shoulderBindings)
             {
@@ -688,7 +673,6 @@ namespace Reallusion.Import
                         break;
                 }
 
-
                 float diff = shoulderOffset * scale;
                 if (update)
                 {
@@ -696,11 +680,8 @@ namespace Reallusion.Import
                     diff = (backgroundArmOffset + armOffset) * scale;
                 }
 
-
-
                 for (int a = 0; a < keys.Length; a++)
                 {
-
                     keys[a].value = eval ? EvaluateValue(keys[a].value, subtract ? -diff : diff) : keys[a].value + (subtract ? -diff : diff);
                 }
                 curve.keys = keys;
@@ -708,13 +689,21 @@ namespace Reallusion.Import
                 {
                     curve.SmoothTangents(b, 0.0f);
                 }
-                AnimationUtility.SetEditorCurve(WorkingClip, bind.Value, curve);
-            }
+                applicableBindings.Add(bind.Value);
+                applicableCurves.Add(curve);
+            }            
+            AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
+            AnimationUtility.SetEditorCurves(swapClip, applicableBindings.ToArray(), applicableCurves.ToArray());
+            AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);            
+            AnimPlayerGUI.UpdateAnimator();
         }
 
         static void OffsetArms()
         {
             if (!(OriginalClip && WorkingClip)) return;
+
+            List<EditorCurveBinding> applicableBindings = new List<EditorCurveBinding>();
+            List<AnimationCurve> applicableCurves = new List<AnimationCurve>();
 
             foreach (KeyValuePair<string, EditorCurveBinding> bind in armBindings)
             {
@@ -775,13 +764,21 @@ namespace Reallusion.Import
                 {
                     curve.SmoothTangents(b, 0.0f);
                 }
-                AnimationUtility.SetEditorCurve(WorkingClip, bind.Value, curve);
+                applicableBindings.Add(bind.Value);
+                applicableCurves.Add(curve);
             }
+            AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
+            AnimationUtility.SetEditorCurves(swapClip, applicableBindings.ToArray(), applicableCurves.ToArray());
+            AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);
+            AnimPlayerGUI.UpdateAnimator();
         }
 
         static void OffsetArmsFB()
         {
             if (!(OriginalClip && WorkingClip)) return;
+
+            List<EditorCurveBinding> applicableBindings = new List<EditorCurveBinding>();
+            List<AnimationCurve> applicableCurves = new List<AnimationCurve>();
 
             foreach (KeyValuePair<string, EditorCurveBinding> bind in armFBBindings)
             {
@@ -828,13 +825,21 @@ namespace Reallusion.Import
                 {
                     curve.SmoothTangents(b, 0.0f);
                 }
-                AnimationUtility.SetEditorCurve(WorkingClip, bind.Value, curve);
+                applicableBindings.Add(bind.Value);
+                applicableCurves.Add(curve);
             }
+            AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
+            AnimationUtility.SetEditorCurves(swapClip, applicableBindings.ToArray(), applicableCurves.ToArray());
+            AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);
+            AnimPlayerGUI.UpdateAnimator();
         }
 
         static void OffsetLegs()
         {
             if (!(OriginalClip && WorkingClip)) return;
+
+            List<EditorCurveBinding> applicableBindings = new List<EditorCurveBinding>();
+            List<AnimationCurve> applicableCurves = new List<AnimationCurve>();
 
             foreach (KeyValuePair<string, EditorCurveBinding> bind in legBindings)
             {
@@ -889,13 +894,21 @@ namespace Reallusion.Import
                 {
                     curve.SmoothTangents(b, 0.0f);
                 }
-                AnimationUtility.SetEditorCurve(WorkingClip, bind.Value, curve);
+                applicableBindings.Add(bind.Value);
+                applicableCurves.Add(curve);
             }
+            AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
+            AnimationUtility.SetEditorCurves(swapClip, applicableBindings.ToArray(), applicableCurves.ToArray());
+            AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);
+            AnimPlayerGUI.UpdateAnimator();
         }
 
         static void OffsetHeel()
         {
             if (!(OriginalClip && WorkingClip)) return;
+
+            List<EditorCurveBinding> applicableBindings = new List<EditorCurveBinding>();
+            List<AnimationCurve> applicableCurves = new List<AnimationCurve>();
 
             foreach (KeyValuePair<string, EditorCurveBinding> bind in heelBindings)
             {
@@ -950,13 +963,21 @@ namespace Reallusion.Import
                 {
                     curve.SmoothTangents(b, 0.0f);
                 }
-                AnimationUtility.SetEditorCurve(WorkingClip, bind.Value, curve);
+                applicableBindings.Add(bind.Value);
+                applicableCurves.Add(curve);
             }
+            AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
+            AnimationUtility.SetEditorCurves(swapClip, applicableBindings.ToArray(), applicableCurves.ToArray());
+            AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);
+            AnimPlayerGUI.UpdateAnimator();
         }
 
         static void OffsetHeight()
         {
             if (!(OriginalClip && WorkingClip)) return;
+
+            List<EditorCurveBinding> applicableBindings = new List<EditorCurveBinding>();
+            List<AnimationCurve> applicableCurves = new List<AnimationCurve>();
 
             foreach (KeyValuePair<string, EditorCurveBinding> bind in heightBindings)
             {
@@ -974,8 +995,13 @@ namespace Reallusion.Import
                 {
                     curve.SmoothTangents(b, 0.0f);
                 }
-                AnimationUtility.SetEditorCurve(WorkingClip, bind.Value, curve);
+                applicableBindings.Add(bind.Value);
+                applicableCurves.Add(curve);
             }
+            AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
+            AnimationUtility.SetEditorCurves(swapClip, applicableBindings.ToArray(), applicableCurves.ToArray());
+            AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);
+            AnimPlayerGUI.UpdateAnimator();
         }
 
         static float EvaluateValue(float currentKeyValue, float deltaValue)
