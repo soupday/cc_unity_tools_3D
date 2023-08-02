@@ -313,7 +313,7 @@ namespace Reallusion.Import
         private static void ApplyDefaultSettings()
         {
             flagSettings = AnimatorFlags.AutoLoopPlayback;
-            FootIK = true;
+            SetFootIK(true);
             CharacterAnimator.SetFloat(paramDirection, 0f);
             if (CharacterAnimator != null)
             {
@@ -321,32 +321,39 @@ namespace Reallusion.Import
             }
         }
 
-        // Important IK disable function used by the retargeter (or you can't see the effects of changing the heel curves)
-        public static void DisableFootIK()
+        // Important IK enable/disable function used by the retargeter
+        // (or you can't see the effects of changing the heel curves)
+        public static void SetFootIK(bool enable)
         {
-            FootIK = false;
-            AnimatorControllerLayer[] allLayer = playbackAnimatorController.layers;
-            for (int i = 0; i < allLayer.Length; i++)
+            FootIK = enable;
+
+            if (playbackAnimatorController)
             {
-                ChildAnimatorState[] states = allLayer[i].stateMachine.states;
-                for (int j = 0; j < states.Length; j++)
+                AnimatorControllerLayer[] allLayer = playbackAnimatorController.layers;
+                for (int i = 0; i < allLayer.Length; i++)
                 {
-                    if (states[j].state.nameHash == controlStateHash)
+                    ChildAnimatorState[] states = allLayer[i].stateMachine.states;
+                    for (int j = 0; j < states.Length; j++)
                     {
-                        states[j].state.iKOnFeet = FootIK;
-                        allLayer[i].iKPass = FootIK;
+                        if (states[j].state.nameHash == controlStateHash)
+                        {
+                            states[j].state.iKOnFeet = FootIK;
+                            allLayer[i].iKPass = FootIK;
+                        }
                     }
                 }
-            }
 
-            playbackAnimatorController.layers = allLayer;
+                if (EditorApplication.isPlaying) CharacterAnimator.gameObject.SetActive(false);
+                playbackAnimatorController.layers = allLayer;
+                if (EditorApplication.isPlaying) CharacterAnimator.gameObject.SetActive(true);                
+            }
         }
 
         // called by the retargetter to revert all settings to default
         public static void ForceSettingsReset()
         {
             ApplyDefaultSettings();
-            DisableFootIK();
+            SetFootIK(false);
             SetClipSettings(WorkingClip);
             FirstFrameButton();
         }
@@ -741,22 +748,7 @@ namespace Reallusion.Import
         {
             // Alternative method - retrieve a copy of the layers - modify then reapply
             // find the controlstate by nameHash
-            AnimatorControllerLayer[] allLayer = playbackAnimatorController.layers;
-            for (int i = 0; i < allLayer.Length; i++)
-            {
-                ChildAnimatorState[] states = allLayer[i].stateMachine.states;
-                for (int j = 0; j < states.Length; j++)
-                {
-                    if (states[j].state.nameHash == controlStateHash)
-                    {
-                        states[j].state.iKOnFeet = FootIK;
-                        allLayer[i].iKPass = FootIK;
-                    }
-                }
-            }
-            if (EditorApplication.isPlaying) CharacterAnimator.gameObject.SetActive(false);
-            playbackAnimatorController.layers = allLayer;
-            if (EditorApplication.isPlaying) CharacterAnimator.gameObject.SetActive(true);
+            SetFootIK(FootIK);
 
             // originally using the cached default state directly ...
             // both methods encounter errors when changing foot ik during runtime
