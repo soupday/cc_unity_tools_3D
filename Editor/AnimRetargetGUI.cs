@@ -613,6 +613,19 @@ namespace Reallusion.Import
             ApplyPose(handPose);            
         }
 
+        static void SetEditorCurves(AnimationClip clip, List<EditorCurveBinding> bindings, List<AnimationCurve> curves)
+        {
+#if UNITY_2020_3_OR_NEWER
+            AnimationUtility.SetEditorCurves(clip, bindings.ToArray(), curves.ToArray());
+#else
+            int numClips = bindings.Count;
+            for (int i = 0; i < numClips; i++)
+            {
+                AnimationUtility.SetEditorCurve(clip, bindings[i], curves[i]);
+            }
+#endif
+        }
+
         static void OffsetShoulders()
         {
             if (!(OriginalClip && WorkingClip)) return;
@@ -699,7 +712,7 @@ namespace Reallusion.Import
                 applicableCurves.Add(curve);
             }            
             AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
-            AnimationUtility.SetEditorCurves(swapClip, applicableBindings.ToArray(), applicableCurves.ToArray());
+            SetEditorCurves(swapClip, applicableBindings, applicableCurves);
             AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);            
             AnimPlayerGUI.UpdateAnimator();
         }
@@ -774,7 +787,7 @@ namespace Reallusion.Import
                 applicableCurves.Add(curve);
             }
             AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
-            AnimationUtility.SetEditorCurves(swapClip, applicableBindings.ToArray(), applicableCurves.ToArray());
+            SetEditorCurves(swapClip, applicableBindings, applicableCurves);
             AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);
             AnimPlayerGUI.UpdateAnimator();
         }
@@ -835,7 +848,7 @@ namespace Reallusion.Import
                 applicableCurves.Add(curve);
             }
             AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
-            AnimationUtility.SetEditorCurves(swapClip, applicableBindings.ToArray(), applicableCurves.ToArray());
+            SetEditorCurves(swapClip, applicableBindings, applicableCurves);
             AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);
             AnimPlayerGUI.UpdateAnimator();
         }
@@ -904,7 +917,7 @@ namespace Reallusion.Import
                 applicableCurves.Add(curve);
             }
             AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
-            AnimationUtility.SetEditorCurves(swapClip, applicableBindings.ToArray(), applicableCurves.ToArray());
+            SetEditorCurves(swapClip, applicableBindings, applicableCurves);
             AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);
             AnimPlayerGUI.UpdateAnimator();
         }
@@ -973,7 +986,7 @@ namespace Reallusion.Import
                 applicableCurves.Add(curve);
             }
             AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
-            AnimationUtility.SetEditorCurves(swapClip, applicableBindings.ToArray(), applicableCurves.ToArray());
+            SetEditorCurves(swapClip, applicableBindings, applicableCurves);
             AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);
             AnimPlayerGUI.UpdateAnimator();
         }
@@ -1005,7 +1018,7 @@ namespace Reallusion.Import
                 applicableCurves.Add(curve);
             }
             AnimationClip swapClip = AnimPlayerGUI.CloneClip(WorkingClip);
-            AnimationUtility.SetEditorCurves(swapClip, applicableBindings.ToArray(), applicableCurves.ToArray());
+            SetEditorCurves(swapClip, applicableBindings, applicableCurves);
             AnimPlayerGUI.SelectOverrideAnimationWithoutReset(swapClip, AnimPlayerGUI.animatorOverrideController);
             AnimPlayerGUI.UpdateAnimator();
         }
