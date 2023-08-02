@@ -151,11 +151,17 @@ namespace Reallusion.Import
             unlockedImage = Reallusion.Import.Util.FindTexture(folders, "RLIcon_Unlocked");
 
             RebuildClip();
+
+            // reset all the clip flags to their default vaules            
+            // set the animation player's Foot IK to off
+            AnimPlayerGUI.ForceSettingsReset();
+            AnimPlayerGUI.UpdateAnimator();
         }        
 
         static void CleanUp()
-        {
-
+        {            
+            // reset the player fully with the currently selected clip
+            AnimPlayerGUI.SetupCharacterAndAnimation();
         }
 
         public static void ResetClip()

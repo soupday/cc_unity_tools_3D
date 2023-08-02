@@ -321,6 +321,36 @@ namespace Reallusion.Import
             }
         }
 
+        // Important IK disable function used by the retargeter (or you can't see the effects of changing the heel curves)
+        public static void DisableFootIK()
+        {
+            FootIK = false;
+            AnimatorControllerLayer[] allLayer = playbackAnimatorController.layers;
+            for (int i = 0; i < allLayer.Length; i++)
+            {
+                ChildAnimatorState[] states = allLayer[i].stateMachine.states;
+                for (int j = 0; j < states.Length; j++)
+                {
+                    if (states[j].state.nameHash == controlStateHash)
+                    {
+                        states[j].state.iKOnFeet = FootIK;
+                        allLayer[i].iKPass = FootIK;
+                    }
+                }
+            }
+
+            playbackAnimatorController.layers = allLayer;
+        }
+
+        // called by the retargetter to revert all settings to default
+        public static void ForceSettingsReset()
+        {
+            ApplyDefaultSettings();
+            DisableFootIK();
+            SetClipSettings(WorkingClip);
+            FirstFrameButton();
+        }
+
         private static void SelectOverrideAnimation(AnimationClip clip, AnimatorOverrideController aoc)
         {
             ResetAnimationPlayer();            
@@ -552,14 +582,14 @@ namespace Reallusion.Import
                 GUILayout.BeginHorizontal();
 
                 GUILayout.Space(4f);
-
+                EditorGUI.BeginDisabledGroup(AnimRetargetGUI.IsPlayerShown());
                 EditorGUI.BeginChangeCheck();
-                FootIK = GUILayout.Toggle(FootIK, new GUIContent("IK", "Toggle feet IK"), guiStyles.settingsButton, GUILayout.Width(24f), GUILayout.Height(24f));
+                FootIK = GUILayout.Toggle(FootIK, new GUIContent("IK", FootIK ? "Toggle feet IK - Currently: ON" : "Toggle feet IK - Currently: OFF"), guiStyles.settingsButton, GUILayout.Width(24f), GUILayout.Height(24f));
                 if (EditorGUI.EndChangeCheck())
                 {
                     ToggleIKButton();
                 }
-
+                EditorGUI.EndDisabledGroup();
                 // Camera Bone Tracker
 
                 if (!CheckTackingStatus())
@@ -597,11 +627,12 @@ namespace Reallusion.Import
                     ResetCharacterAndPlayer();
                 }
 
+                EditorGUI.BeginDisabledGroup(AnimRetargetGUI.IsPlayerShown());
                 if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d__Menu").image, "Animation Clip Preferences"), guiStyles.settingsButton, GUILayout.Width(20f), GUILayout.Height(20f)))
                 {
                     ShowPrefsGenericMenu();
                 }
-
+                EditorGUI.EndDisabledGroup();
 
                 GUILayout.Space(4f);
 
@@ -746,7 +777,7 @@ namespace Reallusion.Import
                 CharacterAnimator.Update(time);
             }
         }
-
+        
         // playback speed slider sets speed multiplier directly in edit mode but requires an update in play mode
         private static void PlaybackSpeedSlider()
         {
