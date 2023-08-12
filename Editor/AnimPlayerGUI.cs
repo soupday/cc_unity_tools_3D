@@ -251,7 +251,7 @@ namespace Reallusion.Import
         [SerializeField]
         public static bool isTracking = false;
         [SerializeField]
-        private static GameObject lastTracked;
+        public static GameObject lastTracked;
         private static string boneNotFound = "not found";
 
         // ----------------------------------------------------------------------------

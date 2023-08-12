@@ -290,6 +290,8 @@ namespace Reallusion.Import
 
         private void AddColliders()
         {
+            
+
             if (!addClothPhysics && !addHairPhysics && !addHairSpringBones)
             {
                 ColliderManager existingColliderManager = prefabInstance.GetComponent<ColliderManager>();
@@ -341,6 +343,43 @@ namespace Reallusion.Import
 
                 if (collider.colliderType.Equals(ColliderType.Capsule))
                 {
+                    Type capsuleColliderType = Physics.GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
+                    var capsuleColliderComponent = g.AddComponent(capsuleColliderType);
+
+                    /*
+                    enum MagicaCapsuleCollider.Direction
+
+                    [InspectorName("X-Axis")]
+                    X = 0,
+
+                    [InspectorName("Y-Axis")]
+                    Y = 1,
+
+                    [InspectorName("Z-Axis")]
+                    Z = 2,
+                    */
+
+                    Physics.SetTypeField(capsuleColliderComponent.GetType(), capsuleColliderComponent, "direction", (int)collider.colliderAxis);
+                    Physics.SetTypeField(capsuleColliderComponent.GetType(), capsuleColliderComponent, "radiusSeparation", false);
+
+                    float r = (collider.radius - collider.margin * Physics.PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                    float h = collider.length * modelScale + r * 2f;
+
+                    //"https://learn.microsoft.com/en-us/dotnet/api/system.type.getmethod?view=netframework-4.8#System_Type_GetMethod_System_String_System_Type___"
+                    MethodInfo setSize = capsuleColliderComponent.GetType().GetMethod("SetSize",
+                                        BindingFlags.Public | BindingFlags.Instance,
+                                        null,
+                                        CallingConventions.Any,
+                                        new Type[] { typeof(Vector3) },
+                                        null);
+                    Vector3 sizeVector = new Vector3(r, r, h);
+                    object[] inputParams = new object[] { sizeVector };
+                    setSize.Invoke(capsuleColliderComponent, inputParams);
+
+                    MethodInfo update = capsuleColliderComponent.GetType().GetMethod("UpdateParameters");
+                    update.Invoke(capsuleColliderComponent, new object[] { });
+
+
                     CapsuleCollider c = g.AddComponent<CapsuleCollider>();
 
                     c.direction = (int)collider.colliderAxis;                    
@@ -391,7 +430,7 @@ namespace Reallusion.Import
                     c.height = height * modelScale;
                     colliderLookup.Add(c, collider.boneName);
                     if (existingCollider) existingLookup.Add(c, existingCollider);
-                }                
+                } 
             }
             parent.transform.Rotate(Vector3.left, 90);
             parent.transform.localScale = new Vector3(-1f, 1f, 1f);
@@ -955,6 +994,29 @@ namespace Reallusion.Import
             if (fRoots != null)
             {
                 fRoots.SetValue(o, value);
+                return true;
+            }
+            return false;
+        }
+
+        public static bool GetTypeProperty(object o, string property, out object value)
+        {
+            PropertyInfo propertyInfo = o.GetType().GetProperty(property);
+            if (propertyInfo != null)
+            {
+                value = propertyInfo.GetValue(o);
+                return true;
+            }
+            value = null;
+            return false;
+        }
+
+        public static bool SetTypeProperty(object o, string property, object value)
+        {
+            PropertyInfo propertyInfo = o.GetType().GetProperty(property);
+            if (propertyInfo != null)
+            {
+                propertyInfo.SetValue(o, value);
                 return true;
             }
             return false;

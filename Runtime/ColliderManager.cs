@@ -19,6 +19,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using System.Collections;
+using System.Reflection;
 
 namespace Reallusion.Import
 {
@@ -26,6 +28,170 @@ namespace Reallusion.Import
     public class ColliderManager : MonoBehaviour
     {
 #if UNITY_EDITOR
+        // additions to transpose the capsule maipulation code
+        //[HideInInspector]
+        //public CapsuleCollider selectedCollider;
+        [HideInInspector]
+        public enum ManipulatorType
+        {
+            position,
+            rotation,
+            scale
+        }
+        [HideInInspector]
+        public string[] manipulatorArray = { "Position", "Rotation", "Scale" };
+        [HideInInspector]
+        public ManipulatorType manipulator = ManipulatorType.position;
+        [HideInInspector]
+        public bool transformSymmetrically = true;
+        [HideInInspector]
+        public bool frameSymmetryPair = true;
+        public class AbstractCapsuleCollider
+        {
+            public Transform transform { get; set; }
+            public Vector3 position { get; set; }            
+            public Quaternion rotation { get; set; }
+            public float height { get; set; }
+            public float radius { get; set; }
+            public string name { get; set; }
+
+            //public AbstractCapsuleCollider(Transform _transform, float _height, float _radius, string _name)
+            public AbstractCapsuleCollider(Transform _transform, Vector3 _position, Quaternion _rotation, float _height, float _radius, string _name)
+            {
+                transform = _transform;
+                position = _position;
+                rotation = _rotation;
+                height = _height;
+                radius = _radius;
+                name = _name;
+            }
+
+            public AbstractCapsuleCollider()
+            {
+                name = "Empty Collider";
+            }
+
+        }
+        public List<AbstractCapsuleCollider> abstractedCapsuleColliders;
+        public AbstractCapsuleCollider cachedSelectedCollider;
+        public AbstractCapsuleCollider cachedMirrorImageCollider;
+        public AbstractCapsuleCollider selectedAbstractCapsuleCollider;
+        public AbstractCapsuleCollider mirrorImageAbstractCapsuleCollider;
+        public enum MirrorPlane { x, z }
+        public MirrorPlane selectedMirrorPlane;
+        public IList genericColliderList;
+        
+        public void UpdateColliderFromAbstract(Vector3 mirrorPosDiff, Vector3 mirrorRotDiff)
+        {
+            int index = abstractedCapsuleColliders.IndexOf(selectedAbstractCapsuleCollider);            
+            var genericCollider = genericColliderList[index] as UnityEngine.Object;
+            // transform (as a property of the collider) is inherited and the object ref is already stored
+            //SetTypeProperty(genericCollider, "transform", selectedAbstractCapsuleCollider.transform);
+            SetTypeProperty(genericCollider, "height", selectedAbstractCapsuleCollider.height);
+            SetTypeProperty(genericCollider, "radius", selectedAbstractCapsuleCollider.radius);
+
+            if (mirrorImageAbstractCapsuleCollider != null)
+            {
+                mirrorImageAbstractCapsuleCollider.height = selectedAbstractCapsuleCollider.height;
+                mirrorImageAbstractCapsuleCollider.radius = selectedAbstractCapsuleCollider.radius;
+                
+                int mirrorIndex = abstractedCapsuleColliders.IndexOf(mirrorImageAbstractCapsuleCollider);                
+                var mirrorGenericCollider = genericColliderList[mirrorIndex] as UnityEngine.Object;
+                SetTypeProperty(mirrorGenericCollider, "height", mirrorImageAbstractCapsuleCollider.height);
+                SetTypeProperty(mirrorGenericCollider, "radius", mirrorImageAbstractCapsuleCollider.radius);                
+
+                Transform t = mirrorImageAbstractCapsuleCollider.transform;
+                Vector3 diff = Vector3.zero;
+                Quaternion rDiff = Quaternion.identity;
+                switch (selectedMirrorPlane)
+                {
+                    case MirrorPlane.x:
+                        {                            
+                            // rotation
+                            rDiff = Quaternion.Euler(mirrorRotDiff.x, mirrorRotDiff.y, mirrorRotDiff.z);
+                            
+                            // position
+                            //diff = new Vector3(mirrorPosDiff.x, -mirrorPosDiff.y, mirrorPosDiff.z);
+                            Vector3 mirrordelta = t.localRotation * mirrorPosDiff;
+                            diff = new Vector3(-mirrordelta.x, mirrordelta.y, mirrordelta.z);
+
+                            break;
+                        }
+                    case MirrorPlane.z: // placeholder: unused at the moment (calculations will also be wrong)
+                        {
+                            // rotation
+                            rDiff = Quaternion.Euler(mirrorRotDiff.x, -mirrorRotDiff.y, mirrorRotDiff.z);
+
+                            // position
+                            diff = new Vector3(mirrorPosDiff.x, mirrorPosDiff.y, -mirrorPosDiff.z);
+
+                            break;
+                        }
+                }
+                t.localPosition += diff;
+                t.localRotation = t.localRotation * rDiff;
+
+                mirrorImageAbstractCapsuleCollider.transform = t;
+            }
+        }
+
+        public void CacheCollider(AbstractCapsuleCollider collider, AbstractCapsuleCollider mirrorCollider = null)
+        {  
+            cachedSelectedCollider = new AbstractCapsuleCollider(collider.transform, collider.transform.position, collider.transform.rotation, collider.height, collider.radius, collider.name);
+            
+            if (mirrorCollider != null)
+            {
+                cachedMirrorImageCollider = new AbstractCapsuleCollider(mirrorCollider.transform, mirrorCollider.transform.position, mirrorCollider.transform.rotation, mirrorCollider.height, mirrorCollider.radius, mirrorCollider.name);
+            }
+            else
+            {
+                cachedMirrorImageCollider = new AbstractCapsuleCollider();
+            }
+        }
+        
+        public void ResetColliderFromCache()
+        {
+            if (selectedAbstractCapsuleCollider != null && cachedSelectedCollider != null)
+            {
+                selectedAbstractCapsuleCollider.transform.position = cachedSelectedCollider.position;
+                selectedAbstractCapsuleCollider.transform.rotation = cachedSelectedCollider.rotation;
+                selectedAbstractCapsuleCollider.height = cachedSelectedCollider.height;
+                selectedAbstractCapsuleCollider.radius = cachedSelectedCollider.radius;
+                selectedAbstractCapsuleCollider.name = cachedSelectedCollider.name;
+
+                int index = abstractedCapsuleColliders.IndexOf(selectedAbstractCapsuleCollider);
+                var genericCollider = genericColliderList[index] as UnityEngine.Object;
+                SetTypeProperty(genericCollider, "height", selectedAbstractCapsuleCollider.height);
+                SetTypeProperty(genericCollider, "radius", selectedAbstractCapsuleCollider.radius);
+            }
+
+            if (mirrorImageAbstractCapsuleCollider != null && cachedMirrorImageCollider != null)
+            {
+                mirrorImageAbstractCapsuleCollider.transform.position = cachedMirrorImageCollider.position;
+                mirrorImageAbstractCapsuleCollider.transform.rotation = cachedMirrorImageCollider.rotation;
+                mirrorImageAbstractCapsuleCollider.height = cachedMirrorImageCollider.height;
+                mirrorImageAbstractCapsuleCollider.radius = cachedMirrorImageCollider.radius;
+                mirrorImageAbstractCapsuleCollider.name = cachedMirrorImageCollider.name;
+
+                int mirrorIndex = abstractedCapsuleColliders.IndexOf(mirrorImageAbstractCapsuleCollider);
+                var mirrorGenericCollider = genericColliderList[mirrorIndex] as UnityEngine.Object;
+                SetTypeProperty(mirrorGenericCollider, "height", mirrorImageAbstractCapsuleCollider.height);
+                SetTypeProperty(mirrorGenericCollider, "radius", mirrorImageAbstractCapsuleCollider.radius);
+            }
+        }
+
+        public bool SetTypeProperty(object o, string property, object value)
+        {
+            PropertyInfo propertyInfo = o.GetType().GetProperty(property);
+            if (propertyInfo != null)
+            {
+                propertyInfo.SetValue(o, value);
+                return true;
+            }
+            return false;
+        }
+        //end of additions
+
         [Serializable]
         public class ColliderSettings
         {
