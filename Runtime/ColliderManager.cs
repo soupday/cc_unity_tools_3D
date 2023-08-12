@@ -113,23 +113,24 @@ namespace Reallusion.Import
                             
                             // position
                             //diff = new Vector3(mirrorPosDiff.x, -mirrorPosDiff.y, mirrorPosDiff.z);
-                            Vector3 mirrordelta = t.localRotation * mirrorPosDiff;
-                            diff = new Vector3(-mirrordelta.x, mirrordelta.y, mirrordelta.z);
+                            //Vector3 mirrordelta = t.localRotation * mirrorPosDiff;
+                            diff = new Vector3(-mirrorPosDiff.x, mirrorPosDiff.y, mirrorPosDiff.z);
 
                             break;
                         }
                     case MirrorPlane.z: // placeholder: unused at the moment (calculations will also be wrong)
                         {
                             // rotation
-                            rDiff = Quaternion.Euler(-localEuler.x, -localEuler.y, localEuler.z);
+                            rDiff = Quaternion.Euler(localEuler.x, -localEuler.y, -localEuler.z);
 
                             // position
-                            diff = new Vector3(mirrorPosDiff.x, mirrorPosDiff.y, -mirrorPosDiff.z);
-
+                            //Vector3 mirrordelta = t.localRotation * mirrorPosDiff;
+                            diff = new Vector3(-mirrorPosDiff.x, mirrorPosDiff.y, mirrorPosDiff.z);
+                            //
                             break;
                         }
                 }
-                t.localPosition += diff;
+                t.localPosition = diff;
                 t.localRotation = rDiff;
 
                 mirrorImageAbstractCapsuleCollider.transform = t;

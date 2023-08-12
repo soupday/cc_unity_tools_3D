@@ -206,7 +206,7 @@ namespace Reallusion.Import
 											Vector3 delta = c.transform.parent.InverseTransformPoint(targetPosition) - c.transform.parent.InverseTransformPoint(c.transform.position);
 											Quaternion inv = Quaternion.Inverse(c.transform.localRotation);
                                             Vector3 diff = inv * delta;
-                                            colliderManager.UpdateColliderFromAbstract(diff, Quaternion.identity);
+                                            colliderManager.UpdateColliderFromAbstract(c.transform.localPosition, c.transform.localRotation);
 										}
                                         c.transform.position = targetPosition;
                                     }
@@ -224,7 +224,7 @@ namespace Reallusion.Import
 										if (colliderManager.mirrorImageAbstractCapsuleCollider != null)
                                         {
                                             Vector3 rDiff = targetLocalRotation.eulerAngles - currentLocalRotation.eulerAngles;                                                                                        
-                                            colliderManager.UpdateColliderFromAbstract(Vector3.zero, targetLocalRotation);
+                                            colliderManager.UpdateColliderFromAbstract(c.transform.localPosition, targetLocalRotation);
                                         }
 										c.transform.rotation = targetRotation;
 									}
@@ -257,7 +257,7 @@ namespace Reallusion.Import
                                     {
 										c.radius = r;
 										c.height = h;
-										colliderManager.UpdateColliderFromAbstract(Vector3.zero, Quaternion.identity);
+										colliderManager.UpdateColliderFromAbstract(c.transform.localPosition, c.transform.localRotation);
                                     }
                                     break;
                                 }
@@ -733,26 +733,32 @@ namespace Reallusion.Import
             if (name.Contains("_L_"))
             {
                 symName = name.Replace("_L_", "_R_");
+                colliderManager.selectedMirrorPlane = ColliderManager.MirrorPlane.x;
             }
             else if (name.Contains("_R_"))
             {
                 symName = name.Replace("_R_", "_L_");
+                colliderManager.selectedMirrorPlane = ColliderManager.MirrorPlane.x;
             }            
 			else if (name == "CC_Base_NeckTwist01_Capsule(1)")
             {
                 symName = "CC_Base_NeckTwist01_Capsule(2)";
+                colliderManager.selectedMirrorPlane = ColliderManager.MirrorPlane.z;
             }
             else if (name == "CC_Base_NeckTwist01_Capsule(2)")
             {
                 symName = "CC_Base_NeckTwist01_Capsule(1)";
+                colliderManager.selectedMirrorPlane = ColliderManager.MirrorPlane.z;
             }
             else if (name == "CC_Base_Hip_Capsule")
             {
                 symName = "CC_Base_Hip_Capsule(0)";
+                colliderManager.selectedMirrorPlane = ColliderManager.MirrorPlane.x;
             }
             else if (name == "CC_Base_Hip_Capsule(0)")
             {
                 symName = "CC_Base_Hip_Capsule";
+                colliderManager.selectedMirrorPlane = ColliderManager.MirrorPlane.x;
             }
 			
             mirrorCollider = colliderManager.abstractedCapsuleColliders.Find(x  => x.name == symName);
