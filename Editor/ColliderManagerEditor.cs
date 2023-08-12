@@ -206,7 +206,7 @@ namespace Reallusion.Import
 											Vector3 delta = c.transform.parent.InverseTransformPoint(targetPosition) - c.transform.parent.InverseTransformPoint(c.transform.position);
 											Quaternion inv = Quaternion.Inverse(c.transform.localRotation);
                                             Vector3 diff = inv * delta;
-                                            colliderManager.UpdateColliderFromAbstract(diff, Vector3.zero);
+                                            colliderManager.UpdateColliderFromAbstract(diff, Quaternion.identity);
 										}
                                         c.transform.position = targetPosition;
                                     }
@@ -215,22 +215,21 @@ namespace Reallusion.Import
                             case ColliderManager.ManipulatorType.rotation:
                                 {
                                     Quaternion targetRotation = c.transform.rotation;
-									Quaternion cachedLocalRot = c.transform.localRotation;
+									Quaternion currentLocalRotation = c.transform.localRotation;
                                     EditorGUI.BeginChangeCheck();
-                                    targetRotation = Handles.RotationHandle(targetRotation, c.transform.position);
+                                    targetRotation = Handles.RotationHandle(targetRotation, c.transform.position);									
                                     if (EditorGUI.EndChangeCheck())
                                     {
-                                        c.transform.rotation = targetRotation;
-										//Debug.Log("WORLD: " + c.transform.worldToLocalMatrix * Matrix4x4. targetRotation. + " LOCAL: " + c.transform.localRotation);
-                                        if (colliderManager.mirrorImageAbstractCapsuleCollider != null)
+										Quaternion targetLocalRotation = Quaternion.Inverse(c.transform.parent.rotation) * targetRotation;																				
+										if (colliderManager.mirrorImageAbstractCapsuleCollider != null)
                                         {
-                                            //Vector3 rDiff = targetRotation.eulerAngles - c.transform.localRotation.eulerAngles;
-                                            Vector3 rDiff = c.transform.localRotation.eulerAngles - cachedLocalRot.eulerAngles;
-                                            //Vector3 rDiff = (c.transform.worldToLocalMatrix.rotation * targetRotation).eulerAngles - cachedLocalRot.eulerAngles;
-                                            colliderManager.UpdateColliderFromAbstract(Vector3.zero, rDiff);
-                                        }                                        
-                                    }
-                                    break;
+                                            Vector3 rDiff = targetLocalRotation.eulerAngles - currentLocalRotation.eulerAngles;                                                                                        
+                                            colliderManager.UpdateColliderFromAbstract(Vector3.zero, targetLocalRotation);
+                                        }
+										c.transform.rotation = targetRotation;
+									}
+									
+									break;
                                 }
                             case ColliderManager.ManipulatorType.scale:
                                 {
@@ -258,7 +257,7 @@ namespace Reallusion.Import
                                     {
 										c.radius = r;
 										c.height = h;
-										colliderManager.UpdateColliderFromAbstract(Vector3.zero, Vector3.zero);
+										colliderManager.UpdateColliderFromAbstract(Vector3.zero, Quaternion.identity);
                                     }
                                     break;
                                 }

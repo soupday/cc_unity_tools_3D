@@ -81,10 +81,11 @@ namespace Reallusion.Import
         public MirrorPlane selectedMirrorPlane;
         public IList genericColliderList;
         
-        public void UpdateColliderFromAbstract(Vector3 mirrorPosDiff, Vector3 mirrorRotDiff)
+        public void UpdateColliderFromAbstract(Vector3 mirrorPosDiff, Quaternion localRotation)
         {
             int index = abstractedCapsuleColliders.IndexOf(selectedAbstractCapsuleCollider);            
             var genericCollider = genericColliderList[index] as UnityEngine.Object;
+            Vector3 localEuler = localRotation.eulerAngles;
             // transform (as a property of the collider) is inherited and the object ref is already stored
             //SetTypeProperty(genericCollider, "transform", selectedAbstractCapsuleCollider.transform);
             SetTypeProperty(genericCollider, "height", selectedAbstractCapsuleCollider.height);
@@ -108,7 +109,7 @@ namespace Reallusion.Import
                     case MirrorPlane.x:
                         {                            
                             // rotation
-                            rDiff = Quaternion.Euler(mirrorRotDiff.x, mirrorRotDiff.y, mirrorRotDiff.z);
+                            rDiff = Quaternion.Euler(localEuler.x, -localEuler.y, -localEuler.z);
                             
                             // position
                             //diff = new Vector3(mirrorPosDiff.x, -mirrorPosDiff.y, mirrorPosDiff.z);
@@ -120,7 +121,7 @@ namespace Reallusion.Import
                     case MirrorPlane.z: // placeholder: unused at the moment (calculations will also be wrong)
                         {
                             // rotation
-                            rDiff = Quaternion.Euler(mirrorRotDiff.x, -mirrorRotDiff.y, mirrorRotDiff.z);
+                            rDiff = Quaternion.Euler(-localEuler.x, -localEuler.y, localEuler.z);
 
                             // position
                             diff = new Vector3(mirrorPosDiff.x, mirrorPosDiff.y, -mirrorPosDiff.z);
@@ -129,7 +130,7 @@ namespace Reallusion.Import
                         }
                 }
                 t.localPosition += diff;
-                t.localRotation = t.localRotation * rDiff;
+                t.localRotation = rDiff;
 
                 mirrorImageAbstractCapsuleCollider.transform = t;
             }
