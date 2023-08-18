@@ -33,13 +33,18 @@ namespace Reallusion.Import
     {
 #if UNITY_EDITOR
         public ColliderSettings[] colliderSettings;
-        public List<PhysicsSettings> clothSettings;
-
+        public List<PhysicsSettings> clothSettings;        
 		private const string settingsDir = "Settings";
 		private const string settingsFileName = "PhysicsSettingsStore";
-		private const string settingsSuffix = ".asset";		
+		private const string settingsSuffix = ".asset";
+        // additions        
+        public List<ColliderManager.AbstractCapsuleCollider> abstractColliderSettings;
+        public string[] gizmosToRestore;
+        public string[] iconsToRestore;
+        private const string referenceSettingsDir = "_Reference";
+        // end of additions
 
-		private static string GetSettingsStorePath(Object obj)
+        private static string GetSettingsStorePath(Object obj)
 		{
 			string guid = null;
 			if (obj.GetType() == typeof(ColliderManager))
@@ -97,7 +102,6 @@ namespace Reallusion.Import
 					}
 				}
 			}
-
 			return null;
 		}
 
@@ -223,8 +227,8 @@ namespace Reallusion.Import
 
 			return null;
 		}
-
-		public static bool EnsureAssetsFolderExists(string folder)
+		
+        public static bool EnsureAssetsFolderExists(string folder)
 		{
 			if (string.IsNullOrEmpty(folder)) return true;
 			if (AssetDatabase.IsValidFolder(folder)) return true;
@@ -265,7 +269,7 @@ namespace Reallusion.Import
 			return null;
 		}
 
-		private static bool TryGetSavedIndex(List<PhysicsSettings> savedClothSettings, PhysicsSettings workingSetting, out int savedIndex)
+        private static bool TryGetSavedIndex(List<PhysicsSettings> savedClothSettings, PhysicsSettings workingSetting, out int savedIndex)
 		{
 			savedIndex = -1;
 			if (savedClothSettings == null) return false;
@@ -279,7 +283,134 @@ namespace Reallusion.Import
 				return true;
 
 			return false;
-		}		
+		}
+
+        // additions
+        public static void SaveAbstractColliderSettings(ColliderManager colliderManager)
+        {
+            List<ColliderManager.AbstractCapsuleCollider> target = new List<ColliderManager.AbstractCapsuleCollider>();
+            List<ColliderManager.AbstractCapsuleCollider> current = colliderManager.abstractedCapsuleColliders;
+
+            foreach (ColliderManager.AbstractCapsuleCollider c in current)
+            {
+                target.Add(new ColliderManager.AbstractCapsuleCollider(null, c.transform.position, c.transform.rotation, c.height, c.radius, c.name, c.axis));
+            }
+			            
+            PhysicsSettingsStore settings = TryFindSettingsObject(colliderManager);
+            if (settings)
+            {
+                settings.abstractColliderSettings = target;
+                EditorUtility.SetDirty(settings);
+#if UNITY_2021_2_OR_NEWER
+				AssetDatabase.SaveAssetIfDirty(AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(settings)));
+#else
+                AssetDatabase.SaveAssets();
+#endif				
+                Debug.Log("Collider settings stored.");
+            }
+        }
+
+        public static void SaveAbstractColliderSettings(Object prefab, List<ColliderManager.AbstractCapsuleCollider> abstractColliders = null, bool initialState = false)
+        {
+            if (abstractColliders == null)
+            {
+                GameObject go = prefab as GameObject;
+                abstractColliders = go.GetComponent<ColliderManager>().abstractedCapsuleColliders;
+            }
+            List<ColliderManager.AbstractCapsuleCollider> target = new List<ColliderManager.AbstractCapsuleCollider>();
+
+            foreach (ColliderManager.AbstractCapsuleCollider c in abstractColliders)
+            {
+                target.Add(new ColliderManager.AbstractCapsuleCollider(null, c.transform.position, c.transform.rotation, c.height, c.radius, c.name, c.axis));
+            }
+
+            PhysicsSettingsStore settings = TryFindSettingsObject(prefab, initialState);
+            
+            if (settings)
+            {
+				settings.abstractColliderSettings = target;
+                EditorUtility.SetDirty(settings);
+#if UNITY_2021_2_OR_NEWER
+				AssetDatabase.SaveAssetIfDirty(AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(settings)));
+#else
+                AssetDatabase.SaveAssets();
 #endif
+                Debug.Log("Collider settings stored.");
+            }
+        }
+
+        public static List<ColliderManager.AbstractCapsuleCollider> RecallAbstractColliderSettings(ColliderManager colliderManager, bool initialState = false)
+        {
+            PhysicsSettingsStore saved = TryFindSettingsObject(colliderManager, initialState);
+
+            if (saved)            
+                return saved.abstractColliderSettings;
+				
+			return null;
+        }
+
+		// original methods extended to accomodate different pathing for the 'initial collider state' save data
+		// should be ok to replace the original methods and use [bool initialstate = false] as optional parameter
+        public static PhysicsSettingsStore TryFindSettingsObject(Object obj, bool initialState)
+        {
+            string assetPath = GetSettingsStorePath(obj, initialState);
+            if (!string.IsNullOrEmpty(assetPath))
+            {
+                PhysicsSettingsStore settingsStore = AssetDatabase.LoadAssetAtPath<PhysicsSettingsStore>(assetPath);
+
+                if (!settingsStore)
+                {
+                    settingsStore = CreateInstance<PhysicsSettingsStore>();
+                    EnsureAssetsFolderExists(Path.GetDirectoryName(assetPath));
+                    AssetDatabase.CreateAsset(settingsStore, assetPath);
+                }
+
+                return settingsStore;
+            }
+
+            Debug.LogError("Unable to open physics settings store for character.");
+
+            return null;
+        }
+
+        private static string GetSettingsStorePath(Object obj, bool initialState)
+        {
+            string guid = null;
+            if (obj.GetType() == typeof(ColliderManager))
+            {
+                guid = ((ColliderManager)obj).characterGUID;
+            }
+            else if (obj.GetType() == typeof(WeightMapper))
+            {
+                guid = ((WeightMapper)obj).characterGUID;
+            }
+
+            string characterPath = null;
+            if (!string.IsNullOrEmpty(guid))
+            {
+                characterPath = AssetDatabase.GUIDToAssetPath(guid);
+            }
+            else
+            {
+                Debug.LogWarning("Unable to determine character physics store path.\nPlease rebuild physics for this character to correct this.");
+                return null;
+            }
+
+            string characterFolder;
+            string characterName;
+			if (!string.IsNullOrEmpty(characterPath))
+			{
+				characterFolder = Path.GetDirectoryName(characterPath);
+				characterName = Path.GetFileNameWithoutExtension(characterPath);
+                // determine pathing for the 'initial collider state' save data
+                if (initialState)
+					return Path.Combine(characterFolder, settingsDir, characterName + referenceSettingsDir, settingsFileName + settingsSuffix);
+				else
+					return Path.Combine(characterFolder, settingsDir, characterName, settingsFileName + settingsSuffix);
 			}
+            return null;
+        }		
+        // end of additions
+#endif
+    }
 }

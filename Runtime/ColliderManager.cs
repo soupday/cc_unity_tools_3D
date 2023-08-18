@@ -21,6 +21,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.Reflection;
+using UnityEditor;
 
 namespace Reallusion.Import
 {
@@ -28,35 +29,31 @@ namespace Reallusion.Import
     public class ColliderManager : MonoBehaviour
     {
 #if UNITY_EDITOR
-        // additions to transpose the capsule maipulation code
-        //[HideInInspector]
-        //public CapsuleCollider selectedCollider;
-        [HideInInspector]
-        public enum ManipulatorType
-        {
-            position,
-            rotation,
-            scale
-        }
-        [HideInInspector]
-        public string[] manipulatorArray = { "Position", "Rotation", "Scale" };
-        [HideInInspector]
-        public ManipulatorType manipulator = ManipulatorType.position;
-        [HideInInspector]
-        public bool transformSymmetrically = true;
-        [HideInInspector]
-        public bool frameSymmetryPair = true;
+        // additions to transpose the capsule maipulation code        
+        [HideInInspector] public enum ColliderSource { UnityEngine, MagicaCloth2, DynamicBone }
+        [HideInInspector] public ColliderSource currentEditType;
+        [HideInInspector] public enum ManipulatorType { position, rotation, scale }
+        [HideInInspector] public ManipulatorType manipulator = ManipulatorType.position;
+        [HideInInspector] public string[] manipulatorArray = { "Position", "Rotation", "Scale" };
+        [HideInInspector] public enum ColliderAxis { x, y, z }
+        [HideInInspector] public bool transformSymmetrically = true;
+        [HideInInspector] public bool frameSymmetryPair = true;
+        [HideInInspector] public enum MirrorPlane { x, z }
+        [HideInInspector] public MirrorPlane selectedMirrorPlane;
+        [HideInInspector] public IList genericColliderList;
+
+        [Serializable]
         public class AbstractCapsuleCollider
         {
-            public Transform transform { get; set; }
-            public Vector3 position { get; set; }            
-            public Quaternion rotation { get; set; }
-            public float height { get; set; }
-            public float radius { get; set; }
-            public string name { get; set; }
+            public Transform transform;
+            public Vector3 position;          
+            public Quaternion rotation;
+            public float height;
+            public float radius;
+            public string name;
+            public ColliderAxis axis;
 
-            //public AbstractCapsuleCollider(Transform _transform, float _height, float _radius, string _name)
-            public AbstractCapsuleCollider(Transform _transform, Vector3 _position, Quaternion _rotation, float _height, float _radius, string _name)
+            public AbstractCapsuleCollider(Transform _transform, Vector3 _position, Quaternion _rotation, float _height, float _radius, string _name, ColliderAxis _axis)
             {
                 transform = _transform;
                 position = _position;
@@ -64,42 +61,115 @@ namespace Reallusion.Import
                 height = _height;
                 radius = _radius;
                 name = _name;
+                axis = _axis;
             }
 
-            public AbstractCapsuleCollider()
+            public static bool IsNullOrEmpty(AbstractCapsuleCollider c)
             {
-                name = "Empty Collider";
-            }
+                bool result = false;
+                if (c == null)
+                    return true;
 
+                if (c.height == 0f && c.radius == 0f && string.IsNullOrEmpty(c.name))
+                    return true;
+
+                return result;
+            }
+            //public AbstractCapsuleCollider()
+            //{
+            //    //name = "Empty Collider";
+            //}
         }
+
+        /*
+        public class GizmoState
+        {
+            public bool gizmosEnabled { get; set; }
+            public bool capsuleEnabled { get; set; }
+            public bool clothEnabled { get; set; }
+            public bool sphereEnabled { get; set; }
+            public bool boxEnabled { get; set; }
+            public bool magicaCapsuleEnabled { get; set; }
+            public bool magicaCapsuleIconEnabled { get; set; }
+            public bool magicaClothEnabled { get; set; }
+            public bool magicaClothIconEnabled { get; set; }
+            public bool magicaSphereEnabled { get; set; }
+            public bool magicaSphereIconEnabled { get; set; }
+            public bool magicaPlaneEnabled { get; set; }
+            public bool magicaPlaneIconEnabled { get; set; }
+            public float iconSize { get; set; }
+            public bool iconsEnabled { get; set; }
+
+            public GizmoState()
+            {
+                gizmosEnabled = false;
+                capsuleEnabled = false;
+                clothEnabled = false;
+                sphereEnabled = false;
+                boxEnabled = false;
+                magicaCapsuleEnabled = false;
+                magicaCapsuleIconEnabled = false;
+                magicaClothEnabled = false;
+                magicaClothIconEnabled = false;
+                magicaSphereEnabled = false;
+                magicaSphereIconEnabled = false;
+                magicaPlaneEnabled = false;
+                magicaPlaneIconEnabled = false;
+                iconSize = 0f;
+                iconsEnabled = false;
+            }
+        }
+        */
+        [HideInInspector]
+        public string[] gizmoNames = new string[]
+        {
+            "CapsuleCollider",
+            "Cloth",
+            "SphereCollider",
+            "BoxCollider",
+            "MagicaCapsuleCollider",
+            "MagicaCloth",
+            "MagicaSphereCollider",
+            "MagicaPlaneCollider"            
+        };
+
+        [HideInInspector]
+        public bool hasGizmoUtility = false;
+        [HideInInspector]
         public List<AbstractCapsuleCollider> abstractedCapsuleColliders;
+        [HideInInspector]
         public AbstractCapsuleCollider cachedSelectedCollider;
+        [HideInInspector]
         public AbstractCapsuleCollider cachedMirrorImageCollider;
+        [HideInInspector]
         public AbstractCapsuleCollider selectedAbstractCapsuleCollider;
+        [HideInInspector]
         public AbstractCapsuleCollider mirrorImageAbstractCapsuleCollider;
-        public enum MirrorPlane { x, z }
-        public MirrorPlane selectedMirrorPlane;
-        public IList genericColliderList;
         
+        //[HideInInspector]
+        //public GizmoState cachedGizmoState = new GizmoState();   
+
         public void UpdateColliderFromAbstract(Vector3 mirrorPosDiff, Quaternion localRotation)
         {
-            int index = abstractedCapsuleColliders.IndexOf(selectedAbstractCapsuleCollider);            
-            var genericCollider = genericColliderList[index] as UnityEngine.Object;
+            int selectedIndex = abstractedCapsuleColliders.IndexOf(selectedAbstractCapsuleCollider);            
+            var genericCollider = genericColliderList[selectedIndex] as UnityEngine.Object;
+
             Vector3 localEuler = localRotation.eulerAngles;
             // transform (as a property of the collider) is inherited and the object ref is already stored
             //SetTypeProperty(genericCollider, "transform", selectedAbstractCapsuleCollider.transform);
             SetTypeProperty(genericCollider, "height", selectedAbstractCapsuleCollider.height);
             SetTypeProperty(genericCollider, "radius", selectedAbstractCapsuleCollider.radius);
 
-            if (mirrorImageAbstractCapsuleCollider != null)
+            //if (mirrorImageAbstractCapsuleCollider != null)
+            if (!AbstractCapsuleCollider.IsNullOrEmpty(mirrorImageAbstractCapsuleCollider))
             {
                 mirrorImageAbstractCapsuleCollider.height = selectedAbstractCapsuleCollider.height;
                 mirrorImageAbstractCapsuleCollider.radius = selectedAbstractCapsuleCollider.radius;
-                
-                int mirrorIndex = abstractedCapsuleColliders.IndexOf(mirrorImageAbstractCapsuleCollider);                
+
+                int mirrorIndex = abstractedCapsuleColliders.IndexOf(mirrorImageAbstractCapsuleCollider);
                 var mirrorGenericCollider = genericColliderList[mirrorIndex] as UnityEngine.Object;
                 SetTypeProperty(mirrorGenericCollider, "height", mirrorImageAbstractCapsuleCollider.height);
-                SetTypeProperty(mirrorGenericCollider, "radius", mirrorImageAbstractCapsuleCollider.radius);                
+                SetTypeProperty(mirrorGenericCollider, "radius", mirrorImageAbstractCapsuleCollider.radius);
 
                 Transform t = mirrorImageAbstractCapsuleCollider.transform;
                 Vector3 diff = Vector3.zero;
@@ -107,26 +177,23 @@ namespace Reallusion.Import
                 switch (selectedMirrorPlane)
                 {
                     case MirrorPlane.x:
-                        {                            
-                            // rotation
-                            rDiff = Quaternion.Euler(localEuler.x, -localEuler.y, -localEuler.z);
-                            
-                            // position
-                            //diff = new Vector3(mirrorPosDiff.x, -mirrorPosDiff.y, mirrorPosDiff.z);
-                            //Vector3 mirrordelta = t.localRotation * mirrorPosDiff;
-                            diff = new Vector3(-mirrorPosDiff.x, mirrorPosDiff.y, mirrorPosDiff.z);
-
-                            break;
-                        }
-                    case MirrorPlane.z: // placeholder: unused at the moment (calculations will also be wrong)
                         {
                             // rotation
                             rDiff = Quaternion.Euler(localEuler.x, -localEuler.y, -localEuler.z);
 
-                            // position
-                            //Vector3 mirrordelta = t.localRotation * mirrorPosDiff;
+                            // position                            
                             diff = new Vector3(-mirrorPosDiff.x, mirrorPosDiff.y, mirrorPosDiff.z);
-                            //
+
+                            break;
+                        }
+                    case MirrorPlane.z:
+                        {
+                            // rotation
+                            rDiff = Quaternion.Euler(localEuler.x, -localEuler.y, -localEuler.z);
+
+                            // position                            
+                            diff = new Vector3(-mirrorPosDiff.x, mirrorPosDiff.y, mirrorPosDiff.z);
+
                             break;
                         }
                 }
@@ -139,46 +206,81 @@ namespace Reallusion.Import
 
         public void CacheCollider(AbstractCapsuleCollider collider, AbstractCapsuleCollider mirrorCollider = null)
         {  
-            cachedSelectedCollider = new AbstractCapsuleCollider(collider.transform, collider.transform.position, collider.transform.rotation, collider.height, collider.radius, collider.name);
+            cachedSelectedCollider = new AbstractCapsuleCollider(null, collider.transform.position, collider.transform.rotation, collider.height, collider.radius, collider.name, collider.axis);
             
             if (mirrorCollider != null)
             {
-                cachedMirrorImageCollider = new AbstractCapsuleCollider(mirrorCollider.transform, mirrorCollider.transform.position, mirrorCollider.transform.rotation, mirrorCollider.height, mirrorCollider.radius, mirrorCollider.name);
+                cachedMirrorImageCollider = new AbstractCapsuleCollider(null, mirrorCollider.transform.position, mirrorCollider.transform.rotation, mirrorCollider.height, mirrorCollider.radius, mirrorCollider.name, mirrorCollider.axis);
             }
             else
             {
-                cachedMirrorImageCollider = new AbstractCapsuleCollider();
+                cachedMirrorImageCollider = null;
             }
         }
-        
+
+        public AbstractCapsuleCollider DetermineMirrorImageCollider(AbstractCapsuleCollider collider, List<AbstractCapsuleCollider> colliderList)
+        {
+            if (!transformSymmetrically) { return null; }
+
+            if (DetermineMirrorImageColliderName(collider.name, out string mirrorName, out selectedMirrorPlane))                   
+                return colliderList.Find(x => x.name == mirrorName);            
+            else
+                return null;
+        }
+
+        public bool DetermineMirrorImageColliderName(string name, out string mirrorName, out MirrorPlane mirrorPlane)
+        {
+            // All mirror image determination rules in one place
+            mirrorName = "";
+            mirrorPlane = MirrorPlane.x;
+
+            if (name.Contains("_L_"))
+            {
+                mirrorName = name.Replace("_L_", "_R_");
+                mirrorPlane = MirrorPlane.x;
+            }
+            else if (name.Contains("_R_"))
+            {
+                mirrorName = name.Replace("_R_", "_L_");
+                mirrorPlane = MirrorPlane.x;
+            }
+            else if (name == "CC_Base_NeckTwist01_Capsule(1)")
+            {
+                mirrorName = "CC_Base_NeckTwist01_Capsule(2)";
+                mirrorPlane = MirrorPlane.z;
+            }
+            else if (name == "CC_Base_NeckTwist01_Capsule(2)")
+            {
+                mirrorName = "CC_Base_NeckTwist01_Capsule(1)";
+                mirrorPlane = MirrorPlane.z;
+            }
+            else if (name == "CC_Base_Hip_Capsule")
+            {
+                mirrorName = "CC_Base_Hip_Capsule(0)";
+                mirrorPlane = MirrorPlane.x;
+            }
+            else if (name == "CC_Base_Hip_Capsule(0)")
+            {
+                mirrorName = "CC_Base_Hip_Capsule";
+                mirrorPlane = MirrorPlane.x;
+            }
+
+            return !string.IsNullOrEmpty(mirrorName);
+        }
+
         public void ResetColliderFromCache()
         {
             if (selectedAbstractCapsuleCollider != null && cachedSelectedCollider != null)
             {
-                selectedAbstractCapsuleCollider.transform.position = cachedSelectedCollider.position;
-                selectedAbstractCapsuleCollider.transform.rotation = cachedSelectedCollider.rotation;
-                selectedAbstractCapsuleCollider.height = cachedSelectedCollider.height;
-                selectedAbstractCapsuleCollider.radius = cachedSelectedCollider.radius;
-                selectedAbstractCapsuleCollider.name = cachedSelectedCollider.name;
-
                 int index = abstractedCapsuleColliders.IndexOf(selectedAbstractCapsuleCollider);
-                var genericCollider = genericColliderList[index] as UnityEngine.Object;
-                SetTypeProperty(genericCollider, "height", selectedAbstractCapsuleCollider.height);
-                SetTypeProperty(genericCollider, "radius", selectedAbstractCapsuleCollider.radius);
+                if ( index != -1)
+                    UpdateColliderSettings(cachedSelectedCollider, selectedAbstractCapsuleCollider, index);                
             }
-
-            if (mirrorImageAbstractCapsuleCollider != null && cachedMirrorImageCollider != null)
+            if (!AbstractCapsuleCollider.IsNullOrEmpty(mirrorImageAbstractCapsuleCollider) && !AbstractCapsuleCollider.IsNullOrEmpty(cachedMirrorImageCollider))
             {
-                mirrorImageAbstractCapsuleCollider.transform.position = cachedMirrorImageCollider.position;
-                mirrorImageAbstractCapsuleCollider.transform.rotation = cachedMirrorImageCollider.rotation;
-                mirrorImageAbstractCapsuleCollider.height = cachedMirrorImageCollider.height;
-                mirrorImageAbstractCapsuleCollider.radius = cachedMirrorImageCollider.radius;
-                mirrorImageAbstractCapsuleCollider.name = cachedMirrorImageCollider.name;
-
                 int mirrorIndex = abstractedCapsuleColliders.IndexOf(mirrorImageAbstractCapsuleCollider);
-                var mirrorGenericCollider = genericColliderList[mirrorIndex] as UnityEngine.Object;
-                SetTypeProperty(mirrorGenericCollider, "height", mirrorImageAbstractCapsuleCollider.height);
-                SetTypeProperty(mirrorGenericCollider, "radius", mirrorImageAbstractCapsuleCollider.radius);
+                if ( mirrorIndex != -1 )
+                    UpdateColliderSettings(cachedMirrorImageCollider, mirrorImageAbstractCapsuleCollider, mirrorIndex);
             }
         }
 
@@ -191,6 +293,105 @@ namespace Reallusion.Import
                 return true;
             }
             return false;
+        }
+
+        public static bool GetTypeProperty(object o, string property, out object value)
+        {
+            PropertyInfo propertyInfo = o.GetType().GetProperty(property);
+            if (propertyInfo != null)
+            {
+                value = propertyInfo.GetValue(o);
+                return true;
+            }
+            value = null;
+            return false;
+        }
+
+        public static System.Type GetTypeInAssemblies(string typeName)
+        {
+            Assembly[] assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+            foreach (Assembly a in assemblies)
+            {
+                System.Type[] types = a.GetTypes();
+                foreach (System.Type t in types)
+                {
+                    if (typeName == t.FullName)
+                    {
+                        return t;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// See: https://stackoverflow.com/questions/10754150/dynamic-type-with-lists-in-c-sharp
+        public static object CreateGeneric(Type generic, Type innerType, params object[] args)
+        {
+            System.Type specificType = generic.MakeGenericType(new System.Type[] { innerType });
+            return Activator.CreateInstance(specificType, args);
+        }
+
+        public void ResetAbstractColliders(List<AbstractCapsuleCollider> referenceList)
+        {
+            if (abstractedCapsuleColliders != null && referenceList != null)
+            {
+                foreach (var s in referenceList)
+                {
+                    AbstractCapsuleCollider current = abstractedCapsuleColliders.Find(x => x.name == s.name);  // collider in the real world list corresponding to s
+                    int colliderIndex = abstractedCapsuleColliders.FindIndex(x => x.name == s.name);
+
+                    if (current != null && colliderIndex != -1)
+                        UpdateColliderSettings(s, current, colliderIndex);
+                }
+            }
+        }
+
+        public void ResetSingleAbstractCollider(List<AbstractCapsuleCollider> referenceList, string colliderName, bool resetMirror)
+        {
+            // reset the specified collider name in abstractedCapsuleColliders with data from referenceList
+            if (abstractedCapsuleColliders != null && referenceList != null && !string.IsNullOrEmpty(colliderName))
+            {                
+                AbstractCapsuleCollider target = abstractedCapsuleColliders.Find(x => x.name == colliderName);  
+                AbstractCapsuleCollider source = referenceList.Find(y => y.name == colliderName);
+
+                int targetIndex = abstractedCapsuleColliders.FindIndex(x => x.name == colliderName);
+                int sourceIndex = referenceList.FindIndex(y => y.name == colliderName);
+
+                if (targetIndex == sourceIndex)
+                    UpdateColliderSettings(source, target, targetIndex);
+
+                if (resetMirror && !AbstractCapsuleCollider.IsNullOrEmpty(mirrorImageAbstractCapsuleCollider))  // determine the mirror in abstractedCapsuleColliders and reset it with data from the corresponding mirror in referenceList
+                {
+                    AbstractCapsuleCollider mirrorTarget = DetermineMirrorImageCollider(target, abstractedCapsuleColliders);
+                    AbstractCapsuleCollider mirrorSource = DetermineMirrorImageCollider(target, referenceList);
+                    int mirrorTargetIndex = abstractedCapsuleColliders.FindIndex(x => x.name == mirrorTarget.name);
+                    int mirrorSourceIndex = referenceList.FindIndex(y => y.name == mirrorSource.name);
+
+                    if (!AbstractCapsuleCollider.IsNullOrEmpty(mirrorTarget) && !AbstractCapsuleCollider.IsNullOrEmpty(mirrorSource))
+                    {
+                        if (mirrorTargetIndex == mirrorSourceIndex)
+                            UpdateColliderSettings(mirrorSource, mirrorTarget, mirrorTargetIndex);
+                    }
+                }
+            }
+        }
+
+        public void UpdateColliderSettings(AbstractCapsuleCollider source, AbstractCapsuleCollider target, int genericIndex)
+        {
+            // update the real world information with the stored info
+            target.transform.position = source.position;
+            target.transform.rotation = source.rotation;
+
+            target.height = source.height;
+            target.radius = source.radius;
+            target.name = source.name;
+            target.axis = source.axis;
+            
+            // native UnityEngine.CapsuleCollider
+            var genericCollider = genericColliderList[genericIndex] as UnityEngine.Object;
+            SetTypeProperty(genericCollider, "height", source.height);
+            SetTypeProperty(genericCollider, "radius", source.radius);
         }
         //end of additions
 
