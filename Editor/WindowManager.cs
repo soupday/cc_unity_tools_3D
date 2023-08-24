@@ -155,21 +155,7 @@ namespace Reallusion.Import
             {
                 HideAnimationPlayer(true);
                 HideAnimationRetargeter(true);
-            }
-            //
-            /*
-            if (AnimationMode.InAnimationMode())  
-            { 
-                Util.LogWarn("Disabling Animation Mode on editor assembly reload.");
-                AnimationMode.StopAnimationMode();
-            }
-
-            if (LodSelectionWindow.Current)
-            {
-                Util.LogInfo("Closing Lod Selection Window on editor assembly reload.");
-                LodSelectionWindow.Current.Close();
-            }
-            */
+            }            
         }
 
         public static PreviewScene OpenPreviewScene(GameObject prefab)
