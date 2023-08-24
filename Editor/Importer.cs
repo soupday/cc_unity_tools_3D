@@ -203,7 +203,7 @@ namespace Reallusion.Import
 
             // fetch the character json export data.            
             jsonData = info.JsonData;            
-            if (info.MeshJsonData == null) Util.LogError("Unable to find Json mesh data!");
+            if (jsonData == null) Util.LogError("Unable to find Json data!");
             
             jsonPhysicsData = info.PhysicsJsonData;
             if (jsonPhysicsData == null)
