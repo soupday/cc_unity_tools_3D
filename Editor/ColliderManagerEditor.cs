@@ -407,27 +407,30 @@ namespace Reallusion.Import
                 {
                     bool active = (c == colliderManager.selectedAbstractCapsuleCollider);
                     GUILayout.BeginVertical();
-
+                    GUILayout.Space(active ? 1f : 0f);
                     GUILayout.BeginHorizontal();
                     
                     GUILayout.FlexibleSpace();
-                    if (GUILayout.Button(c.name, (active ? colliderManagerStyles.currentButton : colliderManagerStyles.normalButton), GUILayout.MaxWidth(250f)))
+                    GUI.backgroundColor = active ? Color.Lerp(baseBackground, Color.blue, 0.35f) : baseBackground;
+                    if (GUILayout.Button(c.name, GUILayout.MaxWidth(250f)))
+                    //if (GUILayout.Button(c.name, (active ? colliderManagerStyles.currentButton : colliderManagerStyles.normalButton), GUILayout.MaxWidth(250f)))
                     {
                         SelectColliderForEdit(c);
                     }
+                    GUI.backgroundColor = baseBackground;
                     GUILayout.FlexibleSpace();
                     
                     GUILayout.EndHorizontal();
 
                     if (active)
                     {
-                        GUILayout.Space(2f);
+                        GUILayout.Space(0f);
                         DrawEditModeControls();
                     }
 
                     GUILayout.EndVertical();
                     if (active)
-                        GUILayout.Space(2f);
+                        GUILayout.Space(1f);
                 }
             }
             GUILayout.Space(10f);
@@ -511,26 +514,35 @@ namespace Reallusion.Import
             GUILayout.BeginHorizontal(GUILayout.MaxWidth(270f));
             GUILayout.Space(10f);
 
-            GUIStyle style = (colliderManager.manipulator == ColliderManager.ManipulatorType.position ? colliderManagerStyles.currentButton : colliderManagerStyles.normalButton);
-            if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d_MoveTool on").image, "Transform position tool"), style, GUILayout.Width(30f)))
+            GUI.backgroundColor = colliderManager.manipulator == ColliderManager.ManipulatorType.position ? Color.Lerp(baseBackground, Color.blue, 0.35f) : baseBackground;
+            //GUIStyle style = (colliderManager.manipulator == ColliderManager.ManipulatorType.position ? colliderManagerStyles.currentButton : colliderManagerStyles.normalButton);
+            //if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d_MoveTool on").image, "Transform position tool"), style, GUILayout.Width(30f)))
+            if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d_MoveTool on").image, "Transform position tool"),  GUILayout.Width(30f)))
             {
                 colliderManager.manipulator = ColliderManager.ManipulatorType.position;
                 SceneView.RepaintAll();
             }
-            
-            style = (colliderManager.manipulator == ColliderManager.ManipulatorType.rotation ? colliderManagerStyles.currentButton : colliderManagerStyles.normalButton);
-            if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d_RotateTool On").image, "Transform rotation tool"), style, GUILayout.Width(30f)))
+            GUI.backgroundColor = baseBackground;
+
+            GUI.backgroundColor = colliderManager.manipulator == ColliderManager.ManipulatorType.rotation ? Color.Lerp(baseBackground, Color.blue, 0.35f) : baseBackground;
+            //style = (colliderManager.manipulator == ColliderManager.ManipulatorType.rotation ? colliderManagerStyles.currentButton : colliderManagerStyles.normalButton);
+            //if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d_RotateTool On").image, "Transform rotation tool"), style, GUILayout.Width(30f)))
+            if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d_RotateTool On").image, "Transform rotation tool"),  GUILayout.Width(30f)))
             {
                 colliderManager.manipulator = ColliderManager.ManipulatorType.rotation;
                 SceneView.RepaintAll();
             }
-            
-            style = (colliderManager.manipulator == ColliderManager.ManipulatorType.scale ? colliderManagerStyles.currentButton : colliderManagerStyles.normalButton);
-            if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("ScaleTool On").image, "Transform scale tool"), style, GUILayout.Width(30f)))
+            GUI.backgroundColor = baseBackground;
+
+            GUI.backgroundColor = colliderManager.manipulator == ColliderManager.ManipulatorType.scale ? Color.Lerp(baseBackground, Color.blue, 0.35f) : baseBackground;
+            //style = (colliderManager.manipulator == ColliderManager.ManipulatorType.scale ? colliderManagerStyles.currentButton : colliderManagerStyles.normalButton);
+            //if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("ScaleTool On").image, "Transform scale tool"), style, GUILayout.Width(30f)))
+            if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("ScaleTool On").image, "Transform scale tool"), GUILayout.Width(30f)))
             {
                 colliderManager.manipulator = ColliderManager.ManipulatorType.scale;
                 SceneView.RepaintAll();
             }
+            GUI.backgroundColor = baseBackground;
 
             GUILayout.FlexibleSpace();
 
