@@ -46,8 +46,8 @@ namespace Reallusion.Import
         public class AbstractCapsuleCollider
         {
             public Transform transform;
-            public Vector3 position;          
-            public Quaternion rotation;
+            public Vector3 localPosition;          
+            public Quaternion localRotation;
             public float height;
             public float radius;
             public string name;
@@ -56,8 +56,8 @@ namespace Reallusion.Import
             public AbstractCapsuleCollider(Transform _transform, Vector3 _position, Quaternion _rotation, float _height, float _radius, string _name, ColliderAxis _axis)
             {
                 transform = _transform;
-                position = _position;
-                rotation = _rotation;
+                localPosition = _position;
+                localRotation = _rotation;
                 height = _height;
                 radius = _radius;
                 name = _name;
@@ -206,11 +206,11 @@ namespace Reallusion.Import
 
         public void CacheCollider(AbstractCapsuleCollider collider, AbstractCapsuleCollider mirrorCollider = null)
         {  
-            cachedSelectedCollider = new AbstractCapsuleCollider(null, collider.transform.position, collider.transform.rotation, collider.height, collider.radius, collider.name, collider.axis);
+            cachedSelectedCollider = new AbstractCapsuleCollider(null, collider.transform.localPosition, collider.transform.localRotation, collider.height, collider.radius, collider.name, collider.axis);
             
             if (mirrorCollider != null)
             {
-                cachedMirrorImageCollider = new AbstractCapsuleCollider(null, mirrorCollider.transform.position, mirrorCollider.transform.rotation, mirrorCollider.height, mirrorCollider.radius, mirrorCollider.name, mirrorCollider.axis);
+                cachedMirrorImageCollider = new AbstractCapsuleCollider(null, mirrorCollider.transform.localPosition, mirrorCollider.transform.localRotation, mirrorCollider.height, mirrorCollider.radius, mirrorCollider.name, mirrorCollider.axis);
             }
             else
             {
@@ -382,8 +382,8 @@ namespace Reallusion.Import
             // update the real world information with the stored info
             //target.transform.position = source.position;
             //target.transform.rotation = source.rotation;
-            target.transform.localPosition = source.position;
-            target.transform.localRotation = source.rotation;
+            target.transform.localPosition = source.localPosition;
+            target.transform.localRotation = source.localRotation;
 
             target.height = source.height;
             target.radius = source.radius;

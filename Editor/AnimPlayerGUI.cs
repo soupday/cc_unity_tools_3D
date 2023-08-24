@@ -49,7 +49,7 @@ namespace Reallusion.Import
         {
             if (scenePrefab)
             {
-                scenePrefab = Util.TryResetScenePrefab(scenePrefab);                
+                //scenePrefab = Util.TryResetScenePrefab(scenePrefab);                
                 SetCharacter(scenePrefab);
             }
 
@@ -84,11 +84,11 @@ namespace Reallusion.Import
                 EditorApplication.update -= UpdateCallback;
                 EditorApplication.playModeStateChanged -= PlayStateChangeCallback;
 
-                if (CharacterAnimator)       
-                {
-                    GameObject scenePrefab = Util.GetScenePrefabInstanceRoot(CharacterAnimator.gameObject);
-                    Util.TryResetScenePrefab(scenePrefab);
-                }
+                //if (CharacterAnimator)       
+                ///{
+                    //GameObject scenePrefab = Util.GetScenePrefabInstanceRoot(CharacterAnimator.gameObject);
+                    //Util.TryResetScenePrefab(scenePrefab);
+                //}
 
 #if SCENEVIEW_OVERLAY_COMPATIBLE
                 //2021.2.0a17+          

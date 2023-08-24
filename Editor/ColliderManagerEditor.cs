@@ -110,15 +110,7 @@ namespace Reallusion.Import
             Physics.CreateAbstractColliders(colliderManager, out colliderManager.abstractedCapsuleColliders, out colliderManager.genericColliderList);
         }
 
-        private void UpdateAbstractCollider()
-        {
-            if (currentCollider == null)
-            {
-
-            }
-        }
-        
-		private void InitIcons()
+       	private void InitIcons()
 		{
 			editModeEnable = Util.FindTexture(new string[] { "Assets", "Packages" }, "RL_Edit_Enable");
 			editModeDisable = Util.FindTexture(new string[] { "Assets", "Packages" }, "RL_Edit_Disable");
@@ -299,6 +291,8 @@ namespace Reallusion.Import
             DrawEditAssistBlock();
             DrawColliderSelectionBlock();
             DrawStoreControls();
+            // 
+            //
 
             if (resetAfterGUI)
             {

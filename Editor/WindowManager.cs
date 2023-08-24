@@ -151,6 +151,13 @@ namespace Reallusion.Import
 
         public static void OnBeforeAssemblyReload()
         {
+            if (AnimPlayerGUI.IsPlayerShown())
+            {
+                HideAnimationPlayer(true);
+                HideAnimationRetargeter(true);
+            }
+            //
+            /*
             if (AnimationMode.InAnimationMode())  
             { 
                 Util.LogWarn("Disabling Animation Mode on editor assembly reload.");
@@ -162,6 +169,7 @@ namespace Reallusion.Import
                 Util.LogInfo("Closing Lod Selection Window on editor assembly reload.");
                 LodSelectionWindow.Current.Close();
             }
+            */
         }
 
         public static PreviewScene OpenPreviewScene(GameObject prefab)
@@ -447,10 +455,12 @@ namespace Reallusion.Import
 
         public static void HideAnimationPlayer(bool updateShowPlayer)
         {
-            if (AnimPlayerGUI.IsPlayerShown()) AnimPlayerGUI.ResetFace();
-
-            AnimPlayerGUI.ClosePlayer();
-
+            if (AnimPlayerGUI.IsPlayerShown())
+            {
+                AnimPlayerGUI.ResetFace();
+                AnimPlayerGUI.ResetCharacterPose();
+                AnimPlayerGUI.ClosePlayer();
+            }
             HideAnimationRetargeter(false);
 
             if (updateShowPlayer)
