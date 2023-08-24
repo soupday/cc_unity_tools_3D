@@ -81,24 +81,24 @@ namespace Reallusion.Import
             //}
         }
 
-        /*
+        [Serializable]
         public class GizmoState
         {
-            public bool gizmosEnabled { get; set; }
-            public bool capsuleEnabled { get; set; }
-            public bool clothEnabled { get; set; }
-            public bool sphereEnabled { get; set; }
-            public bool boxEnabled { get; set; }
-            public bool magicaCapsuleEnabled { get; set; }
-            public bool magicaCapsuleIconEnabled { get; set; }
-            public bool magicaClothEnabled { get; set; }
-            public bool magicaClothIconEnabled { get; set; }
-            public bool magicaSphereEnabled { get; set; }
-            public bool magicaSphereIconEnabled { get; set; }
-            public bool magicaPlaneEnabled { get; set; }
-            public bool magicaPlaneIconEnabled { get; set; }
-            public float iconSize { get; set; }
-            public bool iconsEnabled { get; set; }
+            public bool gizmosEnabled;
+            public bool capsuleEnabled;
+            public bool clothEnabled;
+            public bool sphereEnabled;
+            public bool boxEnabled;
+            public bool magicaCapsuleEnabled;
+            public bool magicaCapsuleIconEnabled;
+            public bool magicaClothEnabled;
+            public bool magicaClothIconEnabled;
+            public bool magicaSphereEnabled;
+            public bool magicaSphereIconEnabled;
+            public bool magicaPlaneEnabled;
+            public bool magicaPlaneIconEnabled;
+            public float iconSize;
+            public bool iconsEnabled;
 
             public GizmoState()
             {
@@ -119,7 +119,7 @@ namespace Reallusion.Import
                 iconsEnabled = false;
             }
         }
-        */
+        
         [HideInInspector]
         public string[] gizmoNames = new string[]
         {
@@ -380,8 +380,10 @@ namespace Reallusion.Import
         public void UpdateColliderSettings(AbstractCapsuleCollider source, AbstractCapsuleCollider target, int genericIndex)
         {
             // update the real world information with the stored info
-            target.transform.position = source.position;
-            target.transform.rotation = source.rotation;
+            //target.transform.position = source.position;
+            //target.transform.rotation = source.rotation;
+            target.transform.localPosition = source.position;
+            target.transform.localRotation = source.rotation;
 
             target.height = source.height;
             target.radius = source.radius;

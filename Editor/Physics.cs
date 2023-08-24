@@ -291,8 +291,6 @@ namespace Reallusion.Import
 
         private void AddColliders()
         {
-            
-
             if (!addClothPhysics && !addHairPhysics && !addHairSpringBones)
             {
                 ColliderManager existingColliderManager = prefabInstance.GetComponent<ColliderManager>();
@@ -1084,7 +1082,8 @@ namespace Reallusion.Import
                 if (GetTypeProperty(collider, "direction", out object _axis))
                     axis = (ColliderManager.ColliderAxis)_axis;  // verify that magica can cast into this
 
-                abstractColliders.Add(new ColliderManager.AbstractCapsuleCollider(t, t.position, t.rotation, height, radius, name, axis));
+                //abstractColliders.Add(new ColliderManager.AbstractCapsuleCollider(t, t.position, t.rotation, height, radius, name, axis));
+                abstractColliders.Add(new ColliderManager.AbstractCapsuleCollider(t, t.localPosition, t.localRotation, height, radius, name, axis));
             }
             if (genericColliders.Count > 0 && abstractColliders.Count > 0)
                 return true;

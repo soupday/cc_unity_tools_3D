@@ -246,12 +246,10 @@ namespace Reallusion.Import
         // GUIStyles
         private static Styles guiStyles;
 
-        [SerializeField]
-        private static List<BoneItem> boneItemList;
-        [SerializeField]
-        public static bool isTracking = false;
-        [SerializeField]
-        public static GameObject lastTracked;
+        [SerializeField] private static List<BoneItem> boneItemList;
+        [SerializeField] public static bool isTracking = false;
+        [SerializeField] public static GameObject lastTracked;
+        [SerializeField] public static bool trackingPermitted = true;
         private static string boneNotFound = "not found";
 
         // ----------------------------------------------------------------------------
@@ -602,6 +600,7 @@ namespace Reallusion.Import
                 if (!CheckTackingStatus())
                     CancelBoneTracking(false); //object focus lost - arrange ui to reflect that, but dont fight with the scene camera
 
+                EditorGUI.BeginDisabledGroup(!trackingPermitted);
                 if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("Camera Gizmo").image, "Select individual bone to track with the scene camera."), guiStyles.settingsButton, GUILayout.Width(24f), GUILayout.Height(24f)))
                 {
                     GenerateBoneMenu();
@@ -614,6 +613,7 @@ namespace Reallusion.Import
                 {
                     CancelBoneTracking(true); //tracking deliberately cancelled - leave scene camera in last position with last tracked object still selected
                 }
+                EditorGUI.EndDisabledGroup();
                 EditorGUI.EndDisabledGroup();
                 GUILayout.FlexibleSpace();
 
@@ -1140,6 +1140,34 @@ namespace Reallusion.Import
             scene.FrameSelected(true, true);
             scene.FrameSelected(true, true);
             scene.Repaint();
+        }
+
+        public static void ForbidTracking() 
+        {
+            // this is called by the collider manager editor script to use its own tracking while editing colliders
+            // this avoids having an objected selected since its control handles will be visible and cause problems
+            
+            if (isTracking)
+            {
+                isTracking = false;
+                Selection.activeObject = null;
+            }
+
+            trackingPermitted = false;
+
+            if (boneItemList != null)
+            {
+                foreach (BoneItem boneItem in boneItemList)
+                {
+                    if (boneItem.selected)
+                        boneItem.selected = false;
+                }
+            }
+        }
+
+        public static void AllowTracking()
+        {
+            trackingPermitted = true;
         }
 
         public static void ReEstablishTracking(string humanBoneName)
