@@ -1049,7 +1049,7 @@ namespace Reallusion.Import
                 MethodInfo getSize = null;
 
                 // create an array of the in-scene transforms in the character hierarchy
-                Transform[] allChildTransforms = colliderManager.gameObject.GetComponentsInChildren<Transform>();
+                Transform[] allChildTransforms = colliderManager.gameObject.GetComponentsInChildren<Transform>(true);
                 foreach (Transform childtransform in allChildTransforms)
                 {
                     GameObject go = childtransform.gameObject;
@@ -1063,6 +1063,7 @@ namespace Reallusion.Import
                             {
                                 CapsuleCollider coll = go.GetComponent<CapsuleCollider>();
                                 abs.transform = coll.transform;
+                                abs.isEnabled = coll.transform.gameObject.activeSelf;
                                 abs.localPosition = coll.transform.localPosition;
                                 abs.localRotation = coll.transform.localRotation;
                                 abs.height = coll.height;
@@ -1092,6 +1093,7 @@ namespace Reallusion.Import
                                 else
                                 {
                                     abs.transform = go.transform;
+                                    abs.isEnabled = go.activeSelf;
                                     abs.localPosition = go.transform.localPosition;
                                     abs.localRotation = go.transform.localRotation;
 

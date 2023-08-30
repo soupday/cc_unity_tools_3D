@@ -47,6 +47,7 @@ namespace Reallusion.Import
         public class AbstractCapsuleCollider
         {
             public Transform transform;
+            public bool isEnabled;
             public Vector3 localPosition;          
             public Quaternion localRotation;
             public float height;
@@ -63,15 +64,16 @@ namespace Reallusion.Import
 
             }
 
-            public AbstractCapsuleCollider(Transform _transform, Vector3 _position, Quaternion _rotation, float _height, float _radius, string _name, ColliderAxis _axis, ColliderType _colliderTypes = ColliderType.Unknown, UnityEngine.Object _native = null, UnityEngine.Object _magica = null, UnityEngine.Object _dynamic = null)
+            public AbstractCapsuleCollider(Transform _transform, Vector3 _position, Quaternion _rotation, float _height, float _radius, string _name, ColliderAxis _axis, bool _enabled = true, ColliderType _colliderTypes = ColliderType.Unknown, UnityEngine.Object _native = null, UnityEngine.Object _magica = null, UnityEngine.Object _dynamic = null)
             {
-                transform = _transform;
+                transform = _transform;                
                 localPosition = _position;
                 localRotation = _rotation;
                 height = _height;
                 radius = _radius;
                 name = _name;
                 axis = _axis;
+                isEnabled = _enabled;
                 colliderTypes = _colliderTypes;
                 nativeRef = _native;
                 magicaRef = _magica;
@@ -390,8 +392,6 @@ namespace Reallusion.Import
         public void UpdateColliderSettings(AbstractCapsuleCollider source, AbstractCapsuleCollider target, int genericIndex)
         {
             // update the real world information with the stored info
-            //target.transform.position = source.position;
-            //target.transform.rotation = source.rotation;
             target.transform.localPosition = source.localPosition;
             target.transform.localRotation = source.localRotation;
 
@@ -399,6 +399,7 @@ namespace Reallusion.Import
             target.radius = source.radius;
             target.name = source.name;
             target.axis = source.axis;
+            target.isEnabled = source.isEnabled;
             
             // native UnityEngine.CapsuleCollider
             var genericCollider = genericColliderList[genericIndex] as UnityEngine.Object;

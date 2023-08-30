@@ -323,9 +323,8 @@ namespace Reallusion.Import
 			List<ColliderManager.AbstractCapsuleCollider> target = new List<ColliderManager.AbstractCapsuleCollider>();
 
 			foreach (ColliderManager.AbstractCapsuleCollider c in abstractColliders)
-			{
-                //target.Add(new ColliderManager.AbstractCapsuleCollider(null, c.transform.position, c.transform.rotation, c.height, c.radius, c.name, c.axis));
-                target.Add(new ColliderManager.AbstractCapsuleCollider(null, c.transform.localPosition, c.transform.localRotation, c.height, c.radius, c.name, c.axis));
+			{                
+                target.Add(new ColliderManager.AbstractCapsuleCollider(null, c.transform.localPosition, c.transform.localRotation, c.height, c.radius, c.name, c.axis, c.isEnabled));
             }
 
 			PhysicsSettingsStore settings = TryFindSettingsObject(prefab, initialState);

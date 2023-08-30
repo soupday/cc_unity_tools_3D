@@ -160,8 +160,8 @@ namespace Reallusion.Import
                         selectedName = c.name;
                         //small floating annotation near the collider                        
                         Handles.Label(c.transform.position + Vector3.up * 0.1f + Vector3.left * 0.1f, c.name, colliderManagerStyles.objectLabelText);
-
-                        DrawWireCapsule(c.transform.position, c.transform.rotation, c.radius, c.height, c.axis, drawCol);
+                        if (c.isEnabled)
+                            DrawWireCapsule(c.transform.position, c.transform.rotation, c.radius, c.height, c.axis, drawCol);
                         switch (colliderManager.manipulator)
                         {
                             case ColliderManager.ManipulatorType.position:
@@ -246,8 +246,11 @@ namespace Reallusion.Import
 
                         if (drawAllGizmos)
                         {
-                            if (colliderManager.mirrorImageAbstractCapsuleCollider == c) drawCol = Color.magenta;
-                            DrawWireCapsule(c.transform.position, c.transform.rotation, c.radius, c.height, c.axis, drawCol);
+                            if (c.isEnabled)
+                            {
+                                if (colliderManager.mirrorImageAbstractCapsuleCollider == c) drawCol = Color.magenta;
+                                DrawWireCapsule(c.transform.position, c.transform.rotation, c.radius, c.height, c.axis, drawCol);
+                            }
                         }
                     }
                 }
@@ -525,6 +528,8 @@ namespace Reallusion.Import
                     GUILayout.BeginHorizontal();
                     
                     GUILayout.FlexibleSpace();
+
+                    EditorGUI.BeginDisabledGroup(!c.isEnabled);
                     GUI.backgroundColor = active ? Color.Lerp(baseBackground, Color.blue, 0.35f) : baseBackground;
                     if (GUILayout.Button(c.name, GUILayout.MaxWidth(250f)))
                     //if (GUILayout.Button(c.name, (active ? colliderManagerStyles.currentButton : colliderManagerStyles.normalButton), GUILayout.MaxWidth(250f)))
@@ -532,6 +537,26 @@ namespace Reallusion.Import
                         SelectColliderForEdit(c);
                     }
                     GUI.backgroundColor = baseBackground;
+                    EditorGUI.EndDisabledGroup();
+                    // off button
+                    GUILayout.Space(4f);
+                    EditorGUI.BeginChangeCheck();
+                    c.isEnabled = GUILayout.Toggle(c.isEnabled, "");
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        if (c.isEnabled)
+                        {
+                            c.transform.gameObject.SetActive(true);
+                        }
+                        else
+                        {
+                            c.transform.gameObject.SetActive(false);
+                            DeSelectColliderForEdit();
+                        }
+                        SceneView.RepaintAll();
+                    }
+                    // end of off button
+
                     GUILayout.FlexibleSpace();
                     
                     GUILayout.EndHorizontal();
@@ -545,6 +570,8 @@ namespace Reallusion.Import
                     GUILayout.EndVertical();
                     if (active)
                         GUILayout.Space(1f);
+
+                    
                 }
             }
             GUILayout.Space(10f);
@@ -676,6 +703,11 @@ namespace Reallusion.Import
             }
             GUILayout.Space(10f);
             GUILayout.EndHorizontal();
+
+            // off button
+            GUILayout.Space(24f);
+            // end of off button
+
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
         }
@@ -706,6 +738,8 @@ namespace Reallusion.Import
             if (GUILayout.Button(recallLabel, GUILayout.Width(120f), GUILayout.MinWidth(100f)))
             {
                 colliderManager.ResetAbstractColliders(PhysicsSettingsStore.RecallAbstractColliderSettings(colliderManager, false));
+                Repaint();
+                SceneView.RepaintAll();
             }
             GUI.backgroundColor = baseBackground;
             GUILayout.FlexibleSpace();
@@ -721,6 +755,8 @@ namespace Reallusion.Import
             if (GUILayout.Button(resetLabel, GUILayout.Width(BUTTON_WIDTH)))
             {
                 colliderManager.ResetAbstractColliders(PhysicsSettingsStore.RecallAbstractColliderSettings(colliderManager, true));
+                Repaint();
+                SceneView.RepaintAll();
             }
             GUI.enabled = true;
             GUI.backgroundColor = baseBackground;
