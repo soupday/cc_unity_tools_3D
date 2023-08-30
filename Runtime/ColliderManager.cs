@@ -30,8 +30,9 @@ namespace Reallusion.Import
     {
 #if UNITY_EDITOR
         // additions to transpose the capsule maipulation code        
-        [HideInInspector] public enum ColliderSource { UnityEngine, MagicaCloth2, DynamicBone }
-        [HideInInspector] public ColliderSource currentEditType;
+        [HideInInspector][Flags] public enum ColliderType { UnityEngine = 1, MagicaCloth2 = 2, DynamicBone = 4, Unknown = 8 }
+        [HideInInspector] public ColliderType currentEditType;
+        [HideInInspector] public ColliderType availableColliderTypes;
         [HideInInspector] public enum ManipulatorType { position, rotation, scale }
         [HideInInspector] public ManipulatorType manipulator = ManipulatorType.position;
         [HideInInspector] public string[] manipulatorArray = { "Position", "Rotation", "Scale" };
@@ -52,8 +53,17 @@ namespace Reallusion.Import
             public float radius;
             public string name;
             public ColliderAxis axis;
+            public ColliderType colliderTypes;
+            public UnityEngine.Object nativeRef;
+            public UnityEngine.Object magicaRef;
+            public UnityEngine.Object dynamicRef;
 
-            public AbstractCapsuleCollider(Transform _transform, Vector3 _position, Quaternion _rotation, float _height, float _radius, string _name, ColliderAxis _axis)
+            public AbstractCapsuleCollider()
+            {
+
+            }
+
+            public AbstractCapsuleCollider(Transform _transform, Vector3 _position, Quaternion _rotation, float _height, float _radius, string _name, ColliderAxis _axis, ColliderType _colliderTypes = ColliderType.Unknown, UnityEngine.Object _native = null, UnityEngine.Object _magica = null, UnityEngine.Object _dynamic = null)
             {
                 transform = _transform;
                 localPosition = _position;
@@ -62,6 +72,10 @@ namespace Reallusion.Import
                 radius = _radius;
                 name = _name;
                 axis = _axis;
+                colliderTypes = _colliderTypes;
+                nativeRef = _native;
+                magicaRef = _magica;
+                dynamicRef = _dynamic;
             }
 
             public static bool IsNullOrEmpty(AbstractCapsuleCollider c)
@@ -75,10 +89,6 @@ namespace Reallusion.Import
 
                 return result;
             }
-            //public AbstractCapsuleCollider()
-            //{
-            //    //name = "Empty Collider";
-            //}
         }
 
         [Serializable]

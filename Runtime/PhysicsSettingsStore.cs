@@ -365,7 +365,7 @@ namespace Reallusion.Import
 #else
                 AssetDatabase.SaveAssets();
 #endif
-				Debug.Log("Gizmo state stored.");
+				//Debug.Log("Gizmo state stored.");
 			}
 		}
 

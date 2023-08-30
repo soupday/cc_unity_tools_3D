@@ -342,24 +342,17 @@ namespace Reallusion.Import
 
                 if (collider.colliderType.Equals(ColliderType.Capsule))
                 {
+                    if (MagicaCloth2IsAvailable())
+                       AddMagicaCloth2Collider(g, collider);
+
+                    /*
+                    // add logic to determine magica usage - allow or disallow multiple cloth sim? 
+                    // allow use cases with multiple concurrent collider systems
+                    // possibility to have native + magica, native + dynamicbone, magica + dynamicbone?, all 3?
                     Type capsuleColliderType = Physics.GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
-                    if (capsuleColliderType != null)
+                    if (capsuleColliderType != null)  
                     {
                         var capsuleColliderComponent = g.AddComponent(capsuleColliderType);
-
-                        /*
-                        enum MagicaCapsuleCollider.Direction
-
-                        [InspectorName("X-Axis")]
-                        X = 0,
-
-                        [InspectorName("Y-Axis")]
-                        Y = 1,
-
-                        [InspectorName("Z-Axis")]
-                        Z = 2,
-                        */
-
                         Physics.SetTypeField(capsuleColliderComponent.GetType(), capsuleColliderComponent, "direction", (int)collider.colliderAxis);
                         Physics.SetTypeField(capsuleColliderComponent.GetType(), capsuleColliderComponent, "radiusSeparation", false);
 
@@ -380,7 +373,7 @@ namespace Reallusion.Import
                         MethodInfo update = capsuleColliderComponent.GetType().GetMethod("UpdateParameters");
                         update.Invoke(capsuleColliderComponent, new object[] { });
                     }
-
+                    */
                     CapsuleCollider c = g.AddComponent<CapsuleCollider>();
 
                     c.direction = (int)collider.colliderAxis;                    
@@ -392,6 +385,9 @@ namespace Reallusion.Import
                 }
                 else if (collider.colliderType.Equals(ColliderType.Sphere))
                 {
+                    if (MagicaCloth2IsAvailable())
+                        AddMagicaCloth2Collider(g, collider);
+
                     CapsuleCollider c = g.AddComponent<CapsuleCollider>();
 
                     c.direction = (int)collider.colliderAxis;
@@ -406,6 +402,9 @@ namespace Reallusion.Import
                     //BoxCollider b = g.gameObject.AddComponent<BoxCollider>();
                     //b.size = collider.extent * modelScale;
                     //colliderLookup.Add(b, collider.boneName);
+
+                    if (MagicaCloth2IsAvailable())
+                        AddMagicaCloth2Collider(g, collider);
 
                     CapsuleCollider c = g.AddComponent<CapsuleCollider>();
                     c.direction = (int)collider.colliderAxis;
@@ -493,6 +492,7 @@ namespace Reallusion.Import
             // create a reference list of abstract colliders here
             // to be used as a 'reset to defaults' resource
             CreateAbstractColliders(colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders, out IList genericColliders);
+            
             PhysicsSettingsStore.SaveAbstractColliderSettings(colliderManager, abstractColliders, true);
             // end of addition
 
@@ -1031,65 +1031,298 @@ namespace Reallusion.Import
         }
 
         // additions
-
-
         public static bool CreateAbstractColliders(ColliderManager colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders, out IList genericColliders)
         {
-            // basic magica test
+            bool newMethod = true;
+            if (newMethod)
+            {
+                abstractColliders = new List<ColliderManager.AbstractCapsuleCollider>();
+
+                Type magicaCollderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider"); // very slow
+                genericColliders = (IList)CreateGeneric(typeof(List<>), magicaCollderType); // placeholder
+
+                // importer logic: there will be a possibility for all 3 supported collider types to be present
+                bool parseNative = false; // HasNativeCapsuleColliders(colliderManager.gameObject);
+                bool parseMagica = true;// HasMagicaCloth2Colliders(colliderManager.gameObject);
+                bool parseDynamic = false; // HasDynamicBoneColliders(colliderManager.gameObject);
+                bool doOnce = true;
+                MethodInfo getSize = null;
+
+                // create an array of the in-scene transforms in the character hierarchy
+                Transform[] allChildTransforms = colliderManager.gameObject.GetComponentsInChildren<Transform>();
+                foreach (Transform childtransform in allChildTransforms)
+                {
+                    GameObject go = childtransform.gameObject;
+                    if (go.GetComponent<CapsuleCollider>() != null || go.GetComponent(magicaCollderType) != null)
+                    {
+                        ColliderManager.AbstractCapsuleCollider abs = new ColliderManager.AbstractCapsuleCollider();
+                        bool nativeFound = false, magicaFound = false;
+                        if (parseNative)
+                        {
+                            if (go.GetComponent(typeof(CapsuleCollider)))
+                            {
+                                CapsuleCollider coll = go.GetComponent<CapsuleCollider>();
+                                abs.transform = coll.transform;
+                                abs.localPosition = coll.transform.localPosition;
+                                abs.localRotation = coll.transform.localRotation;
+                                abs.height = coll.height;
+                                abs.radius = coll.radius;
+                                abs.name = coll.name;
+                                abs.axis = (ColliderManager.ColliderAxis)coll.direction;
+                                abs.nativeRef = coll;
+                                nativeFound = true;
+                            }
+                        }
+
+                        if (parseMagica)
+                        {
+                            var magicaColl = go.GetComponent(magicaCollderType);
+                            if (magicaColl != null)
+                            {
+                                if (doOnce)
+                                {
+                                    getSize = magicaColl.GetType().GetMethod("GetSize");
+                                    doOnce = false;
+                                }
+
+                                if (nativeFound)
+                                {
+                                    abs.magicaRef = magicaColl;
+                                }
+                                else
+                                {
+                                    abs.transform = go.transform;
+                                    abs.localPosition = go.transform.localPosition;
+                                    abs.localRotation = go.transform.localRotation;
+
+                                    // see: https://learn.microsoft.com/en-us/dotnet/api/system.reflection.methodbase.invoke?view=net-7.0
+                                    //getSize = magicaColl.GetType().GetMethod("GetSize");
+                                    Vector3 size = (Vector3)getSize.Invoke(magicaColl, new object[] { });
+                                    abs.height = size.z;
+                                    abs.radius = size.x;
+
+                                    if (GetTypeProperty(magicaColl, "name", out object _name))
+                                        abs.name = (string)_name;
+
+                                    if (GetTypeProperty(magicaColl, "direction", out object _axis))
+                                        abs.axis = (ColliderManager.ColliderAxis)_axis;
+
+                                    abs.magicaRef = magicaColl;
+                                    Debug.Log(abs.name + " H: " + abs.height + " R: " + abs.radius);
+                                }
+                                genericColliders.Add(magicaColl);
+                                magicaFound = true;
+                            }
+                        }
+                        if (!ColliderManager.AbstractCapsuleCollider.IsNullOrEmpty(abs))
+                            abstractColliders.Add(abs);
+                    }
+                }
+                if (genericColliders.Count > 0 && abstractColliders.Count > 0)
+                    return true;
+                else
+                    return false;
+            }
+            else
+            {
+                // determine which type of collliders we are using
+                // currently just use native capsules on the target -  this allows for a typeof(magicaCollider) as input
+                Type colliderComponentType = typeof(CapsuleCollider);
+                genericColliders = (IList)CreateGeneric(typeof(List<>), colliderComponentType);
+
+                Transform[] allChildObjects = colliderManager.gameObject.GetComponentsInChildren<Transform>();
+                foreach (Transform childObject in allChildObjects)
+                {
+                    GameObject go = childObject.gameObject;
+                    if (go.GetComponent(colliderComponentType))
+                    {
+                        genericColliders.Add(go.GetComponent(colliderComponentType));
+                    }
+                }
+
+                // transpose all of the generic collider data into the abstract class
+                abstractColliders = new List<ColliderManager.AbstractCapsuleCollider>();
+                foreach (var collider in genericColliders)
+                {
+                    Transform t = null;
+                    float height = 0f;
+                    float radius = 0f;
+                    string name = "";
+                    ColliderManager.ColliderAxis axis = ColliderManager.ColliderAxis.y;
+
+                    if (GetTypeProperty(collider, "transform", out object _t))
+                        t = (Transform)_t;
+
+                    if (GetTypeProperty(collider, "height", out object _height))
+                        height = (float)_height;
+
+                    if (GetTypeProperty(collider, "radius", out object _radius))
+                        radius = (float)_radius;
+
+                    if (GetTypeProperty(collider, "name", out object _name))
+                        name = (string)_name;
+
+                    if (GetTypeProperty(collider, "direction", out object _axis))
+                        axis = (ColliderManager.ColliderAxis)_axis;  // verify that magica can cast into this
+
+                    //abstractColliders.Add(new ColliderManager.AbstractCapsuleCollider(t, t.position, t.rotation, height, radius, name, axis));
+                    abstractColliders.Add(new ColliderManager.AbstractCapsuleCollider(t, t.localPosition, t.localRotation, height, radius, name, axis));
+                }
+                if (genericColliders.Count > 0 && abstractColliders.Count > 0)
+                    return true;
+                else
+                    return false;
+            }
+        }
+
+        public static bool MagicaCloth2IsAvailable()
+        {
+            // basic magica cloth v2 test
+            Type magicaClothType = GetTypeInAssemblies("MagicaCloth2.MagicaCloth");
+            return magicaClothType != null;            
+        }
+
+        public void AddMagicaCloth2Collider(GameObject g, CollisionShapeData collider)
+        {
+            // add logic to determine magica usage - allow or disallow multiple cloth sim? 
+            // allow use cases with multiple concurrent collider systems
+            // possibility to have native + magica, native + dynamicbone, magica + dynamicbone?, all 3?
+            Type capsuleColliderType = Physics.GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
+            if (capsuleColliderType != null)
+            {
+                var capsuleColliderComponent = g.AddComponent(capsuleColliderType);
+
+                Physics.SetTypeField(capsuleColliderComponent.GetType(), capsuleColliderComponent, "direction", (int)collider.colliderAxis);
+                Physics.SetTypeField(capsuleColliderComponent.GetType(), capsuleColliderComponent, "radiusSeparation", false);
+
+                float r;
+                float h;
+                if (collider.colliderType.Equals(ColliderType.Capsule))
+                {
+                    r = (collider.radius - collider.margin * Physics.PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                    h = collider.length * modelScale + r * 2f;
+                }
+                else if (collider.colliderType.Equals(ColliderType.Sphere))
+                {
+                    //Debug.Log("SPHERE================ " + collider.name);
+                    float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                    //c.radius = radius;
+                    //c.height = 0f;
+                    r = radius;
+                    h = 0f;
+                }
+                else // DRY
+                {
+                    //Debug.Log("BOX================ " + collider.name);
+                    float radius;
+                    float height;
+                    switch (collider.colliderAxis)
+                    {
+                        case ColliderAxis.X:
+                            radius = (collider.extent.y + collider.extent.z) / 4f;
+                            height = collider.extent.x;
+                            break;
+                        case ColliderAxis.Z:
+                            radius = (collider.extent.x + collider.extent.y) / 4f;
+                            height = collider.extent.z;
+                            break;
+                        case ColliderAxis.Y:
+                        default:
+                            radius = (collider.extent.x + collider.extent.z) / 4f;
+                            height = collider.extent.y;
+                            break;
+                    }
+                    r = (radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                    h = height * modelScale;
+                }
+
+                //"https://learn.microsoft.com/en-us/dotnet/api/system.type.getmethod?view=netframework-4.8#System_Type_GetMethod_System_String_System_Type___"
+                MethodInfo setSize = capsuleColliderComponent.GetType().GetMethod("SetSize",
+                                    BindingFlags.Public | BindingFlags.Instance,
+                                    null,
+                                    CallingConventions.Any,
+                                    new Type[] { typeof(Vector3) },
+                                    null);
+                Vector3 sizeVector = new Vector3(r, r, h);
+                object[] inputParams = new object[] { sizeVector };
+                setSize.Invoke(capsuleColliderComponent, inputParams);
+
+                MethodInfo update = capsuleColliderComponent.GetType().GetMethod("UpdateParameters");
+                update.Invoke(capsuleColliderComponent, new object[] { });
+            }
+        }
+
+        public static bool DynamicBoneIsAvailable()
+        {
+            // basic dynamic bone test
+            Type dynamicBoneType = GetTypeInAssemblies("DynamicBone");
+            return dynamicBoneType != null;
+        }
+
+        public static bool HasNativeCapsuleColliders(GameObject go)
+        {
+            return go.GetComponentsInChildren(typeof(CapsuleCollider)).Length > 0;
+        }
+
+        public static bool HasMagicaCloth2Colliders(GameObject go)
+        {
             Type magicaClothType = GetTypeInAssemblies("MagicaCloth2.MagicaCloth");
             if (magicaClothType != null)
             {
-                //Magica cloth 2 is available
-            }
-            // determine which type of collliders we are using
-
-            // currently just use native capsules on the target -  this allows for a typeof(magicaCollider) as input
-            Type colliderComponentType = typeof(CapsuleCollider);
-            genericColliders = (IList)CreateGeneric(typeof(List<>), colliderComponentType);
-
-            Transform[] allChildObjects = colliderManager.gameObject.GetComponentsInChildren<Transform>();
-            foreach (Transform childObject in allChildObjects)
-            {
-                GameObject go = childObject.gameObject;
-                if (go.GetComponent(colliderComponentType))
+                Type magicaCollderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
+                if (magicaCollderType != null)
                 {
-                    genericColliders.Add(go.GetComponent(colliderComponentType));
+                    Component[] components = go.GetComponentsInChildren(magicaCollderType);
+                    return components.Length > 0;
                 }
             }
-
-            // transpose all of the generic collider data into the abstract class
-            abstractColliders = new List<ColliderManager.AbstractCapsuleCollider>();
-            foreach (var collider in genericColliders)
-            {
-                Transform t = null;
-                float height = 0f;
-                float radius = 0f;
-                string name = "";
-                ColliderManager.ColliderAxis axis = ColliderManager.ColliderAxis.y;
-
-                if (GetTypeProperty(collider, "transform", out object _t))
-                    t = (Transform)_t;
-
-                if (GetTypeProperty(collider, "height", out object _height))
-                    height = (float)_height;
-
-                if (GetTypeProperty(collider, "radius", out object _radius))
-                    radius = (float)_radius;
-
-                if (GetTypeProperty(collider, "name", out object _name))
-                    name = (string)_name;
-
-                if (GetTypeProperty(collider, "direction", out object _axis))
-                    axis = (ColliderManager.ColliderAxis)_axis;  // verify that magica can cast into this
-
-                //abstractColliders.Add(new ColliderManager.AbstractCapsuleCollider(t, t.position, t.rotation, height, radius, name, axis));
-                abstractColliders.Add(new ColliderManager.AbstractCapsuleCollider(t, t.localPosition, t.localRotation, height, radius, name, axis));
-            }
-            if (genericColliders.Count > 0 && abstractColliders.Count > 0)
-                return true;
-            else
-                return false;
+            return false;
         }
 
+        public static bool HasDynamicBoneColliders(GameObject go)
+        {
+            Type dynamicBoneType = GetTypeInAssemblies("DynamicBone");
+
+            //
+
+            return false;
+        }
+
+        public static bool HasAnyValidCollider(Transform t)
+        {
+            // return true if any valid collider is present
+            GameObject go = t.gameObject;
+            if (go != null)
+            {
+                // native
+                //if (go.GetComponent<CapsuleCollider>() != null) return true;
+
+                // magica
+                Type magicaCollderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
+                if (go.GetComponent(magicaCollderType) != null) return true;
+
+                // dynamic bone
+                // --------
+            }
+            return false;
+        }
+
+        public static void ReadAllTypeProperties(object o)
+        {
+            PropertyInfo[] propertyInfo = o.GetType().GetProperties();
+            foreach (PropertyInfo property in propertyInfo)
+            {
+                Debug.Log("PROPERTY:: " + property.Name);
+            }
+        }
+
+        public static void ReadAllTypeFields(object o)
+        {
+            FieldInfo[] fieldInfo = o.GetType().GetFields();
+            foreach (FieldInfo field in fieldInfo)
+            {
+                Debug.Log("FIELD:: " + field.Name);
+            }
+        }
     }
 }

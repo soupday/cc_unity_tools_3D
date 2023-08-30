@@ -38,7 +38,7 @@ namespace Reallusion.Import
         private ColliderManager colliderManager;
         private ColliderSettings currentCollider;
         private bool symmetrical = true;
-        private Texture2D editModeEnable, editModeDisable;
+        private Texture2D editModeEnable, editModeDisable, magicaIcon;
         private Color baseBackground;
 
         const float LABEL_WIDTH = 80f;
@@ -73,12 +73,12 @@ namespace Reallusion.Import
 
         private void OnDestroy()
         {
-            
+            // Debug.Log("OnDestroy");
         }
 
         private void OnDisable()
         {
-            
+            // Debug.Log("OnDisable");
         }
 
         private void InitCurrentCollider(string name = null)
@@ -112,6 +112,13 @@ namespace Reallusion.Import
         {
             editModeEnable = Util.FindTexture(new string[] { "Assets", "Packages" }, "RL_Edit_Enable");
             editModeDisable = Util.FindTexture(new string[] { "Assets", "Packages" }, "RL_Edit_Disable");
+            //magicaIcon = Util.FindTexture(new string[] { "Assets", "Packages" }, "icon-collider");
+            //if (magicaIcon == null)
+            //{
+                magicaIcon = (Texture2D)EditorGUIUtility.IconContent("CircleCollider2D Icon").image;
+            //}
+            colliderManager.currentEditType = ColliderManager.ColliderType.Unknown;
+
         }
 
         public class Styles
@@ -269,6 +276,7 @@ namespace Reallusion.Import
             base.OnInspectorGUI();
 
             DrawEditAssistBlock();
+            //DrawColliderSetSelector();
             DrawColliderSelectionBlock();
             DrawStoreControls();
             DrawClothShortcuts();
@@ -363,7 +371,7 @@ namespace Reallusion.Import
             }
             Selection.activeObject = colliderManager.gameObject;
             ActiveEditorTracker.sharedTracker.isLocked = editMode;
-            ActiveEditorTracker.sharedTracker.ForceRebuild();
+            //ActiveEditorTracker.sharedTracker.ForceRebuild();
             SetGizmos();
             Selection.activeObject = null;
             SceneView.RepaintAll();
@@ -384,10 +392,116 @@ namespace Reallusion.Import
 
             editMode = false;
             ActiveEditorTracker.sharedTracker.isLocked = false;
-            ActiveEditorTracker.sharedTracker.ForceRebuild();
+            //ActiveEditorTracker.sharedTracker.ForceRebuild();
             ResetGizmos();
             Selection.activeObject = colliderManager.gameObject;
             SceneView.RepaintAll();
+        }
+
+        private void DrawColliderSetSelector()
+        {
+            GUILayout.Space(10f);
+            GUILayout.Label("Collider Type Select", EditorStyles.boldLabel);
+            GUILayout.Space(10f);
+            GUI.backgroundColor = editMode ? Color.Lerp(baseBackground, Color.green, 0.9f) : baseBackground;
+            GUILayout.BeginVertical(EditorStyles.helpBox);
+            GUI.backgroundColor = baseBackground;
+
+            GUILayout.BeginHorizontal(); // controls + text
+            GUILayout.Space(10f);
+
+            GUILayout.BeginVertical(); // controls group for vertical centering
+            GUILayout.Space(10f);  // enforce a minimum upper border
+            GUILayout.FlexibleSpace();
+
+            GUILayout.BeginHorizontal(); // controls group horizontal layout
+            float iconSize = 36f;
+
+            bool active = colliderManager.currentEditType.HasFlag(ColliderManager.ColliderType.UnityEngine);
+            GUI.backgroundColor = active ? Color.Lerp(baseBackground, Color.blue, 0.35f) : baseBackground;
+            if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("CapsuleCollider Icon").image, "Native UnityEngine colliders"), GUILayout.Width(iconSize), GUILayout.Height(iconSize)))
+            {                
+                if (active)
+                    colliderManager.currentEditType ^= ColliderManager.ColliderType.UnityEngine;
+                else
+                    colliderManager.currentEditType |= ColliderManager.ColliderType.UnityEngine;                
+            }
+            GUI.backgroundColor = baseBackground;
+
+            GUILayout.Space(4f);
+
+            active = colliderManager.currentEditType.HasFlag(ColliderManager.ColliderType.MagicaCloth2);
+            GUI.backgroundColor = active ? Color.Lerp(baseBackground, Color.blue, 0.35f) : baseBackground;
+            if (GUILayout.Button(new GUIContent(magicaIcon, "Magica Cloth 2 colliders"), GUILayout.Width(iconSize), GUILayout.Height(iconSize)))
+            {
+                if (active)
+                    colliderManager.currentEditType ^= ColliderManager.ColliderType.MagicaCloth2;
+                else
+                    colliderManager.currentEditType |= ColliderManager.ColliderType.MagicaCloth2;
+            }
+            GUI.backgroundColor = baseBackground;
+
+            GUILayout.Space(4f);
+
+            active = colliderManager.currentEditType.HasFlag(ColliderManager.ColliderType.DynamicBone);
+            GUI.backgroundColor = active ? Color.Lerp(baseBackground, Color.blue, 0.35f) : baseBackground;
+            if(GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("FixedJoint Icon").image, "Dynamic Bone colliders"), GUILayout.Width(iconSize), GUILayout.Height(iconSize)))
+            {
+                if (active)
+                    colliderManager.currentEditType ^= ColliderManager.ColliderType.DynamicBone;
+                else
+                    colliderManager.currentEditType |= ColliderManager.ColliderType.DynamicBone;
+            }
+            GUI.backgroundColor = baseBackground;
+
+            GUILayout.Space(4f);
+            GUILayout.EndHorizontal(); // controls group horizontal layout
+
+            GUILayout.FlexibleSpace();
+            GUILayout.Space(10f); // enforce a minimum lower border
+            GUILayout.EndVertical(); // controls group for vertical centering
+
+
+            GUILayout.BeginVertical(); // text for vertical centering
+            GUILayout.FlexibleSpace();
+
+            string labelText = WriteLabelText(colliderManager.currentEditType);
+
+            GUILayout.Label(labelText);
+            GUILayout.FlexibleSpace();
+            GUILayout.EndVertical(); // text for vertical centering
+            GUILayout.FlexibleSpace(); // left justify the text area
+            GUILayout.EndHorizontal(); // controls + text
+
+            GUILayout.EndVertical(); // (EditorStyles.helpBox);
+        }
+
+        private string WriteLabelText(ColliderManager.ColliderType source)
+        {
+            string labelText = "";
+            bool newlineNeeded = false;
+
+            if (source.HasFlag(ColliderManager.ColliderType.UnityEngine))
+            {
+                labelText += "Native UnityEngine";
+                newlineNeeded = true;
+            }
+
+            if (source.HasFlag(ColliderManager.ColliderType.MagicaCloth2))
+            {
+                if (newlineNeeded) labelText += "\n";
+                labelText += "Magica Cloth 2";
+                newlineNeeded = true;
+            }
+
+            if (source.HasFlag(ColliderManager.ColliderType.DynamicBone))
+            {
+                if (newlineNeeded) labelText += "\n";
+                labelText += "DynamicBone";
+                newlineNeeded = true;
+            }
+
+            return labelText;
         }
 
         private void DrawColliderSelectionBlock()

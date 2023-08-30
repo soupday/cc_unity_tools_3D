@@ -574,7 +574,7 @@ namespace Reallusion.Import
 
             GUILayout.EndArea();            
         }
-
+        Rect prev = new Rect();
         private void OnGUIOptionArea(Rect optionBlock)
         {            
             GUILayout.BeginArea(optionBlock);
@@ -672,6 +672,19 @@ namespace Reallusion.Import
             }
             EditorGUI.EndDisabledGroup();
             //GUI.enabled = true;
+
+            //////////////
+            
+            if (Event.current.type == EventType.Repaint)
+                prev = GUILayoutUtility.GetLastRect();
+
+            if (EditorGUILayout.DropdownButton(
+                content: new GUIContent("Features"),
+                focusType: FocusType.Passive))
+            {                
+               ImporterFeaturesWindow.ShowAtPosition(new Rect(prev.x, prev.y + 20f, prev.width, prev.height));
+            }
+            //////////////
 
             GUILayout.Space(8f);
 
