@@ -491,7 +491,7 @@ namespace Reallusion.Import
             // addition
             // create a reference list of abstract colliders here
             // to be used as a 'reset to defaults' resource
-            CreateAbstractColliders(colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders, out IList genericColliders);
+            CreateAbstractColliders(colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders);//, out IList genericColliders);
             
             PhysicsSettingsStore.SaveAbstractColliderSettings(colliderManager, abstractColliders, true);
             // end of addition
@@ -996,6 +996,18 @@ namespace Reallusion.Import
             return null;
         }
 
+        public static bool GetTypeField(object o, string field, out object value)
+        {
+            FieldInfo fieldInfo = o.GetType().GetField(field);
+            if (fieldInfo != null)
+            {
+                value = fieldInfo.GetValue(o);
+                return true;
+            }
+            value = null;
+            return false;
+        }
+
         public static bool SetTypeField(Type t, object o, string field, object value)
         {
             FieldInfo fRoots = t.GetField(field);
@@ -1031,32 +1043,35 @@ namespace Reallusion.Import
         }
 
         // additions
-        public static bool CreateAbstractColliders(ColliderManager colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders, out IList genericColliders)
+        //public static bool CreateAbstractColliders(ColliderManager colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders, out IList genericColliders)
+            public static bool CreateAbstractColliders(ColliderManager colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders)
         {
             bool newMethod = true;
             if (newMethod)
             {
                 abstractColliders = new List<ColliderManager.AbstractCapsuleCollider>();
 
-                Type magicaCollderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider"); // very slow
-                genericColliders = (IList)CreateGeneric(typeof(List<>), magicaCollderType); // placeholder
+                if (MagicaCloth2IsAvailable())
+                    colliderManager.magicaColliderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider"); // very slow
+                //genericColliders = (IList)CreateGeneric(typeof(List<>), magicaCollderType); // placeholder
 
                 // importer logic: there will be a possibility for all 3 supported collider types to be present
-                bool parseNative = false; // HasNativeCapsuleColliders(colliderManager.gameObject);
-                bool parseMagica = true;// HasMagicaCloth2Colliders(colliderManager.gameObject);
+                bool parseNative = true; // HasNativeCapsuleColliders(colliderManager.gameObject);
+                bool parseMagica = MagicaCloth2IsAvailable();// true;// HasMagicaCloth2Colliders(colliderManager.gameObject);
                 bool parseDynamic = false; // HasDynamicBoneColliders(colliderManager.gameObject);
-                bool doOnce = true;
-                MethodInfo getSize = null;
+                //bool doOnce = true;
+                //MethodInfo getSize = null;
 
                 // create an array of the in-scene transforms in the character hierarchy
                 Transform[] allChildTransforms = colliderManager.gameObject.GetComponentsInChildren<Transform>(true);
                 foreach (Transform childtransform in allChildTransforms)
                 {
                     GameObject go = childtransform.gameObject;
-                    if (go.GetComponent<CapsuleCollider>() != null || go.GetComponent(magicaCollderType) != null)
+                    if (colliderManager.TransformHasAnyValidCollider(childtransform))
+                    //if (go.GetComponent<CapsuleCollider>() != null || go.GetComponent(colliderManager.magicalCollderType) != null)
                     {
                         ColliderManager.AbstractCapsuleCollider abs = new ColliderManager.AbstractCapsuleCollider();
-                        bool nativeFound = false, magicaFound = false;
+                        //bool nativeFound = false, magicaFound = false;
                         if (parseNative)
                         {
                             if (go.GetComponent(typeof(CapsuleCollider)))
@@ -1071,22 +1086,26 @@ namespace Reallusion.Import
                                 abs.name = coll.name;
                                 abs.axis = (ColliderManager.ColliderAxis)coll.direction;
                                 abs.nativeRef = coll;
-                                nativeFound = true;
+                                abs.colliderTypes |= ColliderManager.ColliderType.UnityEngine;
+                                //nativeFound = true;
+                                //genericColliders.Add(coll);
                             }
                         }
 
                         if (parseMagica)
                         {
-                            var magicaColl = go.GetComponent(magicaCollderType);
+                            var magicaColl = go.GetComponent(colliderManager.magicaColliderType);
                             if (magicaColl != null)
                             {
-                                if (doOnce)
-                                {
-                                    getSize = magicaColl.GetType().GetMethod("GetSize");
-                                    doOnce = false;
-                                }
+                                //if (doOnce)
+                                //{
+                                    if (colliderManager.magicaGetSize == null)
+                                        colliderManager.magicaGetSize = magicaColl.GetType().GetMethod("GetSize");
+                                    //getSize = magicaColl.GetType().GetMethod("GetSize");
+                                    //doOnce = false;
+                                //}
 
-                                if (nativeFound)
+                                if (abs.colliderTypes.HasFlag(ColliderManager.ColliderType.UnityEngine))// (nativeFound)
                                 {
                                     abs.magicaRef = magicaColl;
                                 }
@@ -1099,34 +1118,42 @@ namespace Reallusion.Import
 
                                     // see: https://learn.microsoft.com/en-us/dotnet/api/system.reflection.methodbase.invoke?view=net-7.0
                                     //getSize = magicaColl.GetType().GetMethod("GetSize");
-                                    Vector3 size = (Vector3)getSize.Invoke(magicaColl, new object[] { });
+                                    //Vector3 size = (Vector3)getSize.Invoke(magicaColl, new object[] { });
+                                    Vector3 size = (Vector3)colliderManager.magicaGetSize.Invoke(magicaColl, new object[] { });
                                     abs.height = size.z;
                                     abs.radius = size.x;
 
                                     if (GetTypeProperty(magicaColl, "name", out object _name))
                                         abs.name = (string)_name;
 
-                                    if (GetTypeProperty(magicaColl, "direction", out object _axis))
+                                    if (GetTypeField(magicaColl, "direction", out object _axis))
                                         abs.axis = (ColliderManager.ColliderAxis)_axis;
 
                                     abs.magicaRef = magicaColl;
-                                    Debug.Log(abs.name + " H: " + abs.height + " R: " + abs.radius);
+                                    //Debug.Log(abs.name + " was: " + _name + " H: " + abs.height + " R: " + abs.radius + " " + abs.axis + " was: " + _axis);                                    
                                 }
-                                genericColliders.Add(magicaColl);
-                                magicaFound = true;
+                                //genericColliders.Add(magicaColl);
+                                abs.colliderTypes |= ColliderManager.ColliderType.MagicaCloth2;
+                                //magicaFound = true;
                             }
                         }
                         if (!ColliderManager.AbstractCapsuleCollider.IsNullOrEmpty(abs))
+                        {
+                            //Debug.Log("TYPES: " + abs.colliderTypes.ToString());
                             abstractColliders.Add(abs);
+                        }
                     }
                 }
-                if (genericColliders.Count > 0 && abstractColliders.Count > 0)
+                if (abstractColliders.Count > 0) //(genericColliders.Count > 0 && abstractColliders.Count > 0)
                     return true;
                 else
                     return false;
             }
             else
             {
+                abstractColliders = new List<ColliderManager.AbstractCapsuleCollider>();
+                return false;
+                /*
                 // determine which type of collliders we are using
                 // currently just use native capsules on the target -  this allows for a typeof(magicaCollider) as input
                 Type colliderComponentType = typeof(CapsuleCollider);
@@ -1174,12 +1201,13 @@ namespace Reallusion.Import
                     return true;
                 else
                     return false;
+                */
             }
         }
 
         public static bool MagicaCloth2IsAvailable()
         {
-            // basic magica cloth v2 test
+            // basic magica cloth v2 test -- very slow
             Type magicaClothType = GetTypeInAssemblies("MagicaCloth2.MagicaCloth");
             return magicaClothType != null;            
         }
@@ -1256,7 +1284,7 @@ namespace Reallusion.Import
 
         public static bool DynamicBoneIsAvailable()
         {
-            // basic dynamic bone test
+            // basic dynamic bone test -- very slow
             Type dynamicBoneType = GetTypeInAssemblies("DynamicBone");
             return dynamicBoneType != null;
         }
@@ -1287,25 +1315,6 @@ namespace Reallusion.Import
 
             //
 
-            return false;
-        }
-
-        public static bool HasAnyValidCollider(Transform t)
-        {
-            // return true if any valid collider is present
-            GameObject go = t.gameObject;
-            if (go != null)
-            {
-                // native
-                //if (go.GetComponent<CapsuleCollider>() != null) return true;
-
-                // magica
-                Type magicaCollderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
-                if (go.GetComponent(magicaCollderType) != null) return true;
-
-                // dynamic bone
-                // --------
-            }
             return false;
         }
 

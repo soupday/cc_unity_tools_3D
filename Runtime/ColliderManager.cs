@@ -42,6 +42,17 @@ namespace Reallusion.Import
         [HideInInspector] public enum MirrorPlane { x, z }
         [HideInInspector] public MirrorPlane selectedMirrorPlane;
         [HideInInspector] public IList genericColliderList;
+        [HideInInspector] public bool magicaCloth2Available;
+        [HideInInspector] public Type magicaColliderType;
+        [HideInInspector] public MethodInfo magicaUpdate;
+        [HideInInspector] public MethodInfo magicaSetSize;
+        [HideInInspector] public MethodInfo magicaGetSize;
+        [HideInInspector] public bool hasGizmoUtility = false;
+        [HideInInspector] public List<AbstractCapsuleCollider> abstractedCapsuleColliders;
+        [HideInInspector] public AbstractCapsuleCollider cachedSelectedCollider;
+        [HideInInspector] public AbstractCapsuleCollider cachedMirrorImageCollider;
+        [HideInInspector] public AbstractCapsuleCollider selectedAbstractCapsuleCollider;
+        [HideInInspector] public AbstractCapsuleCollider mirrorImageAbstractCapsuleCollider;
 
         [Serializable]
         public class AbstractCapsuleCollider
@@ -145,32 +156,18 @@ namespace Reallusion.Import
             "MagicaPlaneCollider"            
         };
 
-        [HideInInspector]
-        public bool hasGizmoUtility = false;
-        [HideInInspector]
-        public List<AbstractCapsuleCollider> abstractedCapsuleColliders;
-        [HideInInspector]
-        public AbstractCapsuleCollider cachedSelectedCollider;
-        [HideInInspector]
-        public AbstractCapsuleCollider cachedMirrorImageCollider;
-        [HideInInspector]
-        public AbstractCapsuleCollider selectedAbstractCapsuleCollider;
-        [HideInInspector]
-        public AbstractCapsuleCollider mirrorImageAbstractCapsuleCollider;
-        
-        //[HideInInspector]
-        //public GizmoState cachedGizmoState = new GizmoState();   
-
         public void UpdateColliderFromAbstract(Vector3 mirrorPosDiff, Quaternion localRotation)
         {
-            int selectedIndex = abstractedCapsuleColliders.IndexOf(selectedAbstractCapsuleCollider);            
-            var genericCollider = genericColliderList[selectedIndex] as UnityEngine.Object;
+            //int selectedIndex = abstractedCapsuleColliders.IndexOf(selectedAbstractCapsuleCollider);            
+            //var genericCollider = genericColliderList[selectedIndex] as UnityEngine.Object;
 
             Vector3 localEuler = localRotation.eulerAngles;
             // transform (as a property of the collider) is inherited and the object ref is already stored
             //SetTypeProperty(genericCollider, "transform", selectedAbstractCapsuleCollider.transform);
-            SetTypeProperty(genericCollider, "height", selectedAbstractCapsuleCollider.height);
-            SetTypeProperty(genericCollider, "radius", selectedAbstractCapsuleCollider.radius);
+            //SetTypeProperty(genericCollider, "height", selectedAbstractCapsuleCollider.height);
+            //SetTypeProperty(genericCollider, "radius", selectedAbstractCapsuleCollider.radius);
+            SyncNativeCollider(selectedAbstractCapsuleCollider);
+            if (magicaCloth2Available) SyncMagicaCollider(selectedAbstractCapsuleCollider);
 
             //if (mirrorImageAbstractCapsuleCollider != null)
             if (!AbstractCapsuleCollider.IsNullOrEmpty(mirrorImageAbstractCapsuleCollider))
@@ -178,10 +175,12 @@ namespace Reallusion.Import
                 mirrorImageAbstractCapsuleCollider.height = selectedAbstractCapsuleCollider.height;
                 mirrorImageAbstractCapsuleCollider.radius = selectedAbstractCapsuleCollider.radius;
 
-                int mirrorIndex = abstractedCapsuleColliders.IndexOf(mirrorImageAbstractCapsuleCollider);
-                var mirrorGenericCollider = genericColliderList[mirrorIndex] as UnityEngine.Object;
-                SetTypeProperty(mirrorGenericCollider, "height", mirrorImageAbstractCapsuleCollider.height);
-                SetTypeProperty(mirrorGenericCollider, "radius", mirrorImageAbstractCapsuleCollider.radius);
+                //int mirrorIndex = abstractedCapsuleColliders.IndexOf(mirrorImageAbstractCapsuleCollider);
+                //var mirrorGenericCollider = genericColliderList[mirrorIndex] as UnityEngine.Object;
+                //SetTypeProperty(mirrorGenericCollider, "height", mirrorImageAbstractCapsuleCollider.height);
+                //SetTypeProperty(mirrorGenericCollider, "radius", mirrorImageAbstractCapsuleCollider.radius);
+                SyncNativeCollider(mirrorImageAbstractCapsuleCollider);
+                if (magicaCloth2Available) SyncMagicaCollider(mirrorImageAbstractCapsuleCollider);
 
                 Transform t = mirrorImageAbstractCapsuleCollider.transform;
                 Vector3 diff = Vector3.zero;
@@ -214,6 +213,39 @@ namespace Reallusion.Import
 
                 mirrorImageAbstractCapsuleCollider.transform = t;
             }
+        }
+
+        public void SyncNativeCollider(AbstractCapsuleCollider collider)
+        {
+            CapsuleCollider c = collider.nativeRef as CapsuleCollider;
+            c.height = collider.height;
+            c.radius = collider.radius;
+        }
+
+        public void SyncMagicaCollider(AbstractCapsuleCollider collider)
+        {
+            var c = collider.magicaRef;
+
+            if (magicaColliderType == null)
+            {
+                magicaColliderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
+            }
+
+            if (magicaSetSize == null || magicaUpdate == null)
+            {
+                magicaSetSize = c.GetType().GetMethod("SetSize",
+                                            BindingFlags.Public | BindingFlags.Instance,
+                                            null,
+                                            CallingConventions.Any,
+                                            new Type[] { typeof(Vector3) },
+                                            null);
+
+                magicaUpdate = c.GetType().GetMethod("UpdateParameters");
+            }
+            Vector3 sizeVector = new Vector3(collider.radius, collider.radius, collider.height);
+            object[] inputParams = new object[] { sizeVector };
+            magicaSetSize.Invoke(c, inputParams);            
+            magicaUpdate.Invoke(c, new object[] { });
         }
 
         public void CacheCollider(AbstractCapsuleCollider collider, AbstractCapsuleCollider mirrorCollider = null)
@@ -284,15 +316,15 @@ namespace Reallusion.Import
         {
             if (selectedAbstractCapsuleCollider != null && cachedSelectedCollider != null)
             {
-                int index = abstractedCapsuleColliders.IndexOf(selectedAbstractCapsuleCollider);
-                if ( index != -1)
-                    UpdateColliderSettings(cachedSelectedCollider, selectedAbstractCapsuleCollider, index);                
+                //int index = abstractedCapsuleColliders.IndexOf(selectedAbstractCapsuleCollider);
+                //if (index != -1)
+                    UpdateColliderSettings(cachedSelectedCollider, selectedAbstractCapsuleCollider);//, index);                
             }
             if (!AbstractCapsuleCollider.IsNullOrEmpty(mirrorImageAbstractCapsuleCollider) && !AbstractCapsuleCollider.IsNullOrEmpty(cachedMirrorImageCollider))
             {
-                int mirrorIndex = abstractedCapsuleColliders.IndexOf(mirrorImageAbstractCapsuleCollider);
-                if ( mirrorIndex != -1 )
-                    UpdateColliderSettings(cachedMirrorImageCollider, mirrorImageAbstractCapsuleCollider, mirrorIndex);
+                //int mirrorIndex = abstractedCapsuleColliders.IndexOf(mirrorImageAbstractCapsuleCollider);
+                //if (mirrorIndex != -1)
+                    UpdateColliderSettings(cachedMirrorImageCollider, mirrorImageAbstractCapsuleCollider);//, mirrorIndex);
             }
         }
 
@@ -354,7 +386,7 @@ namespace Reallusion.Import
                     int colliderIndex = abstractedCapsuleColliders.FindIndex(x => x.name == s.name);
 
                     if (current != null && colliderIndex != -1)
-                        UpdateColliderSettings(s, current, colliderIndex);
+                        UpdateColliderSettings(s, current);//, colliderIndex);
                 }
             }
         }
@@ -371,7 +403,7 @@ namespace Reallusion.Import
                 int sourceIndex = referenceList.FindIndex(y => y.name == colliderName);
 
                 if (targetIndex == sourceIndex)
-                    UpdateColliderSettings(source, target, targetIndex);
+                    UpdateColliderSettings(source, target);//, targetIndex);
 
                 if (resetMirror && !AbstractCapsuleCollider.IsNullOrEmpty(mirrorImageAbstractCapsuleCollider))  // determine the mirror in abstractedCapsuleColliders and reset it with data from the corresponding mirror in referenceList
                 {
@@ -383,13 +415,13 @@ namespace Reallusion.Import
                     if (!AbstractCapsuleCollider.IsNullOrEmpty(mirrorTarget) && !AbstractCapsuleCollider.IsNullOrEmpty(mirrorSource))
                     {
                         if (mirrorTargetIndex == mirrorSourceIndex)
-                            UpdateColliderSettings(mirrorSource, mirrorTarget, mirrorTargetIndex);
+                            UpdateColliderSettings(mirrorSource, mirrorTarget);//, mirrorTargetIndex);
                     }
                 }
             }
         }
 
-        public void UpdateColliderSettings(AbstractCapsuleCollider source, AbstractCapsuleCollider target, int genericIndex)
+        public void UpdateColliderSettings(AbstractCapsuleCollider source, AbstractCapsuleCollider target)//, int genericIndex)
         {
             // update the real world information with the stored info
             target.transform.localPosition = source.localPosition;
@@ -400,12 +432,40 @@ namespace Reallusion.Import
             target.name = source.name;
             target.axis = source.axis;
             target.isEnabled = source.isEnabled;
-            
+
             // native UnityEngine.CapsuleCollider
-            var genericCollider = genericColliderList[genericIndex] as UnityEngine.Object;
-            SetTypeProperty(genericCollider, "height", source.height);
-            SetTypeProperty(genericCollider, "radius", source.radius);
+            //var genericCollider = genericColliderList[genericIndex] as UnityEngine.Object;
+            //SetTypeProperty(genericCollider, "height", source.height);
+            //SetTypeProperty(genericCollider, "radius", source.radius);
+            SyncNativeCollider(target);
+            if (magicaCloth2Available) SyncMagicaCollider(target);
         }
+
+        public bool TransformHasAnyValidCollider(Transform t)
+        {
+            // return true if any valid collider is present
+            GameObject go = t.gameObject;
+            if (go != null)
+            {
+                // native
+                if (go.GetComponent<CapsuleCollider>() != null) return true;
+
+                // magica
+                if (magicaCloth2Available)
+                {
+                    if (magicaColliderType == null)
+                        magicaColliderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
+
+                    if (go.GetComponent(magicaColliderType) != null) return true;
+                }
+
+                // dynamic bone
+                // --------
+            }
+            return false;
+        }
+
+
         //end of additions
 
         [Serializable]
@@ -561,14 +621,12 @@ namespace Reallusion.Import
             }
         }
 
-        public Collider[] colliders;
-        [HideInInspector]
-        public GameObject[] clothMeshes;
-        [HideInInspector]
-        public ColliderSettings[] settings;
-        [HideInInspector]
-        public string characterGUID;
+        [HideInInspector] public Collider[] colliders;
+        [HideInInspector] public GameObject[] clothMeshes;
+        [HideInInspector] public ColliderSettings[] settings;
+        [HideInInspector] public string characterGUID;
         
+
         public void AddColliders(List<Collider> colliders)
         {
             List<ColliderSettings> settings = new List<ColliderSettings>();

@@ -18,12 +18,14 @@
 
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.EditorTools;
 using ColliderSettings = Reallusion.Import.ColliderManager.ColliderSettings;
 using System.Linq;
 using System.Collections.Generic;
 using System;
 using Object = UnityEngine.Object;
 using System.Collections;
+using UnityEditor.ShortcutManagement;
 
 namespace Reallusion.Import
 {
@@ -105,7 +107,7 @@ namespace Reallusion.Import
 
         private void CreateAbstractColliders()
         {
-            Physics.CreateAbstractColliders(colliderManager, out colliderManager.abstractedCapsuleColliders, out colliderManager.genericColliderList);
+            Physics.CreateAbstractColliders(colliderManager, out colliderManager.abstractedCapsuleColliders);//, out colliderManager.genericColliderList);
         }
 
         private void InitIcons()
@@ -118,7 +120,7 @@ namespace Reallusion.Import
                 magicaIcon = (Texture2D)EditorGUIUtility.IconContent("CircleCollider2D Icon").image;
             //}
             colliderManager.currentEditType = ColliderManager.ColliderType.Unknown;
-
+            colliderManager.magicaCloth2Available = Physics.MagicaCloth2IsAvailable();
         }
 
         public class Styles
@@ -146,6 +148,8 @@ namespace Reallusion.Import
 
         private void OnSceneGUI()
         {
+            //CatchKeyEvents();
+
             if (colliderManagerStyles == null) colliderManagerStyles = new Styles();
 
             string selectedName = "";
@@ -154,7 +158,8 @@ namespace Reallusion.Import
             {
                 foreach (ColliderManager.AbstractCapsuleCollider c in colliderManager.abstractedCapsuleColliders)
                 {
-                    Color drawCol = c == colliderManager.selectedAbstractCapsuleCollider ? Color.red : new Color(0.60f, 0.9f, 0.60f);
+                    // Color drawCol = c == colliderManager.selectedAbstractCapsuleCollider ? Color.red : new Color(0.60f, 0.9f, 0.60f);
+                    Color drawCol = c == colliderManager.selectedAbstractCapsuleCollider ? Color.red : Color.cyan;
                     if (colliderManager.selectedAbstractCapsuleCollider == c)
                     {
                         selectedName = c.name;
@@ -269,8 +274,58 @@ namespace Reallusion.Import
             }
         }
 
+        public void CatchKeyEvents()
+        {
+            Event e = Event.current;
+
+            if (e.type == EventType.KeyUp)
+            {
+                
+            }
+
+            if (e.type == EventType.KeyDown)
+            {
+                
+            }
+        }
+
+        public void SyncMode()
+        {
+            switch (Tools.current)
+            {
+                case Tool.Move:
+                    {
+                        if (colliderManager.manipulator != ColliderManager.ManipulatorType.position)
+                        {
+                            colliderManager.manipulator = ColliderManager.ManipulatorType.position;
+                        }
+                        break;
+                    }
+                    case Tool.Rotate:
+                    {
+                        if (colliderManager.manipulator != ColliderManager.ManipulatorType.rotation)
+                        {
+                            colliderManager.manipulator = ColliderManager.ManipulatorType.rotation;
+                        }
+                        break;
+                        }
+                    case Tool.Scale:
+                    {
+                        if(colliderManager.manipulator != ColliderManager.ManipulatorType.scale)
+                        {
+                            colliderManager.manipulator = ColliderManager.ManipulatorType.scale;
+                        }
+                        break;
+                    }
+            }
+        }
+
+
         public override void OnInspectorGUI()
         {
+            //CatchKeyEvents();
+            SyncMode();
+
             if (colliderManager.abstractedCapsuleColliders == null) CreateAbstractColliders();
             if (editModeEnable == null) InitIcons();
             if (colliderManagerStyles == null) colliderManagerStyles = new Styles();
@@ -363,6 +418,7 @@ namespace Reallusion.Import
 
         private void SetEditAssistMode()
         {
+            Tools.hidden = true;
             editMode = true;
             if (colliderManager != null)
             {
@@ -386,6 +442,7 @@ namespace Reallusion.Import
 
         private void UnSetEditAssistMode()
         {
+            Tools.hidden = false;
             // optional: deselect the collider for editing
             bool deSelectChar = false;
             if (deSelectChar)
@@ -547,10 +604,28 @@ namespace Reallusion.Import
                         if (c.isEnabled)
                         {
                             c.transform.gameObject.SetActive(true);
+                            if (colliderManager.transformSymmetrically)
+                            {
+                                ColliderManager.AbstractCapsuleCollider m = DetermineMirrorImageCollider(c);
+                                if (m != null)
+                                {
+                                    m.isEnabled = true;
+                                    m.transform.gameObject.SetActive(true);
+                                }
+                            }
                         }
                         else
                         {
                             c.transform.gameObject.SetActive(false);
+                            if (colliderManager.transformSymmetrically)
+                            {
+                                ColliderManager.AbstractCapsuleCollider m = DetermineMirrorImageCollider(c);
+                                if (m != null)
+                                {
+                                    m.isEnabled = false;
+                                    m.transform.gameObject.SetActive(false);
+                                }
+                            }
                             DeSelectColliderForEdit();
                         }
                         SceneView.RepaintAll();
@@ -661,7 +736,8 @@ namespace Reallusion.Import
             if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d_MoveTool on").image, "Transform position tool"),  GUILayout.Width(30f)))
             {
                 colliderManager.manipulator = ColliderManager.ManipulatorType.position;
-                SceneView.RepaintAll();
+                Tools.current = Tool.Move;
+                //SceneView.RepaintAll();
             }
             GUI.backgroundColor = baseBackground;
 
@@ -671,7 +747,8 @@ namespace Reallusion.Import
             if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d_RotateTool On").image, "Transform rotation tool"),  GUILayout.Width(30f)))
             {
                 colliderManager.manipulator = ColliderManager.ManipulatorType.rotation;
-                SceneView.RepaintAll();
+                Tools.current = Tool.Rotate;
+                //SceneView.RepaintAll();
             }
             GUI.backgroundColor = baseBackground;
 
@@ -681,7 +758,8 @@ namespace Reallusion.Import
             if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("ScaleTool On").image, "Transform scale tool"), GUILayout.Width(30f)))
             {
                 colliderManager.manipulator = ColliderManager.ManipulatorType.scale;
-                SceneView.RepaintAll();
+                Tools.current = Tool.Scale;                
+                //SceneView.RepaintAll();
             }
             GUI.backgroundColor = baseBackground;
 
