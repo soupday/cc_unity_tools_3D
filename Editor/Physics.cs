@@ -316,7 +316,7 @@ namespace Reallusion.Import
             GameObject parent = new GameObject();
             GameObject g;
             Transform[] objects = prefabInstance.GetComponentsInChildren<Transform>();
-            Dictionary<Collider, string> colliderLookup = new Dictionary<Collider, string>();
+            Dictionary<Object, string> colliderLookup = new Dictionary<Object, string>();
             Dictionary<Collider, Collider> existingLookup = new Dictionary<Collider, Collider>();
             
             // delegates
@@ -354,7 +354,10 @@ namespace Reallusion.Import
                     {
                         Debug.Log("ADDING MAGICA: " + collider.name);
                         if (MagicaCloth2IsAvailable())
-                            AddMagicaCloth2Collider(g, collider);
+                        {
+                            Object c = AddMagicaCloth2Collider(g, collider);
+                            colliderLookup.Add(c, collider.boneName);
+                        }
                     }
 
                     if (addUnityClothPhysics)
@@ -374,7 +377,10 @@ namespace Reallusion.Import
                     if (addMagicaClothPhysics)
                     {
                         if (MagicaCloth2IsAvailable())
-                            AddMagicaCloth2Collider(g, collider);
+                        {
+                            Object c = AddMagicaCloth2Collider(g, collider);
+                            colliderLookup.Add(c, collider.boneName);
+                        }
                     }
 
                     if (addUnityClothPhysics)
@@ -398,7 +404,10 @@ namespace Reallusion.Import
                     if (addMagicaClothPhysics)
                     {
                         if (MagicaCloth2IsAvailable() && addMagicaClothPhysics)
-                            AddMagicaCloth2Collider(g, collider);
+                        {
+                            Object c = AddMagicaCloth2Collider(g, collider);
+                            colliderLookup.Add(c, collider.boneName);
+                        }
                     }
 
                     if (addUnityClothPhysics)
@@ -439,7 +448,7 @@ namespace Reallusion.Import
             // as the transforms have moved, need to re-sync the transforms in the physics engine
             UnityEngine.Physics.SyncTransforms(); 
 
-            List<Collider> listColliders = new List<Collider>(colliderLookup.Count);
+            List<Object> listColliders = new List<Object>(colliderLookup.Count);
 
             // revert all existing prefabs overrides...
             foreach (KeyValuePair<Collider, Collider> collPair in existingLookup)
@@ -447,32 +456,43 @@ namespace Reallusion.Import
                 PrefabUtility.RevertObjectOverride(collPair.Value, InteractionMode.UserAction);
             }
 
-            foreach (KeyValuePair<Collider, string> collPair in colliderLookup)
+            foreach (KeyValuePair<Object, string> collPair in colliderLookup)
             {
-                Collider transformedCollider = collPair.Key;
-                string colliderBone = collPair.Value;
-
-                Transform bone = FindBone(colliderBone);
-                if (bone)
+                Component c = collPair.Key as Component;
+                if (c)
                 {
-                    if (existingLookup.TryGetValue(transformedCollider, out Collider existingCollider))
+                    Transform t = c.transform;
+
+                    string colliderBone = collPair.Value;
+
+                    Transform bone = FindBone(colliderBone);
+                    if (bone)
                     {
-                        // reparent with keep position
-                        transformedCollider.transform.SetParent(bone, true);
-                        // copy the transformed collider to the existing if they match
-                        CopyCollider(transformedCollider, existingCollider);
-                        // delete the transformed collider
-                        GameObject.DestroyImmediate(transformedCollider.gameObject);
-                        // add to list of colliders
-                        listColliders.Add(existingCollider);
+                        /* dunno aboot this...
+                        if (existingLookup.TryGetValue(transformedCollider, out Collider existingCollider))
+                        {
+                            // reparent with keep position
+                            transformedCollider.transform.SetParent(bone, true);
+                            // copy the transformed collider to the existing if they match
+                            CopyCollider(transformedCollider, existingCollider);
+                            // delete the transformed collider
+                            GameObject.DestroyImmediate(transformedCollider.gameObject);
+                            // add to list of colliders
+                            listColliders.Add(existingCollider);
+                        }
+                        else
+                        {
+                            // reparent with keep position
+                            t.transform.SetParent(bone, true);
+                            // add to list of colliders
+                            listColliders.Add(transformedCollider);
+                        }*/
                     }
-                    else
-                    {
-                        // reparent with keep position
-                        transformedCollider.transform.SetParent(bone, true);
-                        // add to list of colliders
-                        listColliders.Add(transformedCollider);
-                    }
+
+                    // reparent with keep position
+                    t.transform.SetParent(bone, true);
+                    // add to list of colliders
+                    listColliders.Add(t);
                 }
             }
             
@@ -480,12 +500,14 @@ namespace Reallusion.Import
             ColliderManager colliderManager = prefabInstance.GetComponent<ColliderManager>();
             if (colliderManager == null) colliderManager = prefabInstance.AddComponent<ColliderManager>();
 
+            /*
             // add colliders to manager
             if (colliderManager)
             {
                 colliderManager.characterGUID = characterGUID;
-                colliderManager.AddColliders(listColliders);
+                /////colliderManager.AddColliders(listColliders);
             }
+            */
 
             // addition
             // create a reference list of abstract colliders here
@@ -1104,7 +1126,7 @@ namespace Reallusion.Import
             return prefabAsset;
         }
 
-        void FixColliderAPose(Transform[] objects, Dictionary<Collider, string> colliderLookup)
+        void FixColliderAPose(Transform[] objects, Dictionary<Object, string> colliderLookup)
         {
             Func<string, Transform> FindBone = (boneName) => Array.Find(objects, o => o.name.iEquals(boneName));            
 
@@ -1114,22 +1136,27 @@ namespace Reallusion.Import
             Transform rightArm = FindBone("CC_Base_R_Upperarm");
             if (!leftArm) rightArm = FindBone("R_Upperarm");
 
-            foreach(KeyValuePair<Collider, string> pair in colliderLookup)
+            foreach (KeyValuePair<Object, string> pair in colliderLookup)
             {
-                Collider c = pair.Key;
-                string boneName = pair.Value;
-                Transform bone = FindBone(boneName);
-                if (bone)
+                Component c = pair.Key as Component;
+                if (c)
                 {
-                    if (bone == leftArm || bone.IsChildOf(leftArm))
+                    Transform t = c.transform;
+                    string boneName = pair.Value;
+                    Transform bone = FindBone(boneName);
+                    if (bone)
                     {
-                        c.transform.RotateAround(leftArm.position, Vector3.forward, -30f);
-                    }
-                    else if (bone == rightArm || bone.IsChildOf(rightArm))
-                    {
-                        c.transform.RotateAround(rightArm.position, Vector3.forward, 30f);
+                        if (bone == leftArm || bone.IsChildOf(leftArm))
+                        {
+                            t.RotateAround(leftArm.position, Vector3.forward, -30f);
+                        }
+                        else if (bone == rightArm || bone.IsChildOf(rightArm))
+                        {
+                            t.RotateAround(rightArm.position, Vector3.forward, 30f);
+                        }
                     }
                 }
+
             }
         }
 
@@ -1367,7 +1394,7 @@ namespace Reallusion.Import
             return magicaClothType != null;            
         }
 
-        public void AddMagicaCloth2Collider(GameObject g, CollisionShapeData collider)
+        public Object AddMagicaCloth2Collider(GameObject g, CollisionShapeData collider)
         {
             // add logic to determine magica usage - allow or disallow multiple cloth sim? 
             // allow use cases with multiple concurrent collider systems
@@ -1434,7 +1461,11 @@ namespace Reallusion.Import
 
                 MethodInfo update = capsuleColliderComponent.GetType().GetMethod("UpdateParameters");
                 update.Invoke(capsuleColliderComponent, new object[] { });
+
+                return capsuleColliderComponent;
             }
+
+            return null;
         }
 
         public static bool DynamicBoneIsAvailable()
