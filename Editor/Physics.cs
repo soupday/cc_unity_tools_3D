@@ -23,6 +23,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Collections;
+using Object = UnityEngine.Object;
 
 namespace Reallusion.Import
 {
@@ -189,6 +190,8 @@ namespace Reallusion.Import
         private GameObject prefabInstance;
         private float modelScale = 0.01f;
         private bool addClothPhysics = false;
+        private bool addUnityClothPhysics = false;
+        private bool addMagicaClothPhysics = false;
         private bool addHairPhysics = false;
         private bool addHairSpringBones = false;
 
@@ -202,9 +205,12 @@ namespace Reallusion.Import
         private List<string> textureFolders;
         private QuickJSON jsonData;
         private bool aPose;
+        private CharacterInfo characterInfo;
+        private const int MAGICA_WEIGHT_SIZE = 128;
 
         public Physics(CharacterInfo info, GameObject prefabInstance)
         {
+            characterInfo = info;
             this.prefabInstance = prefabInstance;
             boneColliders = new List<CollisionShapeData>();
             softPhysics = new List<SoftPhysicsData>();
@@ -216,6 +222,8 @@ namespace Reallusion.Import
             fbxFolder = info.folder;
             jsonData = info.JsonData;
             addClothPhysics = (info.ShaderFlags & CharacterInfo.ShaderFeatureFlags.ClothPhysics) > 0;
+            addUnityClothPhysics = (info.ShaderFlags & CharacterInfo.ShaderFeatureFlags.UnityClothPhysics) > 0;
+            addMagicaClothPhysics = (info.ShaderFlags & CharacterInfo.ShaderFeatureFlags.MagicaCloth) > 0;
             addHairPhysics = (info.ShaderFlags & CharacterInfo.ShaderFeatureFlags.HairPhysics) > 0;
             addHairSpringBones = (info.ShaderFlags & CharacterInfo.ShaderFeatureFlags.SpringBoneHair) > 0;
             string fbmFolder = Path.Combine(fbxFolder, characterName + ".fbm");
@@ -342,60 +350,44 @@ namespace Reallusion.Import
 
                 if (collider.colliderType.Equals(ColliderType.Capsule))
                 {
-                    if (MagicaCloth2IsAvailable())
-                       AddMagicaCloth2Collider(g, collider);
-
-                    /*
-                    // add logic to determine magica usage - allow or disallow multiple cloth sim? 
-                    // allow use cases with multiple concurrent collider systems
-                    // possibility to have native + magica, native + dynamicbone, magica + dynamicbone?, all 3?
-                    Type capsuleColliderType = Physics.GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
-                    if (capsuleColliderType != null)  
+                    if (addMagicaClothPhysics)
                     {
-                        var capsuleColliderComponent = g.AddComponent(capsuleColliderType);
-                        Physics.SetTypeField(capsuleColliderComponent.GetType(), capsuleColliderComponent, "direction", (int)collider.colliderAxis);
-                        Physics.SetTypeField(capsuleColliderComponent.GetType(), capsuleColliderComponent, "radiusSeparation", false);
-
-                        float r = (collider.radius - collider.margin * Physics.PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
-                        float h = collider.length * modelScale + r * 2f;
-
-                        //"https://learn.microsoft.com/en-us/dotnet/api/system.type.getmethod?view=netframework-4.8#System_Type_GetMethod_System_String_System_Type___"
-                        MethodInfo setSize = capsuleColliderComponent.GetType().GetMethod("SetSize",
-                                            BindingFlags.Public | BindingFlags.Instance,
-                                            null,
-                                            CallingConventions.Any,
-                                            new Type[] { typeof(Vector3) },
-                                            null);
-                        Vector3 sizeVector = new Vector3(r, r, h);
-                        object[] inputParams = new object[] { sizeVector };
-                        setSize.Invoke(capsuleColliderComponent, inputParams);
-
-                        MethodInfo update = capsuleColliderComponent.GetType().GetMethod("UpdateParameters");
-                        update.Invoke(capsuleColliderComponent, new object[] { });
+                        Debug.Log("ADDING MAGICA: " + collider.name);
+                        if (MagicaCloth2IsAvailable())
+                            AddMagicaCloth2Collider(g, collider);
                     }
-                    */
-                    CapsuleCollider c = g.AddComponent<CapsuleCollider>();
 
-                    c.direction = (int)collider.colliderAxis;                    
-                    float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
-                    c.radius = radius;
-                    c.height = collider.length * modelScale + radius * 2f;
-                    colliderLookup.Add(c, collider.boneName);
-                    if (existingCollider) existingLookup.Add(c, existingCollider);
+                    if (addUnityClothPhysics)
+                    {
+                        CapsuleCollider c = g.AddComponent<CapsuleCollider>();
+
+                        c.direction = (int)collider.colliderAxis;
+                        float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                        c.radius = radius;
+                        c.height = collider.length * modelScale + radius * 2f;
+                        colliderLookup.Add(c, collider.boneName);
+                        if (existingCollider) existingLookup.Add(c, existingCollider);
+                    }
                 }
                 else if (collider.colliderType.Equals(ColliderType.Sphere))
                 {
-                    if (MagicaCloth2IsAvailable())
-                        AddMagicaCloth2Collider(g, collider);
+                    if (addMagicaClothPhysics)
+                    {
+                        if (MagicaCloth2IsAvailable())
+                            AddMagicaCloth2Collider(g, collider);
+                    }
 
-                    CapsuleCollider c = g.AddComponent<CapsuleCollider>();
+                    if (addUnityClothPhysics)
+                    {
+                        CapsuleCollider c = g.AddComponent<CapsuleCollider>();
 
-                    c.direction = (int)collider.colliderAxis;
-                    float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
-                    c.radius = radius;
-                    c.height = 0f;
-                    colliderLookup.Add(c, collider.boneName);
-                    if (existingCollider) existingLookup.Add(c, existingCollider);
+                        c.direction = (int)collider.colliderAxis;
+                        float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                        c.radius = radius;
+                        c.height = 0f;
+                        colliderLookup.Add(c, collider.boneName);
+                        if (existingCollider) existingLookup.Add(c, existingCollider);
+                    }
                 }
                 else
                 {
@@ -403,37 +395,44 @@ namespace Reallusion.Import
                     //b.size = collider.extent * modelScale;
                     //colliderLookup.Add(b, collider.boneName);
 
-                    if (MagicaCloth2IsAvailable())
-                        AddMagicaCloth2Collider(g, collider);
-
-                    CapsuleCollider c = g.AddComponent<CapsuleCollider>();
-                    c.direction = (int)collider.colliderAxis;
-                    float radius;
-                    float height;
-                    switch (collider.colliderAxis)
+                    if (addMagicaClothPhysics)
                     {
-                        case ColliderAxis.X: 
-                            radius = (collider.extent.y + collider.extent.z) / 4f;
-                            height = collider.extent.x;
-                            break;                        
-                        case ColliderAxis.Z:
-                            radius = (collider.extent.x + collider.extent.y) / 4f;
-                            height = collider.extent.z;
-                            break;
-                        case ColliderAxis.Y:
-                        default:
-                            radius = (collider.extent.x + collider.extent.z) / 4f;
-                            height = collider.extent.y;
-                            break;
+                        if (MagicaCloth2IsAvailable() && addMagicaClothPhysics)
+                            AddMagicaCloth2Collider(g, collider);
                     }
-                    c.radius = (radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
-                    c.height = height * modelScale;
-                    colliderLookup.Add(c, collider.boneName);
-                    if (existingCollider) existingLookup.Add(c, existingCollider);
+
+                    if (addUnityClothPhysics)
+                    {
+                        CapsuleCollider c = g.AddComponent<CapsuleCollider>();
+                        c.direction = (int)collider.colliderAxis;
+                        float radius;
+                        float height;
+                        switch (collider.colliderAxis)
+                        {
+                            case ColliderAxis.X:
+                                radius = (collider.extent.y + collider.extent.z) / 4f;
+                                height = collider.extent.x;
+                                break;
+                            case ColliderAxis.Z:
+                                radius = (collider.extent.x + collider.extent.y) / 4f;
+                                height = collider.extent.z;
+                                break;
+                            case ColliderAxis.Y:
+                            default:
+                                radius = (collider.extent.x + collider.extent.z) / 4f;
+                                height = collider.extent.y;
+                                break;
+                        }
+                        c.radius = (radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                        c.height = height * modelScale;
+                        colliderLookup.Add(c, collider.boneName);
+                        if (existingCollider) existingLookup.Add(c, existingCollider);
+                    }
                 } 
             }
             parent.transform.Rotate(Vector3.left, 90);
             parent.transform.localScale = new Vector3(-1f, 1f, 1f);
+
 
             if (aPose) FixColliderAPose(objects, colliderLookup);
 
@@ -679,6 +678,11 @@ namespace Reallusion.Import
 
             PrepWeightMaps();
 
+            //
+            if (MagicaCloth2IsAvailable() && addMagicaClothPhysics)
+                AddMagicaCloth();
+            //
+
             List<string> hairMeshNames = FindHairMeshes();
             Transform[] transforms = prefabInstance.GetComponentsInChildren<Transform>();
             foreach (Transform t in transforms)
@@ -712,8 +716,8 @@ namespace Reallusion.Import
             {
                 colliderManager.clothMeshes = clothMeshes.ToArray();
             }
-        }        
-
+        }
+        
         private bool CanAddPhysics(SoftPhysicsData data)
         {
             if (data != null)
@@ -785,7 +789,7 @@ namespace Reallusion.Import
         }
 
         private void DoCloth(GameObject clothTarget, string meshName)
-        {            
+        {
             SkinnedMeshRenderer renderer = clothTarget.GetComponent<SkinnedMeshRenderer>();
             if (!renderer) return;
             Mesh mesh = renderer.sharedMesh;
@@ -867,13 +871,162 @@ namespace Reallusion.Import
             }
         }
 
+        private void AddMagicaCloth()
+        {
+            // construct a single instance of magica cloth
+            // add relevant skinned mesh renderers along with converted weight maps
+            // add a list of colliders that can interact with the cloth instance
+            CharacterInfo currentChar = ImporterWindow.Current.Character;
+            string fbxPath = currentChar.path;
+            ModelImporter importer = (ModelImporter)AssetImporter.GetAtPath(fbxPath);
+            if(importer != null)
+            {
+                if (!importer.isReadable)
+                {
+                    importer.isReadable = true;
+                    importer.SaveAndReimport();
+                }
+            }
+
+            GameObject g = prefabInstance.gameObject;
+            Type clothType = GetTypeInAssemblies("MagicaCloth2.MagicaCloth");
+            if (clothType != null)
+            {
+                // add cloth component
+                var existingCloth = g.GetComponent(clothType);
+                if (existingCloth)
+                    GameObject.DestroyImmediate(existingCloth);
+
+                var cloth = g.AddComponent(clothType);
+
+                Transform[] transforms = prefabInstance.GetComponentsInChildren<Transform>();
+                foreach (Transform t in transforms)
+                {
+                    GameObject obj = t.gameObject;
+                    foreach (SoftPhysicsData data in softPhysics)
+                    {
+                        string meshName = obj.name;
+                        // omit hair for the moment
+                        if (!data.isHair)
+                        {
+                            if (meshName == data.meshName)
+                            {
+                                Debug.Log("ADDMAGICACLOTH:: " + obj.name);
+                                DoMagicaCloth(cloth, obj, data);
+                            }
+                        }
+                    }
+                }
+
+
+                IList magicaColliderList = FetchMagicaColliders(prefabInstance.gameObject);
+
+                var serializedDataProperty = cloth.GetType().GetProperty("SerializeData");
+                var serializedData = serializedDataProperty.GetValue(cloth);
+
+                var collisionConstraint = serializedData.GetType().GetField("colliderCollisionConstraint");
+                if (collisionConstraint != null)
+                {
+                    var collisionConstraintData = collisionConstraint.GetValue(serializedData);
+                    if (collisionConstraintData != null)
+                    {
+                        var colliderListField = collisionConstraintData.GetType().GetField("colliderList");
+                        if (colliderListField != null)
+                        {
+                            var actualColliderList = colliderListField.GetValue(collisionConstraintData);
+                            if (actualColliderList != null)
+                            {
+                                colliderListField.SetValue(collisionConstraintData, magicaColliderList);
+                            }
+                        }
+                    }
+                }
+
+                MethodInfo setParameterChange = cloth.GetType().GetMethod("SetParameterChange");
+                setParameterChange.Invoke(cloth, new object[] { });
+
+            }
+        }
+
+        private void DoMagicaCloth(Object cloth, GameObject obj, SoftPhysicsData data)
+        {
+            // needs a skinned mesh renderer, a weightmap and a list of magica colliders
+            var serializedDataProperty = cloth.GetType().GetProperty("SerializeData");
+            var serializedData = serializedDataProperty.GetValue(cloth);
+
+            if (serializedData != null)
+            {
+                var sourceRenderersField = serializedData.GetType().GetField("sourceRenderers");
+                if (sourceRenderersField != null)
+                {
+                    SkinnedMeshRenderer smr = obj.GetComponent<SkinnedMeshRenderer>();
+                    if (smr != null)
+                    {
+                        var rendererList = sourceRenderersField.GetValue(serializedData);
+                        List<Renderer> renderers;
+
+                        if (rendererList == null)
+                        {
+                            renderers = new List<Renderer>();
+                        }
+                        else
+                        {
+                            renderers = (List<Renderer>)rendererList;
+                        }
+
+                        //if (!renderers.Contains(smr))
+                        //{
+                        renderers.Add(smr);
+                        //}
+                        sourceRenderersField.SetValue(serializedData, renderers);
+
+                        var reductionSettingField = serializedData.GetType().GetField("reductionSetting");
+                        if (reductionSettingField != null)
+                        {
+                            var reductionsettingFieldValue = reductionSettingField.GetValue(serializedData);
+                            SetTypeField(reductionsettingFieldValue.GetType(), reductionsettingFieldValue, "simpleDistance", 0.06f);
+                            SetTypeField(reductionsettingFieldValue.GetType(), reductionsettingFieldValue, "shapeDistance", 0.06f);
+                        }
+
+                        var paintModeField = serializedData.GetType().GetField("paintMode");
+                        if (paintModeField != null)
+                        {
+                            paintModeField.SetValue(serializedData, 1); //MagicaCloth2.ClothSerializeData.PaintMode.Texture_Fixed_Move
+                        }
+
+                        var paintMapsField = serializedData.GetType().GetField("paintMaps");
+                        if (paintMapsField != null)
+                        {
+                            List<Texture2D> paintMaps = new List<Texture2D>();
+
+                            //Texture2D weightMap = GetTextureFrom(data.weightMapPath, data.materialName, "WeightMap", out string texName, true);
+                            Texture2D weightMap = ConvertWeightmap(data);
+                            if (!weightMap) weightMap = Texture2D.blackTexture;
+                            //paintMaps.Add((Texture2D)AssetDatabase.LoadAssetAtPath<Texture2D>(simpleWeightmapPath));
+                            paintMaps.Add(weightMap);
+
+                            paintMapsField.SetValue(serializedData, paintMaps);
+                        }
+
+                        MethodInfo setParameterChange = cloth.GetType().GetMethod("SetParameterChange");
+                        setParameterChange.Invoke(cloth, new object[] { });
+                    }
+                }
+            }
+        }
+
+
         public void RemoveCloth(GameObject obj)
         {
             Cloth cloth = obj.GetComponent<Cloth>();
             WeightMapper mapper = obj.GetComponent<WeightMapper>();
 
+            Type magicaClothType = GetTypeInAssemblies("MagicaCloth2.MagicaCloth");
+            Component magicaClothInstance = obj.GetComponent(magicaClothType);
+
             if (cloth) Component.DestroyImmediate(cloth);
             if (mapper) Component.DestroyImmediate(mapper);
+            if (magicaClothInstance) Component.DestroyImmediate(magicaClothInstance);            
         }
 
         private Texture2D GetTextureFrom(string jsonTexturePath, string materialName, string suffix, out string name, bool search)
@@ -922,9 +1075,11 @@ namespace Reallusion.Import
             importer.isReadable = true;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.compressionQuality = 0;
-            importer.maxTextureSize = 2048;
+            bool magica = characterInfo.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.MagicaCloth);
+            Debug.Log("MAGICA:: " + path +  magica);
+            importer.maxTextureSize = magica ? MAGICA_WEIGHT_SIZE : 2048;
 
-            AssetDatabase.WriteImportSettingsIfDirty(path);
+            AssetDatabase.WriteImportSettingsIfDirty(path);            
         }        
         
         public static GameObject RebuildPhysics(CharacterInfo characterInfo)
@@ -1044,7 +1199,7 @@ namespace Reallusion.Import
 
         // additions
         //public static bool CreateAbstractColliders(ColliderManager colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders, out IList genericColliders)
-            public static bool CreateAbstractColliders(ColliderManager colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders)
+        public static bool CreateAbstractColliders(ColliderManager colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders)
         {
             bool newMethod = true;
             if (newMethod)
@@ -1335,5 +1490,86 @@ namespace Reallusion.Import
                 Debug.Log("FIELD:: " + field.Name);
             }
         }
+
+        //temp solution
+        private Texture2D ConvertWeightmap(SoftPhysicsData data)
+        {
+            Texture2D weightMap = GetTextureFrom(data.weightMapPath, data.materialName, "WeightMap", out string texName, true);
+            if (!weightMap.isReadable) return null;
+            
+            Texture2D lowOutputMap;
+            bool useCompute = true;
+
+            if (useCompute)
+            {
+                CharacterInfo currentCharacter = ImporterWindow.Current.Character;
+
+                string[] folders = new string[] { "Assets", "Packages" };
+                Texture2D physXWeightMap = Util.FindTexture(folders, "physXWeightMapTest");                
+                string folder = ComputeBake.BakeTexturesFolder(currentCharacter.path);
+                string name = Path.GetFileNameWithoutExtension(data.weightMapPath) + "_" + MAGICA_WEIGHT_SIZE + "_magica";// "magicaWeightMapTest";
+                float threshold = 0f; // 1f / 255f;
+                Vector2Int size = new Vector2Int(MAGICA_WEIGHT_SIZE, MAGICA_WEIGHT_SIZE);
+                // should create the texture in: <current character folder>/Baked/<character name>/Textures
+                lowOutputMap = ComputeBake.BakeMagicaWeightMap(weightMap, threshold, size, folder, name);
+                SetWeightMapImport(lowOutputMap);
+            }
+            else
+            {
+                int sampleX = (int)Mathf.Floor(weightMap.width / 64);
+                int sampleY = (int)Mathf.Floor(weightMap.height / 64);
+
+                lowOutputMap = new Texture2D(64, 64);
+                for (int i = 0; i < 64; i++)
+                {
+                    for (int j = 0; j < 64; j++)
+                    {
+                        Color sample = weightMap.GetPixel(i * sampleX, j * sampleY);
+                        if (sample.g > 0.2f)
+                        {
+                            lowOutputMap.SetPixel(i, j, new Color(0f, 1f, 0f));
+                        }
+                        else
+                        {
+                            lowOutputMap.SetPixel(i, j, new Color(1f, 0f, 0f));
+                        }
+                    }
+                }
+                lowOutputMap.Apply();
+                string assetPath = AssetDatabase.GetAssetPath(weightMap);
+                string assetDir = Path.GetDirectoryName(assetPath);
+                string assetExt = Path.GetExtension(assetPath);
+                string assetName = Path.GetFileNameWithoutExtension(assetPath);
+
+                string outputName = assetName + "_MAGICA";
+                string outPutPath = assetDir + "/" + outputName + ".asset";
+                AssetDatabase.CreateAsset(lowOutputMap, outPutPath);
+                AssetDatabase.SaveAssets();
+            }
+            return lowOutputMap;
+        }
+
+        public IList FetchMagicaColliders(GameObject prefabObject)
+        {
+            if (!MagicaCloth2IsAvailable()) return null;
+
+            //var magicaColliderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
+            var magicaColliderType = GetTypeInAssemblies("MagicaCloth2.ColliderComponent");
+            IList genericColliders = (IList)CreateGeneric(typeof(List<>), magicaColliderType);
+
+            Transform[] allChildTransforms = prefabObject.GetComponentsInChildren<Transform>(true);
+            foreach (Transform childtransform in allChildTransforms)
+            {
+                GameObject go = childtransform.gameObject;
+                var magicaColl = go.GetComponent(magicaColliderType);
+                if (magicaColl != null)
+                {
+                    genericColliders.Add(magicaColl);
+                }
+            }
+
+            return genericColliders;
+        }
+
     }
 }

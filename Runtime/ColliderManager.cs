@@ -389,6 +389,7 @@ namespace Reallusion.Import
                         UpdateColliderSettings(s, current);//, colliderIndex);
                 }
             }
+            SyncTransformActiveStatus();
         }
 
         public void ResetSingleAbstractCollider(List<AbstractCapsuleCollider> referenceList, string colliderName, bool resetMirror)
@@ -419,6 +420,7 @@ namespace Reallusion.Import
                     }
                 }
             }
+            SyncTransformActiveStatus();
         }
 
         public void UpdateColliderSettings(AbstractCapsuleCollider source, AbstractCapsuleCollider target)//, int genericIndex)
@@ -439,6 +441,14 @@ namespace Reallusion.Import
             //SetTypeProperty(genericCollider, "radius", source.radius);
             SyncNativeCollider(target);
             if (magicaCloth2Available) SyncMagicaCollider(target);
+        }
+
+        public void SyncTransformActiveStatus()
+        {
+            foreach (AbstractCapsuleCollider c in abstractedCapsuleColliders)
+            {
+                c.transform.gameObject.SetActive(c.isEnabled);
+            }
         }
 
         public bool TransformHasAnyValidCollider(Transform t)

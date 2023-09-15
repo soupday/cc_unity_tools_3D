@@ -506,9 +506,9 @@ void RLMagicaWeightMap(uint3 id : SV_DispatchThreadID)
     // float threshold;
 
     // red = static
-    float r = weight < threshold ? 1 : 0;
+    float r = weight <= threshold ? 1 : 0;
     // green = can move
-    float g = weight >= threshold ? 1 : 0;
+    float g = weight > threshold ? 1 : 0;
     // blue = obey limit
     float b = weight >= threshold ? weight : 0;
 

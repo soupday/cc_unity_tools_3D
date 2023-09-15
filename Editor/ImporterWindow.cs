@@ -134,6 +134,12 @@ namespace Reallusion.Import
         //The TreeView is not serializable, so it should be reconstructed from the tree data.
         CharacterTreeView characterTreeView;
 
+        private bool magicaCloth2Available;
+        public bool MagicaCloth2Available { get { return magicaCloth2Available; } }
+
+        private bool dynamicBoneAvailable;
+        public bool DynamicBoneAvailable { get { return dynamicBoneAvailable; } }
+
         public static float ICON_AREA_WIDTH
         {
             get
@@ -235,6 +241,8 @@ namespace Reallusion.Import
 
         private void InitData()
         {            
+            CheckAvailableAddons();
+
             string[] folders = new string[] { "Assets", "Packages" };
             iconUnprocessed = Util.FindTexture(folders, "RLIcon_UnprocessedChar");
             iconBasic = Util.FindTexture(folders, "RLIcon_BasicChar");
@@ -1835,5 +1843,14 @@ namespace Reallusion.Import
                 }
             }
         }
+
+        private void CheckAvailableAddons()
+        {
+            // init simple bools for the GUI to use to avoid repeatedly iterating through 
+            // AppDomain.CurrentDomain.GetAssemblies() -- ALWAYS make these checks before any reflection code
+            dynamicBoneAvailable = Physics.DynamicBoneIsAvailable();
+            magicaCloth2Available = Physics.MagicaCloth2IsAvailable();
+        }
+
     }
 }

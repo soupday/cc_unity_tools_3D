@@ -659,7 +659,7 @@ namespace Reallusion.Import
             if (EditorGUI.EndChangeCheck())
             {
                 SceneView.RepaintAll();
-                if (colliderManager.selectedAbstractCapsuleCollider != null)
+                if (!ColliderManager.AbstractCapsuleCollider.IsNullOrEmpty(colliderManager.selectedAbstractCapsuleCollider))
                 {
                     colliderManager.mirrorImageAbstractCapsuleCollider = DetermineMirrorImageCollider(colliderManager.selectedAbstractCapsuleCollider);
                     FocusPosition(colliderManager.selectedAbstractCapsuleCollider.transform.position);
@@ -671,7 +671,7 @@ namespace Reallusion.Import
             if (EditorGUI.EndChangeCheck())
             {
                 SceneView.RepaintAll();
-                if (colliderManager.selectedAbstractCapsuleCollider != null)
+                if (!ColliderManager.AbstractCapsuleCollider.IsNullOrEmpty(colliderManager.selectedAbstractCapsuleCollider))
                 {
                     colliderManager.mirrorImageAbstractCapsuleCollider = DetermineMirrorImageCollider(colliderManager.selectedAbstractCapsuleCollider);
                     FocusPosition(colliderManager.selectedAbstractCapsuleCollider.transform.position);

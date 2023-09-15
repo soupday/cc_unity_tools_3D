@@ -33,10 +33,28 @@ namespace Reallusion.Import
             NoFeatures = 0, 
             Tessellation = 1, 
             ClothPhysics = 2, 
-            HairPhysics = 4, 
+            HairPhysics = 4,
             SpringBoneHair = 8, 
             WrinkleMaps = 16,
+            MagicaCloth = 32,
+            MagicaBone = 64,
+            UnityClothPhysics = 128,
+            UnityClothHairPhysics = 256
         }
+
+        // 'radio groups' of mutually exclusive settings
+        public static ShaderFeatureFlags[] clothGroup =
+        {
+            ShaderFeatureFlags.UnityClothPhysics, // UnityEngine.Cloth instance
+            ShaderFeatureFlags.MagicaCloth // MagicaCloth2 instance set to 'Mesh Cloth' mode
+        };
+
+        public static ShaderFeatureFlags[] hairGroup =
+        {
+            ShaderFeatureFlags.UnityClothHairPhysics, // UnityEngine.Cloth instance for hair objects
+            ShaderFeatureFlags.SpringBoneHair, // DynamicBone springbones
+            ShaderFeatureFlags.MagicaBone // MagicaCloth2 instance set to 'Bone Cloth' mode for springbones
+        };
 
         public enum RigOverride { None = 0, Generic, Humanoid }
 
@@ -225,11 +243,12 @@ namespace Reallusion.Import
             if (qualHair == HairQuality.Coverage && Pipeline.isHDRP)
                 qualHair = HairQuality.Default;
 
-            if ((ShaderFlags & ShaderFeatureFlags.SpringBoneHair) > 0 &&
-                (ShaderFlags & ShaderFeatureFlags.HairPhysics) > 0)
-            {
-                ShaderFlags -= ShaderFeatureFlags.SpringBoneHair;
-            }
+            //if ((ShaderFlags & ShaderFeatureFlags.SpringBoneHair) > 0 &&
+            //    (ShaderFlags & ShaderFeatureFlags.HairPhysics) > 0)
+            //{
+            //    ShaderFlags -= ShaderFeatureFlags.SpringBoneHair;
+            //}
+            CheckRadioGroupFlags();  // set default unity cloth simulation flags if unset
         }
 
         public CharacterInfo(string guid)
@@ -249,7 +268,7 @@ namespace Reallusion.Import
             if (File.Exists(infoFilepath))            
                 Read();
             else
-                Write();            
+                Write();
         }
 
         public void CopySettings(CharacterInfo from)
@@ -769,7 +788,6 @@ namespace Reallusion.Import
             }
         }
 
-
         public void Read()
         {
             TextAsset infoAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(infoFilepath);
@@ -877,6 +895,105 @@ namespace Reallusion.Import
             writer.Close();
             AssetDatabase.ImportAsset(infoFilepath);            
         }
-    }
 
+        public void CheckRadioGroupFlags()
+        {
+            if (ImporterWindow.Current == null)
+            {
+                Util.LogWarn("The Importer Window is not open - please open the CC/iC importer window before continuing.");
+                return;
+            }
+
+            if (ShaderFlags.HasFlag(ShaderFeatureFlags.ClothPhysics))
+            {
+                if (!ImporterWindow.Current.MagicaCloth2Available)
+                {
+                    ShaderFlags |= ShaderFeatureFlags.UnityClothPhysics;
+                }
+
+                if (!GroupHasFlagSet(clothGroup))
+                {
+                    ShaderFlags |= ShaderFeatureFlags.UnityClothPhysics;
+                }
+            }
+            else
+            {
+                if (GroupHasFlagSet(clothGroup))
+                {
+                    ShaderFlags |= ShaderFeatureFlags.ClothPhysics;
+                }
+            }
+
+            if (ShaderFlags.HasFlag(ShaderFeatureFlags.HairPhysics))
+            {
+                if (!ImporterWindow.Current.MagicaCloth2Available && !ImporterWindow.Current.DynamicBoneAvailable)
+                {
+                    ShaderFlags |= ShaderFeatureFlags.UnityClothHairPhysics;
+                }
+
+                if (!GroupHasFlagSet(hairGroup))
+                {
+                    ShaderFlags |= ShaderFeatureFlags.UnityClothHairPhysics;
+                }
+            }
+            else
+            {
+                if (GroupHasFlagSet(hairGroup))
+                {
+                    ShaderFlags |= ShaderFeatureFlags.HairPhysics;
+                }
+            }
+        }
+
+        public void EnsureDefaultsAreSet(ShaderFeatureFlags flag)
+        {
+            if (ImporterWindow.Current == null)
+            {
+                Util.LogWarn("The Importer Window is not open - please open the CC/iC importer window before continuing.");
+                return;
+            }
+
+            // if no alternatives are available or the flags are unset - then set unity physics as a default when activating cloth or hair physics
+            switch (flag)
+            {
+                case ShaderFeatureFlags.ClothPhysics:
+                    {
+                        if (!ImporterWindow.Current.MagicaCloth2Available)
+                        {
+                            ShaderFlags |= ShaderFeatureFlags.UnityClothPhysics;
+                        }
+
+                        if (!GroupHasFlagSet(clothGroup))
+                        {
+                            ShaderFlags |= ShaderFeatureFlags.UnityClothPhysics;
+                        }
+
+                        break;
+                    }
+                case ShaderFeatureFlags.HairPhysics:
+                    {
+                        if (!ImporterWindow.Current.MagicaCloth2Available && !ImporterWindow.Current.DynamicBoneAvailable)
+                        {
+                            ShaderFlags |= ShaderFeatureFlags.UnityClothHairPhysics;
+                        }
+
+                        if (!GroupHasFlagSet(hairGroup))
+                        {
+                            ShaderFlags |= ShaderFeatureFlags.UnityClothHairPhysics;
+                        }
+
+                        break;
+                    }
+            }
+        }
+
+        public bool GroupHasFlagSet(ShaderFeatureFlags[] group)
+        {
+            foreach (ShaderFeatureFlags groupFlag in group)
+            {
+                if (ShaderFlags.HasFlag(groupFlag)) return true;
+            }
+            return false;
+        }
+    }
 }
