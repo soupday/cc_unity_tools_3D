@@ -889,17 +889,20 @@ namespace Reallusion.Import
             GUILayout.BeginVertical();
 
             GUI.backgroundColor = Color.Lerp(baseBackground, Color.green, 0.25f);
-            foreach (GameObject clothMesh in colliderManager.clothMeshes)
+            if (colliderManager.clothMeshes != null)
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.FlexibleSpace();
-                if (GUILayout.Button(clothMesh.name, GUILayout.Width(160f)))
+                foreach (GameObject clothMesh in colliderManager.clothMeshes)
                 {
-                    Selection.activeObject = clothMesh;
+                    GUILayout.BeginHorizontal();
+                    GUILayout.FlexibleSpace();
+                    if (GUILayout.Button(clothMesh.name, GUILayout.Width(160f)))
+                    {
+                        Selection.activeObject = clothMesh;
+                    }
+                    GUILayout.FlexibleSpace();
+                    GUILayout.EndHorizontal();
+                    GUILayout.Space(4f);
                 }
-                GUILayout.FlexibleSpace();
-                GUILayout.EndHorizontal();
-                GUILayout.Space(4f);
             }
             GUI.backgroundColor = baseBackground;
             GUILayout.EndVertical();

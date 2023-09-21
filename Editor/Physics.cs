@@ -31,7 +31,7 @@ namespace Reallusion.Import
     {
         const float MAX_DISTANCE = 0.1f;
         const float MAX_PENETRATION = 0.02f;
-        const float WEIGHT_POWER = 1f;        
+        const float WEIGHT_POWER = 1f;
 
         public enum PhysicsType
         {
@@ -56,7 +56,7 @@ namespace Reallusion.Import
         public class CollisionShapeData
         {
             public string name;
-            public string boneName;            
+            public string boneName;
             public bool boneActive;
             public ColliderType colliderType;
             public ColliderAxis colliderAxis;
@@ -68,7 +68,7 @@ namespace Reallusion.Import
             public Vector3 scale;
             public float radius;
             public float length;
-            public Vector3 extent;            
+            public Vector3 extent;
 
             public CollisionShapeData(string bone, string name, QuickJSON colliderJson)
             {
@@ -114,7 +114,7 @@ namespace Reallusion.Import
             public float softRigidMargin;
             public bool selfCollision;
             public float selfMargin;
-            public float stiffnessFrequency;            
+            public float stiffnessFrequency;
             public bool isHair;
 
             public SoftPhysicsData(string mesh, string material, QuickJSON softPhysicsJson, QuickJSON characterJson)
@@ -123,7 +123,7 @@ namespace Reallusion.Import
                 materialName = material;
                 isHair = false;
                 QuickJSON objectMaterialJson = characterJson.GetObjectAtPath("Meshes/" + mesh + "/Materials/" + material);
-                if (objectMaterialJson != null && 
+                if (objectMaterialJson != null &&
                     objectMaterialJson.PathExists("Custom Shader/Shader Name") &&
                     objectMaterialJson.GetStringValue("Custom Shader/Shader Name") == "RLHair")
                     isHair = true;
@@ -183,10 +183,10 @@ namespace Reallusion.Import
         }
 
         // bones that can have DynamicBone spring bone colliders
-        private List<string> springColliderBones = new List<string> { 
+        private List<string> springColliderBones = new List<string> {
             "CC_Base_Head", "CC_Base_Spine01", "CC_Base_NeckTwist01", "CC_Base_R_Upperarm", "CC_Base_R_Upperarm",
         };
-        
+
         private GameObject prefabInstance;
         private float modelScale = 0.01f;
         private bool addClothPhysics = false;
@@ -240,8 +240,8 @@ namespace Reallusion.Import
         private void ReadPhysicsJson(QuickJSON physicsJson, QuickJSON characterJson)
         {
             QuickJSON shapesJson = physicsJson.GetObjectAtPath("Collision Shapes");
-            QuickJSON softPhysicsJson = physicsJson.GetObjectAtPath("Soft Physics/Meshes");            
-            
+            QuickJSON softPhysicsJson = physicsJson.GetObjectAtPath("Soft Physics/Meshes");
+
             if (shapesJson != null)
             {
                 boneColliders.Clear();
@@ -268,13 +268,13 @@ namespace Reallusion.Import
 
                 foreach (MultiValue meshJson in softPhysicsJson.values)
                 {
-                    string meshName = meshJson.Key;                    
+                    string meshName = meshJson.Key;
                     QuickJSON physicsMaterialsJson = meshJson.ObjectValue.GetObjectAtPath("Materials");
                     if (physicsMaterialsJson != null)
                     {
                         foreach (MultiValue matJson in physicsMaterialsJson.values)
                         {
-                            string materialName = matJson.Key;                            
+                            string materialName = matJson.Key;
                             if (matJson.ObjectValue != null)
                                 softPhysics.Add(new SoftPhysicsData(meshName, materialName, matJson.ObjectValue, characterJson));
                         }
@@ -285,7 +285,8 @@ namespace Reallusion.Import
 
         public void AddPhysics(bool applyInstance)
         {
-            AddColliders();
+            NewAddColliders();
+            //AddColliders();
             AddCloth();
             AddSpringBones();
 
@@ -297,83 +298,50 @@ namespace Reallusion.Import
             Collider[] colliders = prefabInstance.GetComponentsInChildren<Collider>();
         }
 
-        private void AddColliders()
+        private bool MAGICA_CLOTH_AVAILABLE = false;
+        private bool DYNAMIC_BONE_AVAILABLE = false;
+
+        private void NewAddColliders()
         {
-            if (!addClothPhysics && !addHairPhysics && !addHairSpringBones)
-            {
-                ColliderManager existingColliderManager = prefabInstance.GetComponent<ColliderManager>();
-                if (existingColliderManager != null)
-                {
-                    foreach (Collider c in existingColliderManager.colliders)
-                    {
-                        GameObject.DestroyImmediate(c.gameObject);
-                    }
-                    Component.DestroyImmediate(existingColliderManager);
-                }
-                return;
-            }
+            MAGICA_CLOTH_AVAILABLE = MagicaCloth2IsAvailable();
+            DYNAMIC_BONE_AVAILABLE = DynamicBoneIsAvailable();
 
-            GameObject parent = new GameObject();
-            GameObject g;
-            Transform[] objects = prefabInstance.GetComponentsInChildren<Transform>();
-            Dictionary<Object, string> colliderLookup = new Dictionary<Object, string>();
-            Dictionary<Collider, Collider> existingLookup = new Dictionary<Collider, Collider>();
-            
-            // delegates
-            Func<string, Transform> FindBone = (boneName) => Array.Find(objects, o => o.name.Equals(boneName));
-            Func<string, Transform, Collider> FindColliderObj = (colliderName, bone) =>
+            // edit within the character prefab
+            using (var editingScope = new PrefabUtility.EditPrefabContentsScope(AssetDatabase.GetAssetPath(ImporterWindow.Current.Character.PrefabAsset)))
             {
-                for (int i = 0; i < bone.childCount; i++)
-                {
-                    Transform child = bone.GetChild(i);
-                    if (child.name == colliderName)
-                    {
-                        return child.GetComponent<Collider>();
-                    }
-                }
-                return null;
-            };
-            
-            foreach (CollisionShapeData collider in boneColliders)
-            {
-                string colliderName = collider.boneName + "_" + collider.name;
-                Transform bone = FindBone(collider.boneName);
-                Collider existingCollider = FindColliderObj(colliderName, bone);                
+                var prefabRoot = editingScope.prefabContentsRoot;
 
-                g = new GameObject();
-                g.transform.SetParent(parent.transform);
-                g.name = colliderName;
-                
-                Transform t = g.transform;
-                t.position = collider.translation * modelScale;
-                t.rotation = collider.rotation;                
+                Transform[] objects = prefabRoot.GetComponentsInChildren<Transform>();
+                Dictionary<Object, string> colliderLookup = new Dictionary<Object, string>();
+                Dictionary<Collider, Collider> existingLookup = new Dictionary<Collider, Collider>();
 
-                if (collider.colliderType.Equals(ColliderType.Capsule))
+                // delegates
+                Func<string, Transform> FindBone = (boneName) => Array.Find(objects, o => o.name.Equals(boneName));
+                Func<string, Transform, Collider> FindColliderObj = (colliderName, bone) =>
                 {
-                    if (addMagicaClothPhysics)
+                    for (int i = 0; i < bone.childCount; i++)
                     {
-                        Debug.Log("ADDING MAGICA: " + collider.name);
-                        if (MagicaCloth2IsAvailable())
+                        Transform child = bone.GetChild(i);
+                        if (child.name == colliderName)
                         {
-                            Object c = AddMagicaCloth2Collider(g, collider);
-                            colliderLookup.Add(c, collider.boneName);
+                            return child.GetComponent<Collider>();
                         }
                     }
+                    return null;
+                };
 
-                    if (addUnityClothPhysics)
-                    {
-                        CapsuleCollider c = g.AddComponent<CapsuleCollider>();
+                GameObject parent = new GameObject("Temporary GameObject");
+                parent.transform.SetParent(prefabRoot.transform, false);
 
-                        c.direction = (int)collider.colliderAxis;
-                        float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
-                        c.radius = radius;
-                        c.height = collider.length * modelScale + radius * 2f;
-                        colliderLookup.Add(c, collider.boneName);
-                        if (existingCollider) existingLookup.Add(c, existingCollider);
-                    }
-                }
-                else if (collider.colliderType.Equals(ColliderType.Sphere))
+                foreach (CollisionShapeData collider in boneColliders)
                 {
+                    string colliderName = collider.boneName + "_" + collider.name;
+                    GameObject g = GetColliderGameObject(colliderName, objects);
+                    g.transform.SetParent(parent.transform);
+                    Transform t = g.transform;
+                    t.position = collider.translation * modelScale;
+                    t.rotation = collider.rotation;
+
                     if (addMagicaClothPhysics)
                     {
                         if (MagicaCloth2IsAvailable())
@@ -385,209 +353,149 @@ namespace Reallusion.Import
 
                     if (addUnityClothPhysics)
                     {
-                        CapsuleCollider c = g.AddComponent<CapsuleCollider>();
-
-                        c.direction = (int)collider.colliderAxis;
-                        float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
-                        c.radius = radius;
-                        c.height = 0f;
+                        Object c = AddNativeCollider(g, collider);
                         colliderLookup.Add(c, collider.boneName);
-                        if (existingCollider) existingLookup.Add(c, existingCollider);
                     }
                 }
-                else
+                // rotate all the transform data from its original space (JSON) into the Unity coordinate system
+                parent.transform.Rotate(Vector3.left, 90);
+                parent.transform.localScale = new Vector3(-1f, 1f, 1f);
+
+                if (aPose) FixColliderAPose(objects, colliderLookup);
+
+                // as the transforms have moved, need to re-sync the transforms in the physics engine
+                UnityEngine.Physics.SyncTransforms();
+
+                List<Object> listColliders = new List<Object>(colliderLookup.Count);
+
+                foreach (KeyValuePair<Object, string> collPair in colliderLookup)
                 {
-                    //BoxCollider b = g.gameObject.AddComponent<BoxCollider>();
-                    //b.size = collider.extent * modelScale;
-                    //colliderLookup.Add(b, collider.boneName);
-
-                    if (addMagicaClothPhysics)
+                    Component c = collPair.Key as Component;
+                    if (c)
                     {
-                        if (MagicaCloth2IsAvailable() && addMagicaClothPhysics)
-                        {
-                            Object c = AddMagicaCloth2Collider(g, collider);
-                            colliderLookup.Add(c, collider.boneName);
-                        }
-                    }
+                        Transform t = c.transform;
 
-                    if (addUnityClothPhysics)
-                    {
-                        CapsuleCollider c = g.AddComponent<CapsuleCollider>();
-                        c.direction = (int)collider.colliderAxis;
-                        float radius;
-                        float height;
-                        switch (collider.colliderAxis)
-                        {
-                            case ColliderAxis.X:
-                                radius = (collider.extent.y + collider.extent.z) / 4f;
-                                height = collider.extent.x;
-                                break;
-                            case ColliderAxis.Z:
-                                radius = (collider.extent.x + collider.extent.y) / 4f;
-                                height = collider.extent.z;
-                                break;
-                            case ColliderAxis.Y:
-                            default:
-                                radius = (collider.extent.x + collider.extent.z) / 4f;
-                                height = collider.extent.y;
-                                break;
-                        }
-                        c.radius = (radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
-                        c.height = height * modelScale;
-                        colliderLookup.Add(c, collider.boneName);
-                        if (existingCollider) existingLookup.Add(c, existingCollider);
-                    }
-                } 
-            }
-            parent.transform.Rotate(Vector3.left, 90);
-            parent.transform.localScale = new Vector3(-1f, 1f, 1f);
+                        string colliderBone = collPair.Value;
 
-
-            if (aPose) FixColliderAPose(objects, colliderLookup);
-
-            // as the transforms have moved, need to re-sync the transforms in the physics engine
-            UnityEngine.Physics.SyncTransforms(); 
-
-            List<Object> listColliders = new List<Object>(colliderLookup.Count);
-
-            // revert all existing prefabs overrides...
-            foreach (KeyValuePair<Collider, Collider> collPair in existingLookup)
-            {
-                PrefabUtility.RevertObjectOverride(collPair.Value, InteractionMode.UserAction);
-            }
-
-            foreach (KeyValuePair<Object, string> collPair in colliderLookup)
-            {
-                Component c = collPair.Key as Component;
-                if (c)
-                {
-                    Transform t = c.transform;
-
-                    string colliderBone = collPair.Value;
-
-                    Transform bone = FindBone(colliderBone);
-                    if (bone)
-                    {
-                        /* dunno aboot this...
-                        if (existingLookup.TryGetValue(transformedCollider, out Collider existingCollider))
-                        {
-                            // reparent with keep position
-                            transformedCollider.transform.SetParent(bone, true);
-                            // copy the transformed collider to the existing if they match
-                            CopyCollider(transformedCollider, existingCollider);
-                            // delete the transformed collider
-                            GameObject.DestroyImmediate(transformedCollider.gameObject);
-                            // add to list of colliders
-                            listColliders.Add(existingCollider);
-                        }
-                        else
+                        Transform bone = FindBone(colliderBone);
+                        if (bone)
                         {
                             // reparent with keep position
                             t.transform.SetParent(bone, true);
                             // add to list of colliders
-                            listColliders.Add(transformedCollider);
-                        }*/
+                            listColliders.Add(t);
+                        }
                     }
-
-                    // reparent with keep position
-                    t.transform.SetParent(bone, true);
-                    // add to list of colliders
-                    listColliders.Add(t);
                 }
-            }
-            
-            // add collider manager to prefab root
-            ColliderManager colliderManager = prefabInstance.GetComponent<ColliderManager>();
-            if (colliderManager == null) colliderManager = prefabInstance.AddComponent<ColliderManager>();
+                GameObject.DestroyImmediate(parent);
 
-            /*
-            // add colliders to manager
-            if (colliderManager)
-            {
-                colliderManager.characterGUID = characterGUID;
-                /////colliderManager.AddColliders(listColliders);
-            }
-            */
+                // add collider manager to prefab root
+                ColliderManager colliderManager = prefabRoot.GetComponent<ColliderManager>();
+                if (colliderManager == null) colliderManager = prefabRoot.AddComponent<ColliderManager>();
 
-            // addition
-            // create a reference list of abstract colliders here
-            // to be used as a 'reset to defaults' resource
-            CreateAbstractColliders(colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders);//, out IList genericColliders);
-            
-            PhysicsSettingsStore.SaveAbstractColliderSettings(colliderManager, abstractColliders, true);
-            // end of addition
-
-            Type dynamicBoneColliderType = GetTypeInAssemblies("DynamicBoneCollider");
-
-            if (addHairSpringBones)
-            {
-                if (dynamicBoneColliderType == null)
+                // add colliders to manager
+                if (colliderManager)
                 {
-                    Debug.LogWarning("Warning: DynamicBone not found in project assembly.");
+                    colliderManager.characterGUID = characterGUID;
+                    colliderManager.AddColliders(listColliders);
                 }
-                else
+
+                SaveReferenceAbstractColliders(colliderManager);
+
+                if (addHairSpringBones)
                 {
-                    foreach (CollisionShapeData collider in boneColliders)
+                    Type dynamicBoneColliderType = GetTypeInAssemblies("DynamicBoneCollider");
+
+                    if (dynamicBoneColliderType == null)
                     {
-                        if (springColliderBones.Contains(collider.boneName))
+                        Debug.LogWarning("Warning: DynamicBone not found in project assembly.");
+                    }
+                    else
+                    {
+                        foreach (CollisionShapeData collider in boneColliders)
                         {
-                            string colliderName = collider.boneName + "_" + collider.name;
-                            Transform bone = FindBone(collider.boneName);
-                            Collider existingCollider = FindColliderObj(colliderName, bone);
-
-                            if (existingCollider && existingCollider.GetType() == typeof(CapsuleCollider))
+                            if (springColliderBones.Contains(collider.boneName))
                             {
-                                CapsuleCollider cc = (CapsuleCollider)existingCollider;
+                                string colliderName = collider.boneName + "_" + collider.name;
+                                Transform bone = FindBone(collider.boneName);
+                                Collider existingCollider = FindColliderObj(colliderName, bone);
 
-                                var dynamicBoneColliderComponent = existingCollider.gameObject.GetComponent(dynamicBoneColliderType);
-                                if (dynamicBoneColliderComponent == null)
+                                if (existingCollider && existingCollider.GetType() == typeof(CapsuleCollider))
                                 {
-                                    dynamicBoneColliderComponent = existingCollider.gameObject.AddComponent(dynamicBoneColliderType);
-                                }
+                                    CapsuleCollider cc = (CapsuleCollider)existingCollider;
 
-                                SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Height", cc.height);
-                                SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Radius", cc.radius);
-                                SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Center", cc.center);
-                                SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Direction", cc.direction);
+                                    var dynamicBoneColliderComponent = existingCollider.gameObject.GetComponent(dynamicBoneColliderType);
+                                    if (dynamicBoneColliderComponent == null)
+                                    {
+                                        dynamicBoneColliderComponent = existingCollider.gameObject.AddComponent(dynamicBoneColliderType);
+                                    }
+
+                                    SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Height", cc.height);
+                                    SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Radius", cc.radius);
+                                    SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Center", cc.center);
+                                    SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Direction", cc.direction);
+                                }
                             }
                         }
                     }
                 }
             }
-
-            GameObject.DestroyImmediate(parent);
         }
 
-        private bool CopyCollider(Collider from, Collider to)
+        public GameObject GetColliderGameObject(string colliderName, Transform[] prefabObjects)
         {
-            if (from.GetType() != to.GetType()) return false;
-
-            if (from.GetType() == typeof(CapsuleCollider))
+            // if there is an existing matching colider object inside the prefab then
+            // clean the native, magica and dynamic bone colliders and return the gameobject
+            // this should preserve any references to the collider gameobject
+            foreach (Transform childtransform in prefabObjects)
             {
-                CapsuleCollider ccFrom = (CapsuleCollider)from;
-                CapsuleCollider ccTo = (CapsuleCollider)to;                
-                ccTo.direction = ccFrom.direction;
-                ccTo.radius = ccFrom.radius;
-                ccTo.height = ccFrom.height;
-                ccTo.center = ccFrom.center;
-                ccTo.transform.SetPositionAndRotation(ccFrom.transform.position, ccFrom.transform.rotation);
-                ccTo.transform.localScale = ccFrom.transform.localScale;
-                ccTo.enabled = ccFrom.enabled;                
-                return true;
-            }
-            else if (from.GetType() == typeof(SphereCollider))
-            {
-                SphereCollider ccFrom = (SphereCollider)from;
-                SphereCollider ccTo = (SphereCollider)to;                
-                ccTo.radius = ccFrom.radius;
-                ccTo.center = ccFrom.center;
-                ccTo.transform.SetPositionAndRotation(ccFrom.transform.position, ccFrom.transform.rotation);
-                ccTo.transform.localScale = ccFrom.transform.localScale;
-                ccTo.enabled = ccFrom.enabled;                
-                return true;
-            }
+                if (childtransform.name == colliderName)
+                {
+                    GameObject colliderGameObject = childtransform.gameObject;
 
-            return false;
+                    if (MAGICA_CLOTH_AVAILABLE)
+                    {
+                        var magicaColliderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
+                        if (magicaColliderType != null)
+                        {
+                            var mCol = colliderGameObject.GetComponent(magicaColliderType);
+                            if (mCol)
+                            {
+                                GameObject.DestroyImmediate(mCol);
+                            }
+                        }
+                    }
+
+                    if (DYNAMIC_BONE_AVAILABLE)
+                    {
+                        var dynamicBoneColliderType = GetTypeInAssemblies("DynamicBoneCollider");
+                        if (dynamicBoneColliderType != null)
+                        {
+                            var dCol = colliderGameObject.GetComponent(dynamicBoneColliderType);
+                            if (dCol)
+                            {
+                                GameObject.DestroyImmediate(dCol);
+                            }
+                        }
+                    }
+
+                    var col = colliderGameObject.GetComponent<Collider>();
+                    if (col != null)
+                    {
+                        GameObject.DestroyImmediate(col);
+                    }
+                    return colliderGameObject;
+                }
+            }
+            return new GameObject(colliderName);
+        }
+
+        public void SaveReferenceAbstractColliders(ColliderManager colliderManager)
+        {
+            // create a reference list of abstract colliders to be used as a 'reset to defaults' resource             
+            CreateAbstractColliders(colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders);
+            Debug.Log("Build Time abstract count = " + abstractColliders.Count);
+            PhysicsSettingsStore.SaveAbstractColliderSettings(colliderManager, abstractColliders, true);
         }
 
         private void AddSpringBones()
@@ -648,7 +556,7 @@ namespace Reallusion.Import
                 if (hairRoots.Count > 0)
                 {
                     Util.LogInfo("Found: " + hairRoots.Count + " spring bone chains");
-                    SetTypeField(dynamicBoneType, dynamicBoneComponent, "m_Roots", hairRoots);                    
+                    SetTypeField(dynamicBoneType, dynamicBoneComponent, "m_Roots", hairRoots);
                     SetTypeField(dynamicBoneType, dynamicBoneComponent, "m_Damping", 0.11f);
                     SetTypeField(dynamicBoneType, dynamicBoneComponent, "m_Elasticity", 0.04f);
                     SetTypeField(dynamicBoneType, dynamicBoneComponent, "m_Stiffness", 0.33f);
@@ -684,7 +592,7 @@ namespace Reallusion.Import
                         }
                     }
                 }
-            }                     
+            }
         }
 
         /// See: https://stackoverflow.com/questions/10754150/dynamic-type-with-lists-in-c-sharp
@@ -704,60 +612,66 @@ namespace Reallusion.Import
             if (MagicaCloth2IsAvailable() && addMagicaClothPhysics)
                 AddMagicaCloth();
             //
-
-            List<string> hairMeshNames = FindHairMeshes();
-            Transform[] transforms = prefabInstance.GetComponentsInChildren<Transform>();
-            foreach (Transform t in transforms)
+            if (addUnityClothPhysics)
             {
-                GameObject obj = t.gameObject;
-                foreach (SoftPhysicsData data in softPhysics)
+                List<string> hairMeshNames = FindHairMeshes();
+                Transform[] transforms = prefabInstance.GetComponentsInChildren<Transform>();
+                foreach (Transform t in transforms)
                 {
-                    string meshName = obj.name;
-                    if (meshName.iContains("_Extracted"))
+                    GameObject obj = t.gameObject;
+                    //Debug.Log(obj.name);
+                    foreach (SoftPhysicsData data in softPhysics)
                     {
-                        meshName = meshName.Remove(meshName.IndexOf("_Extracted"));
-                    }
-
-                    if (meshName == data.meshName)
-                    {
-                        if (CanAddPhysics(meshName, hairMeshNames))
+                        string meshName = obj.name;
+                        if (meshName.iContains("_Extracted"))
                         {
-                            DoCloth(obj, meshName);
-                            clothMeshes.Add(obj);
+                            meshName = meshName.Remove(meshName.IndexOf("_Extracted"));
                         }
-                        else
+
+                        if (meshName == data.meshName)
                         {
-                            RemoveCloth(obj);
+                            if (CanAddPhysics(meshName, hairMeshNames))
+                            {
+                                //Debug.Log("AddCloth CanAddPhysics: " + obj.name + " " + data.meshName);
+                                DoCloth(obj, meshName);
+                                clothMeshes.Add(obj);
+                            }
+                            else
+                            {
+                                RemoveCloth(obj);
+                            }
                         }
                     }
                 }
-            }
 
-            ColliderManager colliderManager = prefabInstance.GetComponent<ColliderManager>();
-            if (colliderManager)
-            {
-                colliderManager.clothMeshes = clothMeshes.ToArray();
+                ColliderManager colliderManager = prefabInstance.GetComponent<ColliderManager>();
+                if (colliderManager)
+                {
+                    colliderManager.clothMeshes = clothMeshes.ToArray();
+                }
             }
         }
-        
+
         private bool CanAddPhysics(SoftPhysicsData data)
         {
             if (data != null)
             {
                 if (data.isHair)
                 {
+                    //Debug.Log("CanAddPhysics (isHair) to " + data.meshName);
                     if (addHairPhysics) return true;
                 }
                 else
                 {
+                    //Debug.Log("CanAddPhysics (is NOT Hair) to " + data.meshName);
                     if (addClothPhysics) return true;
                 }
             }
 
             return false;
         }
-        
-        private bool CanAddPhysics(string meshName, List<string>hairMeshNames)
+
+        private bool CanAddPhysics(string meshName, List<string> hairMeshNames)
         {
             if (hairMeshNames.iContains(meshName))
             {
@@ -767,7 +681,7 @@ namespace Reallusion.Import
             {
                 return addClothPhysics;
             }
-        }        
+        }
 
         private List<string> FindHairMeshes()
         {
@@ -786,7 +700,7 @@ namespace Reallusion.Import
 
                     if (meshName == data.meshName)
                     {
-                        if (data.isHair && !hairMeshNames.Contains(meshName)) 
+                        if (data.isHair && !hairMeshNames.Contains(meshName))
                             hairMeshNames.Add(meshName);
                     }
                 }
@@ -812,11 +726,12 @@ namespace Reallusion.Import
 
         private void DoCloth(GameObject clothTarget, string meshName)
         {
+            //Debug.Log("DoCloth : " + clothTarget.name + " " +  meshName);
             SkinnedMeshRenderer renderer = clothTarget.GetComponent<SkinnedMeshRenderer>();
             if (!renderer) return;
             Mesh mesh = renderer.sharedMesh;
-            if (!mesh) return;            
-            
+            if (!mesh) return;
+
             List<WeightMapper.PhysicsSettings> settingsList = new List<WeightMapper.PhysicsSettings>();
 
             bool hasPhysics = false;
@@ -826,7 +741,7 @@ namespace Reallusion.Import
                 Material mat = renderer.sharedMaterials[i];
 
                 if (!mat) continue;
-
+                //Debug.Log("sharedMaterials " + mat.name);
                 string sourceName = mat.name;
                 if (sourceName.iContains("_2nd_Pass")) continue;
                 if (sourceName.iContains("_1st_Pass"))
@@ -836,6 +751,7 @@ namespace Reallusion.Import
 
                 foreach (SoftPhysicsData data in softPhysics)
                 {
+                    //Debug.Log("SoftPhysicsData data " + data.meshName);
                     if (data.materialName == sourceName &&
                         data.meshName == meshName &&
                         CanAddPhysics(data))
@@ -901,7 +817,7 @@ namespace Reallusion.Import
             CharacterInfo currentChar = ImporterWindow.Current.Character;
             string fbxPath = currentChar.path;
             ModelImporter importer = (ModelImporter)AssetImporter.GetAtPath(fbxPath);
-            if(importer != null)
+            if (importer != null)
             {
                 if (!importer.isReadable)
                 {
@@ -933,7 +849,7 @@ namespace Reallusion.Import
                         {
                             if (meshName == data.meshName)
                             {
-                                Debug.Log("ADDMAGICACLOTH:: " + obj.name);
+                                //Debug.Log("ADDMAGICACLOTH:: " + obj.name);
                                 DoMagicaCloth(cloth, obj, data);
                             }
                         }
@@ -1037,18 +953,20 @@ namespace Reallusion.Import
             }
         }
 
-
         public void RemoveCloth(GameObject obj)
         {
             Cloth cloth = obj.GetComponent<Cloth>();
+            if (cloth) Component.DestroyImmediate(cloth);
+
             WeightMapper mapper = obj.GetComponent<WeightMapper>();
+            if (mapper) Component.DestroyImmediate(mapper);
 
             Type magicaClothType = GetTypeInAssemblies("MagicaCloth2.MagicaCloth");
-            Component magicaClothInstance = obj.GetComponent(magicaClothType);
-
-            if (cloth) Component.DestroyImmediate(cloth);
-            if (mapper) Component.DestroyImmediate(mapper);
-            if (magicaClothInstance) Component.DestroyImmediate(magicaClothInstance);            
+            if (magicaClothType != null)
+            {
+                var magicaClothInstance = obj.GetComponent(magicaClothType);
+                if (magicaClothInstance != null) Component.DestroyImmediate(magicaClothInstance);
+            }
         }
 
         private Texture2D GetTextureFrom(string jsonTexturePath, string materialName, string suffix, out string name, bool search)
@@ -1087,37 +1005,36 @@ namespace Reallusion.Import
             // now fix the import settings for the texture.
             string path = AssetDatabase.GetAssetPath(tex);
             TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(path);
-                        
+
             importer.alphaSource = TextureImporterAlphaSource.None;
             importer.mipmapEnabled = false;
             importer.mipmapFilter = TextureImporterMipFilter.BoxFilter;
-            importer.sRGBTexture = true;                                                                        
-            importer.alphaIsTransparency = false;                            
+            importer.sRGBTexture = true;
+            importer.alphaIsTransparency = false;
             importer.textureType = TextureImporterType.Default;
             importer.isReadable = true;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.compressionQuality = 0;
             bool magica = characterInfo.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.MagicaCloth);
-            Debug.Log("MAGICA:: " + path +  magica);
             importer.maxTextureSize = magica ? MAGICA_WEIGHT_SIZE : 2048;
 
-            AssetDatabase.WriteImportSettingsIfDirty(path);            
-        }        
-        
+            AssetDatabase.WriteImportSettingsIfDirty(path);
+        }
+
         public static GameObject RebuildPhysics(CharacterInfo characterInfo)
-        {            
+        {
             GameObject prefabAsset = characterInfo.PrefabAsset;
 
             if (prefabAsset)
             {
-                GameObject prefabInstance = (GameObject)PrefabUtility.InstantiatePrefab(prefabAsset);                
+                GameObject prefabInstance = (GameObject)PrefabUtility.InstantiatePrefab(prefabAsset);
 
                 if (prefabAsset && prefabInstance && characterInfo.PhysicsJsonData != null)
                 {
                     characterInfo.ShaderFlags |= CharacterInfo.ShaderFeatureFlags.ClothPhysics;
                     Physics physics = new Physics(characterInfo, prefabInstance);
-                    physics.AddPhysics(true);                    
-                    characterInfo.Write();                    
+                    physics.AddPhysics(true);
+                    characterInfo.Write();
                 }
 
                 if (prefabInstance) GameObject.DestroyImmediate(prefabInstance);
@@ -1128,7 +1045,7 @@ namespace Reallusion.Import
 
         void FixColliderAPose(Transform[] objects, Dictionary<Object, string> colliderLookup)
         {
-            Func<string, Transform> FindBone = (boneName) => Array.Find(objects, o => o.name.iEquals(boneName));            
+            Func<string, Transform> FindBone = (boneName) => Array.Find(objects, o => o.name.iEquals(boneName));
 
             Transform leftArm = FindBone("CC_Base_L_Upperarm");
             if (!leftArm) leftArm = FindBone("L_Upperarm");
@@ -1224,13 +1141,16 @@ namespace Reallusion.Import
             return false;
         }
 
-        // additions
-        //public static bool CreateAbstractColliders(ColliderManager colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders, out IList genericColliders)
+        // additions        
         public static bool CreateAbstractColliders(ColliderManager colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders)
         {
             bool newMethod = true;
             if (newMethod)
             {
+                CharacterInfo current = new CharacterInfo(colliderManager.characterGUID);
+                bool native = current.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.UnityClothPhysics);
+                bool magica = current.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.MagicaCloth);
+
                 abstractColliders = new List<ColliderManager.AbstractCapsuleCollider>();
 
                 if (MagicaCloth2IsAvailable())
@@ -1239,7 +1159,7 @@ namespace Reallusion.Import
 
                 // importer logic: there will be a possibility for all 3 supported collider types to be present
                 bool parseNative = true; // HasNativeCapsuleColliders(colliderManager.gameObject);
-                bool parseMagica = MagicaCloth2IsAvailable();// true;// HasMagicaCloth2Colliders(colliderManager.gameObject);
+                bool parseMagica = true; // MagicaCloth2IsAvailable();// true;// HasMagicaCloth2Colliders(colliderManager.gameObject);
                 bool parseDynamic = false; // HasDynamicBoneColliders(colliderManager.gameObject);
                 //bool doOnce = true;
                 //MethodInfo getSize = null;
@@ -1254,7 +1174,8 @@ namespace Reallusion.Import
                     {
                         ColliderManager.AbstractCapsuleCollider abs = new ColliderManager.AbstractCapsuleCollider();
                         //bool nativeFound = false, magicaFound = false;
-                        if (parseNative)
+
+                        if (native)
                         {
                             if (go.GetComponent(typeof(CapsuleCollider)))
                             {
@@ -1274,17 +1195,18 @@ namespace Reallusion.Import
                             }
                         }
 
-                        if (parseMagica)
+                        if (magica)
                         {
+                            //Debug.Log("Parsing MAgica Colliders");
                             var magicaColl = go.GetComponent(colliderManager.magicaColliderType);
                             if (magicaColl != null)
                             {
                                 //if (doOnce)
                                 //{
-                                    if (colliderManager.magicaGetSize == null)
-                                        colliderManager.magicaGetSize = magicaColl.GetType().GetMethod("GetSize");
-                                    //getSize = magicaColl.GetType().GetMethod("GetSize");
-                                    //doOnce = false;
+                                if (colliderManager.magicaGetSize == null)
+                                    colliderManager.magicaGetSize = magicaColl.GetType().GetMethod("GetSize");
+                                //getSize = magicaColl.GetType().GetMethod("GetSize");
+                                //doOnce = false;
                                 //}
 
                                 if (abs.colliderTypes.HasFlag(ColliderManager.ColliderType.UnityEngine))// (nativeFound)
@@ -1391,14 +1313,18 @@ namespace Reallusion.Import
         {
             // basic magica cloth v2 test -- very slow
             Type magicaClothType = GetTypeInAssemblies("MagicaCloth2.MagicaCloth");
-            return magicaClothType != null;            
+            return magicaClothType != null;
+        }
+
+        public static bool DynamicBoneIsAvailable()
+        {
+            // basic dynamic bone test -- very slow
+            Type dynamicBoneType = GetTypeInAssemblies("DynamicBone");
+            return dynamicBoneType != null;
         }
 
         public Object AddMagicaCloth2Collider(GameObject g, CollisionShapeData collider)
         {
-            // add logic to determine magica usage - allow or disallow multiple cloth sim? 
-            // allow use cases with multiple concurrent collider systems
-            // possibility to have native + magica, native + dynamicbone, magica + dynamicbone?, all 3?
             Type capsuleColliderType = Physics.GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
             if (capsuleColliderType != null)
             {
@@ -1416,16 +1342,12 @@ namespace Reallusion.Import
                 }
                 else if (collider.colliderType.Equals(ColliderType.Sphere))
                 {
-                    //Debug.Log("SPHERE================ " + collider.name);
                     float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
-                    //c.radius = radius;
-                    //c.height = 0f;
                     r = radius;
                     h = 0f;
                 }
-                else // DRY
+                else
                 {
-                    //Debug.Log("BOX================ " + collider.name);
                     float radius;
                     float height;
                     switch (collider.colliderAxis)
@@ -1464,15 +1386,57 @@ namespace Reallusion.Import
 
                 return capsuleColliderComponent;
             }
-
             return null;
         }
 
-        public static bool DynamicBoneIsAvailable()
+        public Object AddNativeCollider(GameObject g, CollisionShapeData collider)
         {
-            // basic dynamic bone test -- very slow
-            Type dynamicBoneType = GetTypeInAssemblies("DynamicBone");
-            return dynamicBoneType != null;
+            if (collider.colliderType.Equals(ColliderType.Capsule))
+            {
+                CapsuleCollider c = g.AddComponent<CapsuleCollider>();
+
+                c.direction = (int)collider.colliderAxis;
+                float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                c.radius = radius;
+                c.height = collider.length * modelScale + radius * 2f;
+                return c;
+            }
+            else if (collider.colliderType.Equals(ColliderType.Sphere))
+            {
+                CapsuleCollider c = g.AddComponent<CapsuleCollider>();
+
+                c.direction = (int)collider.colliderAxis;
+                float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                c.radius = radius;
+                c.height = 0f;
+                return c;
+            }
+            else
+            {
+                CapsuleCollider c = g.AddComponent<CapsuleCollider>();
+                c.direction = (int)collider.colliderAxis;
+                float radius;
+                float height;
+                switch (collider.colliderAxis)
+                {
+                    case ColliderAxis.X:
+                        radius = (collider.extent.y + collider.extent.z) / 4f;
+                        height = collider.extent.x;
+                        break;
+                    case ColliderAxis.Z:
+                        radius = (collider.extent.x + collider.extent.y) / 4f;
+                        height = collider.extent.z;
+                        break;
+                    case ColliderAxis.Y:
+                    default:
+                        radius = (collider.extent.x + collider.extent.z) / 4f;
+                        height = collider.extent.y;
+                        break;
+                }
+                c.radius = (radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                c.height = height * modelScale;
+                return c;
+            }
         }
 
         public static bool HasNativeCapsuleColliders(GameObject go)
@@ -1527,7 +1491,7 @@ namespace Reallusion.Import
         {
             Texture2D weightMap = GetTextureFrom(data.weightMapPath, data.materialName, "WeightMap", out string texName, true);
             if (!weightMap.isReadable) return null;
-            
+
             Texture2D lowOutputMap;
             bool useCompute = true;
 
@@ -1536,7 +1500,7 @@ namespace Reallusion.Import
                 CharacterInfo currentCharacter = ImporterWindow.Current.Character;
 
                 string[] folders = new string[] { "Assets", "Packages" };
-                Texture2D physXWeightMap = Util.FindTexture(folders, "physXWeightMapTest");                
+                Texture2D physXWeightMap = Util.FindTexture(folders, "physXWeightMapTest");
                 string folder = ComputeBake.BakeTexturesFolder(currentCharacter.path);
                 string name = Path.GetFileNameWithoutExtension(data.weightMapPath) + "_" + MAGICA_WEIGHT_SIZE + "_magica";// "magicaWeightMapTest";
                 float threshold = 0f; // 1f / 255f;
@@ -1602,5 +1566,487 @@ namespace Reallusion.Import
             return genericColliders;
         }
 
+        public bool TryGetExistingColliderGameObject(string colliderName, Transform[] prefabObjects, out GameObject colliderGameObject)
+        {
+            foreach (Transform childtransform in prefabObjects)
+            {
+                if (childtransform.name == colliderName)
+                {
+                    colliderGameObject = childtransform.gameObject;
+
+                    //colliderGameObject.transform.parent = null;
+                    //colliderGameObject.transform.position = Vector3.zero;
+                    //colliderGameObject.transform.rotation = Quaternion.identity;
+
+                    if (MAGICA_CLOTH_AVAILABLE)
+                    {
+                        var magicaColliderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
+                        if (magicaColliderType != null)
+                        {
+                            var mCol = colliderGameObject.GetComponent(magicaColliderType);
+                            if (mCol)
+                            {
+                                GameObject.DestroyImmediate(mCol);
+                            }
+                        }
+                    }
+
+                    var col = colliderGameObject.GetComponent<Collider>();
+                    if (col != null)
+                    {
+                        GameObject.DestroyImmediate(col);
+                    }
+
+                    return true;
+                }
+            }
+
+            colliderGameObject = new GameObject(colliderName);
+            return false;
+        }
+
+        // =================
+        // =================
+        // Legacy functions
+        // =================
+        // =================
+        #region Legacy Functions
+
+        private void AddColliders()
+        {
+            if (!addClothPhysics && !addHairPhysics && !addHairSpringBones)
+            {
+                ColliderManager existingColliderManager = prefabInstance.GetComponent<ColliderManager>();
+                if (existingColliderManager != null)
+                {
+                    foreach (Collider c in existingColliderManager.colliders)
+                    {
+                        GameObject.DestroyImmediate(c.gameObject);
+                    }
+                    Component.DestroyImmediate(existingColliderManager);
+                }
+                return;
+            }
+
+            MAGICA_CLOTH_AVAILABLE = MagicaCloth2IsAvailable();
+
+            GameObject parent = new GameObject();
+            GameObject g;
+            Transform[] objects = prefabInstance.GetComponentsInChildren<Transform>();
+            Dictionary<Object, string> colliderLookup = new Dictionary<Object, string>();
+            Dictionary<Collider, Collider> existingLookup = new Dictionary<Collider, Collider>();
+
+            // delegates
+            Func<string, Transform> FindBone = (boneName) => Array.Find(objects, o => o.name.Equals(boneName));
+            Func<string, Transform, Collider> FindColliderObj = (colliderName, bone) =>
+            {
+                for (int i = 0; i < bone.childCount; i++)
+                {
+                    Transform child = bone.GetChild(i);
+                    if (child.name == colliderName)
+                    {
+                        return child.GetComponent<Collider>();
+                    }
+                }
+                return null;
+            };
+
+            //bool objectExists = false;
+            foreach (CollisionShapeData collider in boneColliders)
+            {
+                string colliderName = collider.boneName + "_" + collider.name;
+                Transform bone = FindBone(collider.boneName);
+                Collider existingCollider = FindColliderObj(colliderName, bone);
+
+                /*
+                // addition
+                objectExists = TryGetExistingColliderGameObject(colliderName, objects, out g);
+                
+                if (!objectExists)
+                {
+                    g.transform.SetParent(parent.transform);
+
+                    Transform t = g.transform;
+                    t.position = collider.translation * modelScale;
+                    t.rotation = collider.rotation;
+
+                    AddCollider(g, collider, colliderLookup);
+                }
+                else
+                {                    
+                    // longhand test of changing hierarchy inside a prefab
+                    using (var editingScope = new PrefabUtility.EditPrefabContentsScope(AssetDatabase.GetAssetPath(ImporterWindow.Current.Character.PrefabAsset)))
+                    {
+                        var prefabRoot = editingScope.prefabContentsRoot;
+                        Transform[] editablePrefabTransforms = prefabRoot.GetComponentsInChildren<Transform>();
+                        foreach (Transform child in editablePrefabTransforms)
+                        {
+                            if (child.name == colliderName)
+                            {
+                                child.SetParent(parent.transform);
+                                child.position = collider.translation * modelScale;
+                                child.rotation = collider.rotation;
+                                g = child.gameObject;
+                                AddCollider(g, collider, colliderLookup);
+                                break;
+                            }
+                        }
+                    }
+                    
+                }
+                //
+                */
+
+                g = new GameObject();
+                g.transform.SetParent(parent.transform);
+                g.name = colliderName;
+
+
+                Transform t = g.transform;
+                t.position = collider.translation * modelScale;
+                t.rotation = collider.rotation;
+
+
+                //original add colliders
+
+
+                if (collider.colliderType.Equals(ColliderType.Capsule))
+                {
+                    if (addMagicaClothPhysics)
+                    {
+                        if (MagicaCloth2IsAvailable())
+                        {
+                            Object c = AddMagicaCloth2Collider(g, collider);
+                            colliderLookup.Add(c, collider.boneName);
+                        }
+                    }
+
+                    if (addUnityClothPhysics)
+                    {
+                        CapsuleCollider c = g.AddComponent<CapsuleCollider>();
+
+                        c.direction = (int)collider.colliderAxis;
+                        float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                        c.radius = radius;
+                        c.height = collider.length * modelScale + radius * 2f;
+                        colliderLookup.Add(c, collider.boneName);
+                        if (existingCollider) existingLookup.Add(c, existingCollider);
+                    }
+                }
+                else if (collider.colliderType.Equals(ColliderType.Sphere))
+                {
+                    if (addMagicaClothPhysics)
+                    {
+                        if (MagicaCloth2IsAvailable())
+                        {
+                            Object c = AddMagicaCloth2Collider(g, collider);
+                            colliderLookup.Add(c, collider.boneName);
+                        }
+                    }
+
+                    if (addUnityClothPhysics)
+                    {
+                        CapsuleCollider c = g.AddComponent<CapsuleCollider>();
+
+                        c.direction = (int)collider.colliderAxis;
+                        float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                        c.radius = radius;
+                        c.height = 0f;
+                        colliderLookup.Add(c, collider.boneName);
+                        if (existingCollider) existingLookup.Add(c, existingCollider);
+                    }
+                }
+                else
+                {
+                    //BoxCollider b = g.gameObject.AddComponent<BoxCollider>();
+                    //b.size = collider.extent * modelScale;
+                    //colliderLookup.Add(b, collider.boneName);
+
+                    if (addMagicaClothPhysics)
+                    {
+                        if (MagicaCloth2IsAvailable() && addMagicaClothPhysics)
+                        {
+                            Object c = AddMagicaCloth2Collider(g, collider);
+                            colliderLookup.Add(c, collider.boneName);
+                        }
+                    }
+
+                    if (addUnityClothPhysics)
+                    {
+                        CapsuleCollider c = g.AddComponent<CapsuleCollider>();
+                        c.direction = (int)collider.colliderAxis;
+                        float radius;
+                        float height;
+                        switch (collider.colliderAxis)
+                        {
+                            case ColliderAxis.X:
+                                radius = (collider.extent.y + collider.extent.z) / 4f;
+                                height = collider.extent.x;
+                                break;
+                            case ColliderAxis.Z:
+                                radius = (collider.extent.x + collider.extent.y) / 4f;
+                                height = collider.extent.z;
+                                break;
+                            case ColliderAxis.Y:
+                            default:
+                                radius = (collider.extent.x + collider.extent.z) / 4f;
+                                height = collider.extent.y;
+                                break;
+                        }
+                        c.radius = (radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                        c.height = height * modelScale;
+                        colliderLookup.Add(c, collider.boneName);
+                        if (existingCollider) existingLookup.Add(c, existingCollider);
+                    }
+                }
+
+
+                //end of original add colliders
+            }
+
+            //if (!objectExists)
+            //{
+            parent.transform.Rotate(Vector3.left, 90);
+            parent.transform.localScale = new Vector3(-1f, 1f, 1f);
+            //}
+
+            if (aPose) FixColliderAPose(objects, colliderLookup);
+
+            // as the transforms have moved, need to re-sync the transforms in the physics engine
+            UnityEngine.Physics.SyncTransforms();
+
+            List<Object> listColliders = new List<Object>(colliderLookup.Count);
+
+            // revert all existing prefabs overrides...
+            foreach (KeyValuePair<Collider, Collider> collPair in existingLookup)
+            {
+                PrefabUtility.RevertObjectOverride(collPair.Value, InteractionMode.UserAction);
+            }
+
+            foreach (KeyValuePair<Object, string> collPair in colliderLookup)
+            {
+                Component c = collPair.Key as Component;
+                if (c)
+                {
+                    Transform t = c.transform;
+
+                    string colliderBone = collPair.Value;
+
+                    Transform bone = FindBone(colliderBone);
+                    if (bone)
+                    {
+                        /* dunno aboot this...
+                        if (existingLookup.TryGetValue(transformedCollider, out Collider existingCollider))
+                        {
+                            // reparent with keep position
+                            transformedCollider.transform.SetParent(bone, true);
+                            // copy the transformed collider to the existing if they match
+                            CopyCollider(transformedCollider, existingCollider);
+                            // delete the transformed collider
+                            GameObject.DestroyImmediate(transformedCollider.gameObject);
+                            // add to list of colliders
+                            listColliders.Add(existingCollider);
+                        }
+                        else
+                        {
+                            // reparent with keep position
+                            t.transform.SetParent(bone, true);
+                            // add to list of colliders
+                            listColliders.Add(transformedCollider);
+                        }*/
+                    }
+
+                    // reparent with keep position
+                    t.transform.SetParent(bone, true);
+                    // add to list of colliders
+                    listColliders.Add(t);
+                }
+            }
+
+            // add collider manager to prefab root
+            ColliderManager colliderManager = prefabInstance.GetComponent<ColliderManager>();
+            if (colliderManager == null) colliderManager = prefabInstance.AddComponent<ColliderManager>();
+
+            // add colliders to manager
+            if (colliderManager)
+            {
+                colliderManager.characterGUID = characterGUID;
+                colliderManager.AddColliders(listColliders);
+            }
+
+            // addition
+            // create a reference list of abstract colliders here
+            // to be used as a 'reset to defaults' resource
+            CreateAbstractColliders(colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders);//, out IList genericColliders);
+            Debug.Log("Build Time abstract count = " + abstractColliders.Count);
+            PhysicsSettingsStore.SaveAbstractColliderSettings(colliderManager, abstractColliders, true);
+            // end of addition
+
+            Type dynamicBoneColliderType = GetTypeInAssemblies("DynamicBoneCollider");
+
+            if (addHairSpringBones)
+            {
+                if (dynamicBoneColliderType == null)
+                {
+                    Debug.LogWarning("Warning: DynamicBone not found in project assembly.");
+                }
+                else
+                {
+                    foreach (CollisionShapeData collider in boneColliders)
+                    {
+                        if (springColliderBones.Contains(collider.boneName))
+                        {
+                            string colliderName = collider.boneName + "_" + collider.name;
+                            Transform bone = FindBone(collider.boneName);
+                            Collider existingCollider = FindColliderObj(colliderName, bone);
+
+                            if (existingCollider && existingCollider.GetType() == typeof(CapsuleCollider))
+                            {
+                                CapsuleCollider cc = (CapsuleCollider)existingCollider;
+
+                                var dynamicBoneColliderComponent = existingCollider.gameObject.GetComponent(dynamicBoneColliderType);
+                                if (dynamicBoneColliderComponent == null)
+                                {
+                                    dynamicBoneColliderComponent = existingCollider.gameObject.AddComponent(dynamicBoneColliderType);
+                                }
+
+                                SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Height", cc.height);
+                                SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Radius", cc.radius);
+                                SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Center", cc.center);
+                                SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Direction", cc.direction);
+                            }
+                        }
+                    }
+                }
+            }
+
+            GameObject.DestroyImmediate(parent);
+        }
+
+        private void AddCollider(GameObject g, CollisionShapeData collider, Dictionary<Object, string> colliderLookup)
+        {
+            if (collider.colliderType.Equals(ColliderType.Capsule))
+            {
+                if (addMagicaClothPhysics)
+                {
+                    if (MagicaCloth2IsAvailable())
+                    {
+                        Object c = AddMagicaCloth2Collider(g, collider);
+                        colliderLookup.Add(c, collider.boneName);
+                    }
+                }
+
+                if (addUnityClothPhysics)
+                {
+                    CapsuleCollider c = g.AddComponent<CapsuleCollider>();
+
+                    c.direction = (int)collider.colliderAxis;
+                    float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                    c.radius = radius;
+                    c.height = collider.length * modelScale + radius * 2f;
+                    colliderLookup.Add(c, collider.boneName);
+                    //if (existingCollider) existingLookup.Add(c, existingCollider);
+                }
+            }
+            else if (collider.colliderType.Equals(ColliderType.Sphere))
+            {
+                if (addMagicaClothPhysics)
+                {
+                    if (MagicaCloth2IsAvailable())
+                    {
+                        Object c = AddMagicaCloth2Collider(g, collider);
+                        colliderLookup.Add(c, collider.boneName);
+                    }
+                }
+
+                if (addUnityClothPhysics)
+                {
+                    CapsuleCollider c = g.AddComponent<CapsuleCollider>();
+
+                    c.direction = (int)collider.colliderAxis;
+                    float radius = (collider.radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                    c.radius = radius;
+                    c.height = 0f;
+                    colliderLookup.Add(c, collider.boneName);
+                    //if (existingCollider) existingLookup.Add(c, existingCollider);
+                }
+            }
+            else
+            {
+                //BoxCollider b = g.gameObject.AddComponent<BoxCollider>();
+                //b.size = collider.extent * modelScale;
+                //colliderLookup.Add(b, collider.boneName);
+
+                if (addMagicaClothPhysics)
+                {
+                    if (MagicaCloth2IsAvailable() && addMagicaClothPhysics)
+                    {
+                        Object c = AddMagicaCloth2Collider(g, collider);
+                        colliderLookup.Add(c, collider.boneName);
+                    }
+                }
+
+                if (addUnityClothPhysics)
+                {
+                    CapsuleCollider c = g.AddComponent<CapsuleCollider>();
+                    c.direction = (int)collider.colliderAxis;
+                    float radius;
+                    float height;
+                    switch (collider.colliderAxis)
+                    {
+                        case ColliderAxis.X:
+                            radius = (collider.extent.y + collider.extent.z) / 4f;
+                            height = collider.extent.x;
+                            break;
+                        case ColliderAxis.Z:
+                            radius = (collider.extent.x + collider.extent.y) / 4f;
+                            height = collider.extent.z;
+                            break;
+                        case ColliderAxis.Y:
+                        default:
+                            radius = (collider.extent.x + collider.extent.z) / 4f;
+                            height = collider.extent.y;
+                            break;
+                    }
+                    c.radius = (radius - collider.margin * PHYSICS_SHRINK_COLLIDER_RADIUS) * modelScale;
+                    c.height = height * modelScale;
+                    colliderLookup.Add(c, collider.boneName);
+                    //if (existingCollider) existingLookup.Add(c, existingCollider);
+                }
+            }
+        }
+
+        private bool CopyCollider(Collider from, Collider to)
+        {
+            if (from.GetType() != to.GetType()) return false;
+
+            if (from.GetType() == typeof(CapsuleCollider))
+            {
+                CapsuleCollider ccFrom = (CapsuleCollider)from;
+                CapsuleCollider ccTo = (CapsuleCollider)to;
+                ccTo.direction = ccFrom.direction;
+                ccTo.radius = ccFrom.radius;
+                ccTo.height = ccFrom.height;
+                ccTo.center = ccFrom.center;
+                ccTo.transform.SetPositionAndRotation(ccFrom.transform.position, ccFrom.transform.rotation);
+                ccTo.transform.localScale = ccFrom.transform.localScale;
+                ccTo.enabled = ccFrom.enabled;
+                return true;
+            }
+            else if (from.GetType() == typeof(SphereCollider))
+            {
+                SphereCollider ccFrom = (SphereCollider)from;
+                SphereCollider ccTo = (SphereCollider)to;
+                ccTo.radius = ccFrom.radius;
+                ccTo.center = ccFrom.center;
+                ccTo.transform.SetPositionAndRotation(ccFrom.transform.position, ccFrom.transform.rotation);
+                ccTo.transform.localScale = ccFrom.transform.localScale;
+                ccTo.enabled = ccFrom.enabled;
+                return true;
+            }
+
+            return false;
+        }
+        #endregion Legacy Functions
     }
 }

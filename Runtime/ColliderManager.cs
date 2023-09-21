@@ -217,35 +217,40 @@ namespace Reallusion.Import
 
         public void SyncNativeCollider(AbstractCapsuleCollider collider)
         {
-            CapsuleCollider c = collider.nativeRef as CapsuleCollider;
-            c.height = collider.height;
-            c.radius = collider.radius;
+            if (collider.nativeRef != null)
+            {
+                CapsuleCollider c = collider.nativeRef as CapsuleCollider;
+                c.height = collider.height;
+                c.radius = collider.radius;
+            }
         }
 
         public void SyncMagicaCollider(AbstractCapsuleCollider collider)
         {
-            var c = collider.magicaRef;
-
-            if (magicaColliderType == null)
+            if (collider.magicaRef != null)
             {
-                magicaColliderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
-            }
+                var c = collider.magicaRef;
+                if (magicaColliderType == null)
+                {
+                    magicaColliderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
+                }
 
-            if (magicaSetSize == null || magicaUpdate == null)
-            {
-                magicaSetSize = c.GetType().GetMethod("SetSize",
-                                            BindingFlags.Public | BindingFlags.Instance,
-                                            null,
-                                            CallingConventions.Any,
-                                            new Type[] { typeof(Vector3) },
-                                            null);
+                if (magicaSetSize == null || magicaUpdate == null)
+                {
+                    magicaSetSize = c.GetType().GetMethod("SetSize",
+                                                BindingFlags.Public | BindingFlags.Instance,
+                                                null,
+                                                CallingConventions.Any,
+                                                new Type[] { typeof(Vector3) },
+                                                null);
 
-                magicaUpdate = c.GetType().GetMethod("UpdateParameters");
+                    magicaUpdate = c.GetType().GetMethod("UpdateParameters");
+                }
+                Vector3 sizeVector = new Vector3(collider.radius, collider.radius, collider.height);
+                object[] inputParams = new object[] { sizeVector };
+                magicaSetSize.Invoke(c, inputParams);
+                magicaUpdate.Invoke(c, new object[] { });
             }
-            Vector3 sizeVector = new Vector3(collider.radius, collider.radius, collider.height);
-            object[] inputParams = new object[] { sizeVector };
-            magicaSetSize.Invoke(c, inputParams);            
-            magicaUpdate.Invoke(c, new object[] { });
         }
 
         public void CacheCollider(AbstractCapsuleCollider collider, AbstractCapsuleCollider mirrorCollider = null)
@@ -647,6 +652,35 @@ namespace Reallusion.Import
             }
             this.settings = settings.ToArray();
             this.colliders = colliders.ToArray();
+        }
+
+        // Accept UnityEngine.Object list as input -- in this case the objects will be transforms
+        public void AddColliders(List<UnityEngine.Object> colliders)
+        {
+            List<ColliderSettings> settings = new List<ColliderSettings>();
+            this.colliders = new Collider[colliders.Count];
+            if (colliders != null)
+            {
+                //Debug.Log("AddColliders - Adding Object list containing: " + colliders.Count);
+                if (colliders.Count > 0)
+                {
+                    for (int i = 0; i < colliders.Count; i++)
+                    {
+                        //Debug.Log("AddColliders - Found Collider Object: " + colliders[i].name + " Type: " + colliders[0].GetType().ToString());
+
+                        if (colliders[i].GetType() == typeof(Transform))
+                        {
+                            Transform t = (Transform)colliders[i];
+                            if (t.gameObject.GetComponent<Collider>() != null)
+                            {
+                                this.colliders[i] = t.gameObject.GetComponent<Collider>();
+                                ColliderSettings cs = new ColliderSettings(this.colliders[i]);
+                                settings.Add(cs);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         public void UpdateColliders()
