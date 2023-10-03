@@ -43,7 +43,9 @@ namespace Reallusion.Import
         [HideInInspector] public MirrorPlane selectedMirrorPlane;
         [HideInInspector] public IList genericColliderList;
         [HideInInspector] public bool magicaCloth2Available;
+        [HideInInspector] public bool dynamicBoneAvailable;
         [HideInInspector] public Type magicaColliderType;
+        [HideInInspector] public Type dynamicBoneColliderType;
         [HideInInspector] public MethodInfo magicaUpdate;
         [HideInInspector] public MethodInfo magicaSetSize;
         [HideInInspector] public MethodInfo magicaGetSize;
@@ -168,6 +170,7 @@ namespace Reallusion.Import
             //SetTypeProperty(genericCollider, "radius", selectedAbstractCapsuleCollider.radius);
             SyncNativeCollider(selectedAbstractCapsuleCollider);
             if (magicaCloth2Available) SyncMagicaCollider(selectedAbstractCapsuleCollider);
+            if (dynamicBoneAvailable) SyncDynamicBoneCollider(selectedAbstractCapsuleCollider);
 
             //if (mirrorImageAbstractCapsuleCollider != null)
             if (!AbstractCapsuleCollider.IsNullOrEmpty(mirrorImageAbstractCapsuleCollider))
@@ -181,6 +184,7 @@ namespace Reallusion.Import
                 //SetTypeProperty(mirrorGenericCollider, "radius", mirrorImageAbstractCapsuleCollider.radius);
                 SyncNativeCollider(mirrorImageAbstractCapsuleCollider);
                 if (magicaCloth2Available) SyncMagicaCollider(mirrorImageAbstractCapsuleCollider);
+                if (dynamicBoneAvailable) SyncDynamicBoneCollider(selectedAbstractCapsuleCollider);
 
                 Transform t = mirrorImageAbstractCapsuleCollider.transform;
                 Vector3 diff = Vector3.zero;
@@ -230,10 +234,8 @@ namespace Reallusion.Import
             if (collider.magicaRef != null)
             {
                 var c = collider.magicaRef;
-                if (magicaColliderType == null)
-                {
-                    magicaColliderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");
-                }
+                if (magicaColliderType == null)                
+                    magicaColliderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");                
 
                 if (magicaSetSize == null || magicaUpdate == null)
                 {
@@ -250,6 +252,19 @@ namespace Reallusion.Import
                 object[] inputParams = new object[] { sizeVector };
                 magicaSetSize.Invoke(c, inputParams);
                 magicaUpdate.Invoke(c, new object[] { });
+            }
+        }
+
+        public void SyncDynamicBoneCollider(AbstractCapsuleCollider collider)
+        {
+            if (collider.dynamicRef != null)
+            {
+                var c = collider.dynamicRef;
+                if (dynamicBoneColliderType == null)
+                    dynamicBoneColliderType = GetTypeInAssemblies("DynamicBoneCollider");
+
+                SetTypeField(dynamicBoneColliderType, c, "m_Radius", collider.radius);
+                SetTypeField(dynamicBoneColliderType, c, "m_Height", collider.height);
             }
         }
 
@@ -339,6 +354,17 @@ namespace Reallusion.Import
             if (propertyInfo != null)
             {
                 propertyInfo.SetValue(o, value);
+                return true;
+            }
+            return false;
+        }
+
+        public bool SetTypeField(Type t, object o, string field, object value)
+        {
+            FieldInfo fRoots = t.GetField(field);
+            if (fRoots != null)
+            {
+                fRoots.SetValue(o, value);
                 return true;
             }
             return false;
@@ -446,6 +472,7 @@ namespace Reallusion.Import
             //SetTypeProperty(genericCollider, "radius", source.radius);
             SyncNativeCollider(target);
             if (magicaCloth2Available) SyncMagicaCollider(target);
+            if (dynamicBoneAvailable) SyncDynamicBoneCollider(selectedAbstractCapsuleCollider);
         }
 
         public void SyncTransformActiveStatus()
@@ -475,7 +502,13 @@ namespace Reallusion.Import
                 }
 
                 // dynamic bone
-                // --------
+                if (dynamicBoneAvailable)
+                {
+                    if (dynamicBoneColliderType == null)
+                        dynamicBoneColliderType = dynamicBoneColliderType = GetTypeInAssemblies("DynamicBoneCollider");
+
+                    if (go.GetComponent(dynamicBoneColliderType) != null) return true;
+                }
             }
             return false;
         }
@@ -724,6 +757,17 @@ namespace Reallusion.Import
             colliders = foundColliders.ToArray();
             settings = foundColliderSettings.ToArray();
             clothMeshes = foundClothMeshes.ToArray();            
+        }
+        
+        // Start or Update message needed to show an enable/disable checkbox in the inspector
+        private void Start()
+        {
+            
+        }
+        
+        private void Update()
+        {
+            
         }
 #endif        
     }

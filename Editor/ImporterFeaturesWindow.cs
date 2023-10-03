@@ -199,6 +199,34 @@ namespace Reallusion.Import
                 if (importerWindow.Character.ShaderFlags.HasFlag(flag))
                 {
                     importerWindow.Character.ShaderFlags ^= flag; // toggle changed to OFF => bitwise XOR to remove flag
+
+                    // since the section flag is being unset then all the entries should be unset too
+                    switch(flag)
+                    {
+                        case CharacterInfo.ShaderFeatureFlags.ClothPhysics:
+                            {
+                                if (importerWindow.Character.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.MagicaCloth))
+                                    importerWindow.Character.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.MagicaCloth;
+
+                                if (importerWindow.Character.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.UnityClothPhysics))
+                                    importerWindow.Character.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.UnityClothPhysics;
+
+                                break;
+                            }
+                        case CharacterInfo.ShaderFeatureFlags.HairPhysics:
+                            {
+                                if (importerWindow.Character.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.MagicaBone))
+                                    importerWindow.Character.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.MagicaBone;
+
+                                if (importerWindow.Character.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.SpringBoneHair))
+                                    importerWindow.Character.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.SpringBoneHair;
+
+                                if (importerWindow.Character.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.UnityClothHairPhysics))
+                                    importerWindow.Character.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.UnityClothHairPhysics;
+
+                                break;
+                            }
+                    }
                 }
             }
         }

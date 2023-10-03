@@ -69,7 +69,7 @@ namespace Reallusion.Import
         private void OnEnable()
         {
             colliderManager = (ColliderManager)target;
-            CreateAbstractColliders();
+            //CreateAbstractColliders();
             InitIcons();
         }
 
@@ -121,6 +121,7 @@ namespace Reallusion.Import
             //}
             colliderManager.currentEditType = ColliderManager.ColliderType.Unknown;
             colliderManager.magicaCloth2Available = Physics.MagicaCloth2IsAvailable();
+            colliderManager.dynamicBoneAvailable = Physics.DynamicBoneIsAvailable();
         }
 
         public class Styles
@@ -335,9 +336,12 @@ namespace Reallusion.Import
 
             DrawEditAssistBlock();
             //DrawColliderSetSelector();
-            DrawColliderSelectionBlock();
-            DrawStoreControls();
-            DrawClothShortcuts();
+            if (editMode)
+            {
+                DrawColliderSelectionBlock();
+                DrawStoreControls();
+                DrawClothShortcuts();
+            }
 
             if (resetAfterGUI)
             {
@@ -418,6 +422,7 @@ namespace Reallusion.Import
 
         private void SetEditAssistMode()
         {
+            CreateAbstractColliders();
             Tools.hidden = true;
             editMode = true;
             if (colliderManager != null)
