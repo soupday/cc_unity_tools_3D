@@ -201,6 +201,7 @@ namespace Reallusion.Import
         private bool addUnityClothPhysics = false;
         private bool addMagicaClothPhysics = false;
         private bool addHairPhysics = false;
+        private bool addUnityHairPhysics = false;
         private bool addHairSpringBones = false;
         private bool addMagicaHairSpringBones = false;
 
@@ -234,6 +235,7 @@ namespace Reallusion.Import
             addUnityClothPhysics = (info.ShaderFlags & CharacterInfo.ShaderFeatureFlags.UnityClothPhysics) > 0;
             addMagicaClothPhysics = (info.ShaderFlags & CharacterInfo.ShaderFeatureFlags.MagicaCloth) > 0;
             addHairPhysics = (info.ShaderFlags & CharacterInfo.ShaderFeatureFlags.HairPhysics) > 0;
+            addUnityHairPhysics = (info.ShaderFlags & CharacterInfo.ShaderFeatureFlags.UnityClothHairPhysics) > 0;
             addHairSpringBones = (info.ShaderFlags & CharacterInfo.ShaderFeatureFlags.SpringBoneHair) > 0;
             addMagicaHairSpringBones = (info.ShaderFlags & CharacterInfo.ShaderFeatureFlags.MagicaBone) > 0;
             string fbmFolder = Path.Combine(fbxFolder, characterName + ".fbm");
@@ -404,6 +406,11 @@ namespace Reallusion.Import
                 }
 
                 if (addUnityClothPhysics)
+                {
+                    Object c = AddNativeCollider(g, collider);
+                    colliderLookup.Add(c, collider.boneName);
+                }
+                else if (addUnityHairPhysics && GetVaildSpringBoneColliders().Contains(collider.boneName))
                 {
                     Object c = AddNativeCollider(g, collider);
                     colliderLookup.Add(c, collider.boneName);
@@ -751,7 +758,7 @@ namespace Reallusion.Import
             if (MagicaCloth2IsAvailable() && addMagicaClothPhysics)
                 AddMagicaMeshCloth();
             //
-            if (addUnityClothPhysics)
+            if (addUnityClothPhysics || addUnityHairPhysics)
             {
                 List<string> hairMeshNames = FindHairMeshes();
                 Transform[] transforms = prefabInstance.GetComponentsInChildren<Transform>();
@@ -772,8 +779,17 @@ namespace Reallusion.Import
                             if (CanAddPhysics(meshName, hairMeshNames))
                             {
                                 //Debug.Log("AddCloth CanAddPhysics: " + obj.name + " " + data.meshName);
-                                DoCloth(obj, meshName);
-                                clothMeshes.Add(obj);
+                                if (!data.isHair && addUnityClothPhysics)
+                                {
+                                    DoCloth(obj, meshName);
+                                    clothMeshes.Add(obj);
+                                }
+                                
+                                if (data.isHair && addUnityHairPhysics)
+                                {
+                                    DoCloth(obj, meshName);
+                                    clothMeshes.Add(obj);
+                                }
                             }
                             else
                             {
