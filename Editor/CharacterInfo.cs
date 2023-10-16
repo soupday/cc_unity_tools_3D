@@ -904,6 +904,17 @@ namespace Reallusion.Import
                 return;
             }
 
+            // see which flags are set.
+            var flags = System.Enum.GetValues(typeof(ShaderFeatureFlags));
+            foreach (var flag in flags)
+            {
+                ShaderFeatureFlags f = (ShaderFeatureFlags)flag;
+                if (ShaderFlags.HasFlag(f))
+                    Debug.Log("ShaderFlag " + f.ToString() + " is set.");
+            }
+
+            //return;  // temp to stop code execution
+
             if (ShaderFlags.HasFlag(ShaderFeatureFlags.ClothPhysics))
             {
                 if (!ImporterWindow.Current.MagicaCloth2Available)

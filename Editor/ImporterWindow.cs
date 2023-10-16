@@ -657,6 +657,7 @@ namespace Reallusion.Import
                 menu.ShowAsContext();
             }
 
+            // /*
             int features = 2;
             if (Pipeline.isHDRP12) features++; // tessellation
             if (Pipeline.is3D || Pipeline.isURP) features++; // Amplify
@@ -678,6 +679,7 @@ namespace Reallusion.Import
                     }
                 }
             }
+            // */
             EditorGUI.EndDisabledGroup();
             //GUI.enabled = true;
 

@@ -82,6 +82,8 @@ namespace Reallusion.Import
         private Texture2D iconFilterRemove;
         private Texture2D iconRefreshList;
 
+        Rect prev = new Rect();
+
         private bool initDone = false;                
         private ImporterWindow importerWindow;
         List<CharacterInfo> workingList;
@@ -934,6 +936,19 @@ namespace Reallusion.Import
                 }
                 GUI.enabled = true;
 
+                //////////////
+
+                if (Event.current.type == EventType.Repaint)
+                    prev = GUILayoutUtility.GetLastRect();
+
+                if (EditorGUILayout.DropdownButton(
+                    content: new GUIContent("Features"),
+                    focusType: FocusType.Passive))
+                {
+                    ImporterFeaturesWindow.ShowAtPosition(new Rect(prev.x, prev.y + 20f, prev.width, prev.height), characterSettings);
+                }
+                //////////////
+                ///
                 GUILayout.Space(8f);
 
                 if (characterSettings.BuiltBasicMaterials) GUI.enabled = false;

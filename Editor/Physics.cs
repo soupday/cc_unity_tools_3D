@@ -379,6 +379,8 @@ namespace Reallusion.Import
             GameObject parent = new GameObject("Temporary GameObject");
             parent.transform.SetParent(prefabRoot.transform, false);
 
+            List<string> validSpringBoneColliders = GetVaildSpringBoneColliders();
+
             foreach (CollisionShapeData collider in boneColliders)
             {
                 string colliderName = collider.boneName + "_" + collider.name;
@@ -388,15 +390,18 @@ namespace Reallusion.Import
                 t.position = collider.translation * modelScale;
                 t.rotation = collider.rotation;
 
+                bool boneValid = validSpringBoneColliders.Contains(collider.boneName);
+                bool addFullColliderSet = true; // placeholder
+
                 if (addMagicaClothPhysics)
                 {
-                    if (MAGICA_CLOTH_AVAILABLE)//(MagicaCloth2IsAvailable())
+                    if (MAGICA_CLOTH_AVAILABLE)
                     {
                         Object c = AddMagicaCloth2Collider(g, collider);
                         colliderLookup.Add(c, collider.boneName);
                     }
                 }
-                else if (addMagicaHairSpringBones && GetVaildSpringBoneColliders().Contains(collider.boneName))
+                else if ((addMagicaHairSpringBones && boneValid) || (addMagicaHairSpringBones && addFullColliderSet))
                 {
                     if (MAGICA_CLOTH_AVAILABLE)
                     {
@@ -410,13 +415,13 @@ namespace Reallusion.Import
                     Object c = AddNativeCollider(g, collider);
                     colliderLookup.Add(c, collider.boneName);
                 }
-                else if (addUnityHairPhysics && GetVaildSpringBoneColliders().Contains(collider.boneName))
+                else if ((addUnityHairPhysics && boneValid) || (addUnityHairPhysics && addFullColliderSet))
                 {
                     Object c = AddNativeCollider(g, collider);
                     colliderLookup.Add(c, collider.boneName);
                 }
 
-                if (addHairSpringBones && GetVaildSpringBoneColliders().Contains(collider.boneName))
+                if (addHairSpringBones && boneValid)
                 {
                     Debug.Log("DYNAMIC BONE - TESTING AGAINST: " + collider.boneName);
                     Object c = AddDynamicBoneCollider(g, collider);
@@ -468,46 +473,7 @@ namespace Reallusion.Import
                 colliderManager.AddColliders(listColliders);
             }
 
-            SaveReferenceAbstractColliders(colliderManager);
-            /*
-            if (addHairSpringBones)
-            {
-                Type dynamicBoneColliderType = GetTypeInAssemblies("DynamicBoneCollider");
-
-                if (dynamicBoneColliderType == null)
-                {
-                    Debug.LogWarning("Warning: DynamicBone not found in project assembly.");
-                }
-                else
-                {
-                    foreach (CollisionShapeData collider in boneColliders)
-                    {
-                        if (springColliderBones.Contains(collider.boneName))
-                        {
-                            string colliderName = collider.boneName + "_" + collider.name;
-                            Transform bone = FindBone(collider.boneName);
-                            Collider existingCollider = FindColliderObj(colliderName, bone);
-
-                            if (existingCollider && existingCollider.GetType() == typeof(CapsuleCollider))
-                            {
-                                CapsuleCollider cc = (CapsuleCollider)existingCollider;
-
-                                var dynamicBoneColliderComponent = existingCollider.gameObject.GetComponent(dynamicBoneColliderType);
-                                if (dynamicBoneColliderComponent == null)
-                                {
-                                    dynamicBoneColliderComponent = existingCollider.gameObject.AddComponent(dynamicBoneColliderType);
-                                }
-
-                                SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Height", cc.height);
-                                SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Radius", cc.radius);
-                                SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Center", cc.center);
-                                SetTypeField(dynamicBoneColliderType, dynamicBoneColliderComponent, "m_Direction", cc.direction);
-                            }
-                        }
-                    }
-                }
-            }
-            */
+            SaveReferenceAbstractColliders(colliderManager);            
         }
 
         public GameObject GetColliderGameObject(string colliderName, Transform[] prefabObjects)
@@ -1321,7 +1287,7 @@ namespace Reallusion.Import
 
                 if (prefabAsset && prefabInstance && characterInfo.PhysicsJsonData != null)
                 {
-                    characterInfo.ShaderFlags |= CharacterInfo.ShaderFeatureFlags.ClothPhysics;
+                    //characterInfo.ShaderFlags |= CharacterInfo.ShaderFeatureFlags.ClothPhysics;
                     Physics physics = new Physics(characterInfo, prefabInstance);
                     physics.AddPhysics(true);
                     characterInfo.Write();
@@ -1448,22 +1414,24 @@ namespace Reallusion.Import
             }
             
             bool native = current.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.UnityClothPhysics);
+            bool nativeHair = current.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.UnityClothHairPhysics);
             bool magica = current.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.MagicaCloth) && MagicaCloth2IsAvailable();
+            bool magicaBoneHair = current.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.MagicaBone) && MagicaCloth2IsAvailable();
             bool dynamic = current.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.SpringBoneHair) && DynamicBoneIsAvailable();
             abstractColliders = new List<ColliderManager.AbstractCapsuleCollider>();
 
             if (MagicaCloth2IsAvailable())
             {
                 colliderManager.magicaColliderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider"); // very slow
-                Debug.Log("CreateAbstractColliders: Magica Cloth Available - Magica Determination is set to: " + magica.ToString());
-                Debug.Log("current magica shaderflags == " + current.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.MagicaCloth).ToString());
+                //Debug.Log("CreateAbstractColliders: Magica Cloth Available - Magica Determination is set to: " + magica.ToString());
+                //Debug.Log("current magica shaderflags == " + current.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.MagicaCloth).ToString());
             }
 
             if (DynamicBoneIsAvailable())
             {
                 colliderManager.dynamicBoneColliderType = GetTypeInAssemblies("DynamicBoneCollider"); // very slow
-                Debug.Log("CreateAbstractColliders: DynamicBone Available - Dynamic Bone Determination is set to: " + dynamic.ToString());
-                Debug.Log("current dynamicbone shaderflags == " + current.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.SpringBoneHair).ToString());
+                //Debug.Log("CreateAbstractColliders: DynamicBone Available - Dynamic Bone Determination is set to: " + dynamic.ToString());
+                //Debug.Log("current dynamicbone shaderflags == " + current.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.SpringBoneHair).ToString());
             }
             // create an array of the in-scene transforms in the character hierarchy
             Transform[] allChildTransforms = colliderManager.gameObject.GetComponentsInChildren<Transform>(true);
@@ -1474,7 +1442,7 @@ namespace Reallusion.Import
                 {
                     ColliderManager.AbstractCapsuleCollider abs = new ColliderManager.AbstractCapsuleCollider();
 
-                    if (native)
+                    if (native || nativeHair)
                     {
                         if (go.GetComponent(typeof(CapsuleCollider)))
                         {
@@ -1493,7 +1461,7 @@ namespace Reallusion.Import
                         }
                     }
 
-                    if (magica)
+                    if (magica || magicaBoneHair)
                     {
                         if (colliderManager.magicaColliderType == null)
                             colliderManager.magicaColliderType = GetTypeInAssemblies("MagicaCloth2.MagicaCapsuleCollider");

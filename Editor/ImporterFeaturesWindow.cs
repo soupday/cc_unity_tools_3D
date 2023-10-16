@@ -12,6 +12,9 @@ namespace Reallusion.Import
         static ImporterFeaturesWindow importerFeaturesWindow = null;
         static long lastClosedTime;
 
+        //private CharacterInfo.ShaderFeatureFlags contextShaderFlags;
+        private CharacterInfo contextCharacter;
+
         private ImporterWindow importerWindow;
         private Styles windowStyles;
         private float DROPDOWN_WIDTH = 260f;
@@ -33,7 +36,7 @@ namespace Reallusion.Import
         }
 
 
-        public static bool ShowAtPosition(Rect buttonRect)
+        public static bool ShowAtPosition(Rect buttonRect, CharacterInfo contextChar = null)
         {
             long nowMilliSeconds = System.DateTime.Now.Ticks / System.TimeSpan.TicksPerMillisecond;
             bool justClosed = nowMilliSeconds < lastClosedTime + 50;
@@ -48,18 +51,28 @@ namespace Reallusion.Import
                     return false;
                 }
 
-                importerFeaturesWindow.Init(buttonRect);
+                importerFeaturesWindow.Init(buttonRect, contextChar);
                 return true;
             }
             return false;
         }
 
-        void Init(Rect buttonRect)
+        void Init(Rect buttonRect, CharacterInfo contextChar = null)
         {
             // Has to be done before calling Show / ShowWithMode
             buttonRect = GUIUtility.GUIToScreenRect(buttonRect);
 
             importerWindow = ImporterWindow.Current;
+
+            if (contextChar != null)
+            {
+                contextCharacter = contextChar; 
+            }
+            else
+            {
+                contextCharacter = importerWindow.Character;
+            }
+            
             Vector2 windowSize = new Vector2(DROPDOWN_WIDTH, INITIAL_DROPDOWN_HEIGHT);
             ShowAsDropDown(buttonRect, windowSize);
         }
@@ -119,7 +132,7 @@ namespace Reallusion.Import
             DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.ClothPhysics, "Enable Cloth Physics", SECTION_INDENT);
             if (importerWindow.MagicaCloth2Available) // cloth alternatives available so enable non default selections
             {
-                if (importerWindow.Character.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.ClothPhysics))
+                if (contextCharacter.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.ClothPhysics))
                 {
                     DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.UnityClothPhysics, "Unity Cloth", SUB_SECTION_INDENT, CharacterInfo.clothGroup);
                     if (importerWindow.MagicaCloth2Available)
@@ -134,7 +147,7 @@ namespace Reallusion.Import
             DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.HairPhysics, "Enable Hair Physics", SECTION_INDENT);
             if (importerWindow.DynamicBoneAvailable || importerWindow.MagicaCloth2Available) // cloth/bone alternatives available so enable non default selections
             {
-                if (importerWindow.Character.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.HairPhysics))
+                if (contextCharacter.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.HairPhysics))
                 {
                     DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.UnityClothHairPhysics, "Unity Hair Physics", SUB_SECTION_INDENT, CharacterInfo.hairGroup);
                     if (importerWindow.DynamicBoneAvailable)
@@ -156,7 +169,7 @@ namespace Reallusion.Import
         {
             GUILayout.BeginHorizontal(GetLineStyle(line));
             GUILayout.Space(indent);
-            bool flagVal = importerWindow.Character.ShaderFlags.HasFlag(flag);
+            bool flagVal = contextCharacter.ShaderFlags.HasFlag(flag);
             GUILayout.Label(new GUIContent(string.IsNullOrEmpty(overrideLabel) ? flag.ToString() : overrideLabel, ""), GUILayout.Width(LABEL_WIDTH));
             EditorGUI.BeginChangeCheck();
             flagVal = GUILayout.Toggle(flagVal, "");
@@ -188,41 +201,41 @@ namespace Reallusion.Import
         {
             if (value)
             {
-                if (!importerWindow.Character.ShaderFlags.HasFlag(flag))
+                if (!contextCharacter.ShaderFlags.HasFlag(flag))
                 {
-                    importerWindow.Character.ShaderFlags |= flag; // toggle changed to ON => bitwise OR to add flag
-                    importerWindow.Character.EnsureDefaultsAreSet(flag);
+                    contextCharacter.ShaderFlags |= flag; // toggle changed to ON => bitwise OR to add flag
+                    contextCharacter.EnsureDefaultsAreSet(flag);
                 }
             }
             else
             {
-                if (importerWindow.Character.ShaderFlags.HasFlag(flag))
+                if (contextCharacter.ShaderFlags.HasFlag(flag))
                 {
-                    importerWindow.Character.ShaderFlags ^= flag; // toggle changed to OFF => bitwise XOR to remove flag
+                    contextCharacter.ShaderFlags ^= flag; // toggle changed to OFF => bitwise XOR to remove flag
 
                     // since the section flag is being unset then all the entries should be unset too
                     switch(flag)
                     {
                         case CharacterInfo.ShaderFeatureFlags.ClothPhysics:
                             {
-                                if (importerWindow.Character.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.MagicaCloth))
-                                    importerWindow.Character.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.MagicaCloth;
+                                if (contextCharacter.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.MagicaCloth))
+                                    contextCharacter.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.MagicaCloth;
 
-                                if (importerWindow.Character.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.UnityClothPhysics))
-                                    importerWindow.Character.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.UnityClothPhysics;
+                                if (contextCharacter.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.UnityClothPhysics))
+                                    contextCharacter.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.UnityClothPhysics;
 
                                 break;
                             }
                         case CharacterInfo.ShaderFeatureFlags.HairPhysics:
                             {
-                                if (importerWindow.Character.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.MagicaBone))
-                                    importerWindow.Character.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.MagicaBone;
+                                if (contextCharacter.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.MagicaBone))
+                                    contextCharacter.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.MagicaBone;
 
-                                if (importerWindow.Character.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.SpringBoneHair))
-                                    importerWindow.Character.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.SpringBoneHair;
+                                if (contextCharacter.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.SpringBoneHair))
+                                    contextCharacter.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.SpringBoneHair;
 
-                                if (importerWindow.Character.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.UnityClothHairPhysics))
-                                    importerWindow.Character.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.UnityClothHairPhysics;
+                                if (contextCharacter.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.UnityClothHairPhysics))
+                                    contextCharacter.ShaderFlags ^= CharacterInfo.ShaderFeatureFlags.UnityClothHairPhysics;
 
                                 break;
                             }
