@@ -905,6 +905,7 @@ namespace Reallusion.Import
             }
 
             // see which flags are set.
+            /*
             var flags = System.Enum.GetValues(typeof(ShaderFeatureFlags));
             foreach (var flag in flags)
             {
@@ -912,6 +913,7 @@ namespace Reallusion.Import
                 if (ShaderFlags.HasFlag(f))
                     Debug.Log("ShaderFlag " + f.ToString() + " is set.");
             }
+            */
 
             //return;  // temp to stop code execution
 

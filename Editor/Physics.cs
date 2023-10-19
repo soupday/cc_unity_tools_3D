@@ -585,7 +585,7 @@ namespace Reallusion.Import
         {
             // create a reference list of abstract colliders to be used as a 'reset to defaults' resource             
             CreateAbstractColliders(colliderManager, out List<ColliderManager.AbstractCapsuleCollider> abstractColliders);
-            Debug.Log("Build Time abstract count = " + abstractColliders.Count);
+            //Debug.Log("Build Time abstract count = " + abstractColliders.Count);
             PhysicsSettingsStore.SaveAbstractColliderSettings(colliderManager, abstractColliders, true);
         }
 
@@ -684,7 +684,7 @@ namespace Reallusion.Import
                 mCollidersClear.Invoke(colliders, null);
 
                 IList dynamicBoneColliders = FetchDynamicBoneColliders(prefabInstance, GetVaildSpringBoneColliders());
-                Debug.Log ("DYNAMIC BONE COLLIDER LIST CONTAINS: " + dynamicBoneColliders.Count);
+                //Debug.Log ("DYNAMIC BONE COLLIDER LIST CONTAINS: " + dynamicBoneColliders.Count);
                 foreach (var dynamicBoneCollider in dynamicBoneColliders)
                 {
                     mCollidersAdd.Invoke(colliders, new object[] { dynamicBoneCollider });
@@ -1101,7 +1101,7 @@ namespace Reallusion.Import
                     var rootBonesField = serializedData.GetType().GetField("rootBones");
                     if (rootBonesField != null)
                     {
-                        Debug.Log("Got Root Bones List");
+                        //Debug.Log("Got Root Bones List");
                         //var rootBonesList = rootBonesField.GetValue(serializedData);
                         //if (rootBonesList != null)
                         //{

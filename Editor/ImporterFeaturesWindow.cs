@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Sprites;
 using UnityEngine;
@@ -11,9 +12,10 @@ namespace Reallusion.Import
     {
         static ImporterFeaturesWindow importerFeaturesWindow = null;
         static long lastClosedTime;
-
-        //private CharacterInfo.ShaderFeatureFlags contextShaderFlags;
         private CharacterInfo contextCharacter;
+        private CharacterInfo originalCharacter;
+        bool massProcessingValidate = false;
+        bool flagChanged = false;
 
         private ImporterWindow importerWindow;
         private Styles windowStyles;
@@ -30,11 +32,23 @@ namespace Reallusion.Import
         }
 
         void OnDisable()
-        {
+        {            
             AssemblyReloadEvents.beforeAssemblyReload -= Close;
             importerFeaturesWindow = null;
         }
 
+        void MassProcessingWindowValidate()
+        {
+            if (MassProcessingWindow.massProcessingWindow != null)
+            {
+                if (originalCharacter != null)
+                {
+                    CharacterInfo workingCharacter = MassProcessingWindow.massProcessingWindow.workingList.Where(x => x.guid == contextCharacter.guid).FirstOrDefault();
+                    workingCharacter.settingsChanged = contextCharacter.ShaderFlags != originalCharacter.ShaderFlags;
+                    MassProcessingWindow.massProcessingWindow.FilterDisplayedList();
+                }
+            }
+        }
 
         public static bool ShowAtPosition(Rect buttonRect, CharacterInfo contextChar = null)
         {
@@ -66,7 +80,9 @@ namespace Reallusion.Import
 
             if (contextChar != null)
             {
-                contextCharacter = contextChar; 
+                contextCharacter = contextChar;
+                originalCharacter = ImporterWindow.ValidCharacters.Where(x => x.guid == contextChar.guid).FirstOrDefault();
+                massProcessingValidate = true;
             }
             else
             {
@@ -109,34 +125,45 @@ namespace Reallusion.Import
             if (windowStyles == null) windowStyles = new Styles();
             int line = 0; // used to determine the background tint of alternate lines to avoid a block of solid color
 
+            flagChanged = false;
+
             GUILayout.BeginVertical();
             // manipulate the "[Flags]enum ShaderFeatures" with condidions on what flags are available
             // due to pipleine version and available add-ons such as magica cloth or dynamic bone
             // much more flexible than EditorGUILayout.EnumFlagsField
-        
+
             //if (Pipeline.isHDRP12) -- HDRP12 tessellation
             //if (Pipeline.is3D || Pipeline.isURP) -- Amplify tessellation
             DrawLabelLine(line++, "Tessellation...");
-            DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.Tessellation, "", SECTION_INDENT);
+            if (DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.Tessellation, "", SECTION_INDENT))
+                flagChanged = true;
 
             DrawLabelLine(line++, "");
-            
+
             // wrinkle maps            
             DrawLabelLine(line++, "Wrinkle Maps...");
-            DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.WrinkleMaps, "", SECTION_INDENT);
+            if (DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.WrinkleMaps, "", SECTION_INDENT))
+                flagChanged = true;
 
             DrawLabelLine(line++, "");
 
             // cloth physics
             DrawLabelLine(line++, "Cloth Physics...");
-            DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.ClothPhysics, "Enable Cloth Physics", SECTION_INDENT);
+            if (DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.ClothPhysics, "Enable Cloth Physics", SECTION_INDENT))
+                flagChanged = true;
+
             if (importerWindow.MagicaCloth2Available) // cloth alternatives available so enable non default selections
             {
                 if (contextCharacter.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.ClothPhysics))
                 {
-                    DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.UnityClothPhysics, "Unity Cloth", SUB_SECTION_INDENT, CharacterInfo.clothGroup);
+                    if (DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.UnityClothPhysics, "Unity Cloth", SUB_SECTION_INDENT, CharacterInfo.clothGroup))
+                        flagChanged = true;
+
                     if (importerWindow.MagicaCloth2Available)
-                        DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.MagicaCloth, "Magica Cloth 2", SUB_SECTION_INDENT, CharacterInfo.clothGroup);
+                    {
+                        if (DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.MagicaCloth, "Magica Cloth 2", SUB_SECTION_INDENT, CharacterInfo.clothGroup))
+                            flagChanged = true;
+                    }
                 }
             }
 
@@ -144,16 +171,26 @@ namespace Reallusion.Import
 
             // hair physics
             DrawLabelLine(line++, "Hair Physics...");
-            DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.HairPhysics, "Enable Hair Physics", SECTION_INDENT);
+            if (DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.HairPhysics, "Enable Hair Physics", SECTION_INDENT))
+                flagChanged = true;
+
             if (importerWindow.DynamicBoneAvailable || importerWindow.MagicaCloth2Available) // cloth/bone alternatives available so enable non default selections
             {
                 if (contextCharacter.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.HairPhysics))
                 {
-                    DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.UnityClothHairPhysics, "Unity Hair Physics", SUB_SECTION_INDENT, CharacterInfo.hairGroup);
+                    if (DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.UnityClothHairPhysics, "Unity Hair Physics", SUB_SECTION_INDENT, CharacterInfo.hairGroup))
+                        flagChanged = true;
+
                     if (importerWindow.DynamicBoneAvailable)
-                        DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.SpringBoneHair, "Dynamic Bone Springbones", SUB_SECTION_INDENT, CharacterInfo.hairGroup);
+                    {
+                        if (DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.SpringBoneHair, "Dynamic Bone Springbones", SUB_SECTION_INDENT, CharacterInfo.hairGroup))
+                            flagChanged = true;
+                    }
                     if (importerWindow.MagicaCloth2Available)
-                        DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.MagicaBone, "Magica Bone Springbones", SUB_SECTION_INDENT, CharacterInfo.hairGroup);
+                    {
+                        if (DrawFlagSelectionLine(line++, CharacterInfo.ShaderFeatureFlags.MagicaBone, "Magica Bone Springbones", SUB_SECTION_INDENT, CharacterInfo.hairGroup))
+                            flagChanged = true;
+                    }
                 }
             }
 
@@ -163,9 +200,14 @@ namespace Reallusion.Import
             {
                 minSize = new Vector2(DROPDOWN_WIDTH, GUILayoutUtility.GetLastRect().yMax);
             }
+
+            if (massProcessingValidate && flagChanged)
+            {
+                MassProcessingWindowValidate();
+            }
         }
 
-        private void DrawFlagSelectionLine(int line, CharacterInfo.ShaderFeatureFlags flag, string overrideLabel = "", float indent = 0f, CharacterInfo.ShaderFeatureFlags [] radioGroup = null)
+        private bool DrawFlagSelectionLine(int line, CharacterInfo.ShaderFeatureFlags flag, string overrideLabel = "", float indent = 0f, CharacterInfo.ShaderFeatureFlags [] radioGroup = null)
         {
             GUILayout.BeginHorizontal(GetLineStyle(line));
             GUILayout.Space(indent);
@@ -179,8 +221,11 @@ namespace Reallusion.Import
                     SetFeatureFlagInGroup(flag, radioGroup);
                 else
                     SetFeatureFlag(flag, flagVal);
+
+                return true;
             }
             GUILayout.EndHorizontal();
+            return false;
         }
 
         private void DrawLabelLine(int line, string label)

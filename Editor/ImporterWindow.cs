@@ -658,24 +658,28 @@ namespace Reallusion.Import
             }
 
             // /*
-            int features = 2;
-            if (Pipeline.isHDRP12) features++; // tessellation
-            if (Pipeline.is3D || Pipeline.isURP) features++; // Amplify
+            bool showDebugEnumPopup = false;
+            if (showDebugEnumPopup)
+            {
+                int features = 2;
+                if (Pipeline.isHDRP12) features++; // tessellation
+                if (Pipeline.is3D || Pipeline.isURP) features++; // Amplify
 
-            if (features == 1)
-            {
-                contextCharacter.ShaderFlags = (CharacterInfo.ShaderFeatureFlags)EditorGUILayout.EnumPopup(contextCharacter.ShaderFlags);
-            }
-            else if (features > 1)
-            {
-                EditorGUI.BeginChangeCheck();
-                contextCharacter.ShaderFlags = (CharacterInfo.ShaderFeatureFlags)EditorGUILayout.EnumFlagsField(contextCharacter.ShaderFlags);
-                if (EditorGUI.EndChangeCheck())
+                if (features == 1)
                 {
-                    if ((contextCharacter.ShaderFlags & CharacterInfo.ShaderFeatureFlags.SpringBoneHair) > 0 &&
-                        (contextCharacter.ShaderFlags & CharacterInfo.ShaderFeatureFlags.HairPhysics) > 0)
+                    contextCharacter.ShaderFlags = (CharacterInfo.ShaderFeatureFlags)EditorGUILayout.EnumPopup(contextCharacter.ShaderFlags);
+                }
+                else if (features > 1)
+                {
+                    EditorGUI.BeginChangeCheck();
+                    contextCharacter.ShaderFlags = (CharacterInfo.ShaderFeatureFlags)EditorGUILayout.EnumFlagsField(contextCharacter.ShaderFlags);
+                    if (EditorGUI.EndChangeCheck())
                     {
-                        contextCharacter.ShaderFlags -= CharacterInfo.ShaderFeatureFlags.SpringBoneHair;
+                        if ((contextCharacter.ShaderFlags & CharacterInfo.ShaderFeatureFlags.SpringBoneHair) > 0 &&
+                            (contextCharacter.ShaderFlags & CharacterInfo.ShaderFeatureFlags.HairPhysics) > 0)
+                        {
+                            contextCharacter.ShaderFlags -= CharacterInfo.ShaderFeatureFlags.SpringBoneHair;
+                        }
                     }
                 }
             }
