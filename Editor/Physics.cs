@@ -306,6 +306,9 @@ namespace Reallusion.Import
             AddSpringBones();
 
             if (applyInstance) PrefabUtility.ApplyPrefabInstance(prefabInstance, InteractionMode.AutomatedAction);
+
+            // Reorder components within prefab test
+            ReorderComponentsOfPrefabInstance();
         }
 
         public void RemoveAllPhysics()
@@ -331,7 +334,10 @@ namespace Reallusion.Import
                 var prefabRoot = editingScope.prefabContentsRoot;
                 PurgeAllPhysicsComponents(prefabRoot);
 
-                AddCollidersToPrefabRoot(prefabRoot);
+                if (characterInfo.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.ClothPhysics) || characterInfo.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.ClothPhysics))
+                {
+                    AddCollidersToPrefabRoot(prefabRoot);
+                }
             }
         }
 #endif
@@ -348,7 +354,10 @@ namespace Reallusion.Import
             GameObject prefabRoot = PrefabUtility.LoadPrefabContents(currentPrefabAssetPath);
             PurgeAllPhysicsComponents(prefabRoot);
 
-            AddCollidersToPrefabRoot(prefabRoot);
+            if (characterInfo.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.ClothPhysics) || characterInfo.ShaderFlags.HasFlag(CharacterInfo.ShaderFeatureFlags.ClothPhysics))
+            {
+                AddCollidersToPrefabRoot(prefabRoot);
+            }
 
             PrefabUtility.SaveAsPrefabAsset(prefabRoot, currentPrefabAssetPath, out bool success);
             Debug.Log("Prefab Asset: " + currentPrefabAssetPath + (success ? " successfully saved." : " failed to save."));
@@ -1928,6 +1937,40 @@ namespace Reallusion.Import
 
             colliderGameObject = new GameObject(colliderName);
             return false;
+        }
+
+        // Reorder components within prefab test - needs limiting to specific Unity versions which dont throw errors
+        private void ReorderComponentsOfPrefabInstance()
+        {
+            string currentPrefabAssetPath = AssetDatabase.GetAssetPath(ImporterWindow.Current.Character.PrefabAsset);
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(currentPrefabAssetPath);
+
+            //var components = prefabRoot.GetComponents<Component>();
+            List<Component> components = new List<Component>();
+            prefabRoot.gameObject.GetComponents<Component>(components);
+            int index = 0;
+            int current = 0;
+            ColliderManager col = null;
+            Debug.Log(components.Count);
+            foreach (var component in components)
+            {
+                Debug.Log ("Component: " + component.GetType().Name);
+                if (component.GetType() == typeof(ColliderManager))
+                {
+                    Debug.Log("ColliderManager index: " + index);
+                    current = index;
+                    col = (ColliderManager)component;
+                }
+                index++;
+            }
+            for (int i = 0; i < current - 1; i++)
+            {
+                UnityEditorInternal.ComponentUtility.MoveComponentUp(col);
+            }
+
+            PrefabUtility.SaveAsPrefabAsset(prefabRoot, currentPrefabAssetPath, out bool success);
+            Debug.Log("Prefab Asset: " + currentPrefabAssetPath + (success ? " successfully saved." : " failed to save."));
+            PrefabUtility.UnloadPrefabContents(prefabRoot);
         }
 
         // =================

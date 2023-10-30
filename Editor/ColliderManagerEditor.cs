@@ -369,7 +369,7 @@ namespace Reallusion.Import
         private void DrawEditAssistBlock()
         {
             GUILayout.Space(10f);
-            GUILayout.Label("Edit Assist Mode", EditorStyles.boldLabel);
+            GUILayout.Label("Collider Edit Mode", EditorStyles.boldLabel);
             GUILayout.Space(10f);
             GUI.backgroundColor = editMode ? Color.Lerp(baseBackground, Color.green, 0.9f) : baseBackground;
             GUILayout.BeginVertical(EditorStyles.helpBox);
@@ -391,7 +391,7 @@ namespace Reallusion.Import
             //string lookIcon = locked ? "d_SceneViewVisibility" : "ViewToolOrbit";
             //Texture2D lookIconImage = (Texture2D)EditorGUIUtility.IconContent(lookIcon).image;
             Texture2D lookIconImage = editMode ? editModeDisable : editModeEnable;
-            if (GUILayout.Button(new GUIContent(lookIconImage, (editMode ? "EXIT from" : "ENTER") + " edit assist mode.\n" + (editMode ? "This will UNLOCK the inspctor and reselect the character - drawing all the default gizmos" : "This will LOCK the inspector and deselect the character - showing only the gizmos of editable colliders and preventing loss of focus on the character.")), GUILayout.Width(48f), GUILayout.Height(48f)))
+            if (GUILayout.Button(new GUIContent(lookIconImage, (editMode ? "EXIT from" : "ENTER") + " Collider Edit Mode.\n" + (editMode ? "This will UNLOCK the inspctor and reselect the character - drawing all the default gizmos" : "This will LOCK the inspector and deselect the character - showing only the gizmos of editable colliders and preventing loss of focus on the character.")), GUILayout.Width(48f), GUILayout.Height(48f)))
             {
                 if (!editMode)
                 {
@@ -410,7 +410,9 @@ namespace Reallusion.Import
             GUILayout.EndVertical();
             GUIStyle wrap = new GUIStyle(GUI.skin.button);
             wrap.wordWrap = true;
-            EditorGUILayout.HelpBox("Edit assist mode will LOCK the inspector to the character and an only draw the gizmos for the editable colliders. This will provide a less cluttered view and avoid loss of character focus causing issues.", MessageType.Info, true);
+            string editModeInactiveText = "Collider Edit Mode allows convenient editing of the phycics colliders. This will LOCK the inspector to the character and an only draw the gizmos for the editable colliders.";  //edit removed: This will provide a less cluttered view and avoid loss of character focus causing issues.
+            string editModeActiveText = "Collider Edit Mode is currently ACTIVE: The inspector is currently locked to the character. Click the button to deactivate.";
+            EditorGUILayout.HelpBox(editMode ? editModeActiveText : editModeInactiveText, MessageType.Info, true);
 
             GUILayout.Space(10f);
             GUILayout.EndHorizontal();
