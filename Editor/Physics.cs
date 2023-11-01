@@ -1059,7 +1059,17 @@ namespace Reallusion.Import
                         var paintMapsField = serializedData.GetType().GetField("paintMaps");
                         if (paintMapsField != null)
                         {
-                            List<Texture2D> paintMaps = new List<Texture2D>();
+                            var currentPaintMaps = paintMapsField.GetValue(serializedData);
+                            List<Texture2D> paintMaps;
+
+                            if (currentPaintMaps != null)
+                            {
+                                paintMaps = currentPaintMaps as List<Texture2D>;
+                            }
+                            else
+                            {
+                                paintMaps = new List<Texture2D>();
+                            }
 
                             //Texture2D weightMap = GetTextureFrom(data.weightMapPath, data.materialName, "WeightMap", out string texName, true);
                             Texture2D weightMap = ConvertWeightmap(data);
