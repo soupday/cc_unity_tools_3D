@@ -1825,7 +1825,7 @@ namespace Reallusion.Import
                 Vector2Int size = new Vector2Int(MAGICA_WEIGHT_SIZE, MAGICA_WEIGHT_SIZE);
                 // should create the texture in: <current character folder>/Baked/<character name>/Textures
                 lowOutputMap = ComputeBake.BakeMagicaWeightMap(weightMap, threshold, size, folder, name);
-                SetWeightMapImport(lowOutputMap);
+                //SetWeightMapImport(lowOutputMap);
             }
             else
             {

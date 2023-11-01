@@ -1994,7 +1994,9 @@ namespace Reallusion.Import
         public static Texture2D BakeMagicaWeightMap(Texture2D physXWeightMap, float threshold, Vector2Int size, string folder, string name)
         {            
             ComputeBakeTexture bakeTarget =
-                new ComputeBakeTexture(size, folder, name, Importer.FLAG_ALPHA_DATA);
+                new ComputeBakeTexture(size, folder, name, Importer.FLAG_ALPHA_DATA | 
+                                                           Importer.FLAG_READ_WRITE | 
+                                                           Importer.FLAG_UNCOMPRESSED);
 
             ComputeShader bakeShader = Util.FindComputeShader(COMPUTE_SHADER);
             if (bakeShader)
