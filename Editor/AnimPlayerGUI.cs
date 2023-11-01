@@ -725,7 +725,12 @@ namespace Reallusion.Import
                 EditorGUI.EndDisabledGroup();
 
                 GUILayout.Space(10f);
-                GUILayout.Label(new GUIContent(EditorGUIUtility.IconContent("d_UnityEditor.GameView").image, "Controls for 'Play Mode'"), guiStyles.playIconStyle, GUILayout.Width(24f), GUILayout.Height(24f));
+                //GUILayout.Label(new GUIContent(EditorGUIUtility.IconContent("d_UnityEditor.GameView").image, "Controls for 'Play Mode'"), guiStyles.playIconStyle, GUILayout.Width(24f), GUILayout.Height(24f));
+                                
+                if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d_ViewToolOrbit On").image, "Select the character root."), EditorStyles.toolbarButton))
+                {
+                    Selection.activeObject = selectedAnimator.gameObject;
+                }
 
                 Texture bigPlayButton = EditorApplication.isPlaying ? EditorGUIUtility.IconContent("preAudioPlayOn").image : EditorGUIUtility.IconContent("preAudioPlayOff").image;
                 string playToggleTxt = EditorApplication.isPlaying ? "Exit 'Play Mode'." : "Enter 'Play Mode' and focus on the scene view window. This is to be used to evaluate play mode physics whilst allowing visualization of objects such as colliders.";
