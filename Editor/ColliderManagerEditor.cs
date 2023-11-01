@@ -50,6 +50,9 @@ namespace Reallusion.Import
         [SerializeField] private ColliderManager.GizmoState cachedGizmoState;
         [SerializeField] private bool editMode = false;
         [SerializeField] private bool activeEdit = false;
+        public static bool EditMode => Current != null && Current.editMode;
+        public static ColliderManagerEditor Current { get; private set; }
+        
 
         public static string CURRENT_COLLIDER_NAME
         {
@@ -68,14 +71,17 @@ namespace Reallusion.Import
 
         private void OnEnable()
         {
+            Current = this;
             colliderManager = (ColliderManager)target;
             //CreateAbstractColliders();
             InitIcons();
+            //Debug.Log("OnEnable");
         }
 
         private void OnDestroy()
         {
-            // Debug.Log("OnDestroy");
+            if (Current == this) Current = null;
+            //Debug.Log("OnDestroy");
         }
 
         private void OnDisable()

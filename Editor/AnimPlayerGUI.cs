@@ -729,7 +729,15 @@ namespace Reallusion.Import
                                 
                 if (GUILayout.Button(new GUIContent(EditorGUIUtility.IconContent("d_ViewToolOrbit On").image, "Select the character root."), EditorStyles.toolbarButton))
                 {
-                    Selection.activeObject = selectedAnimator.gameObject;
+                    if (ColliderManagerEditor.EditMode)
+                    {
+                        Selection.activeObject = null;
+                    }
+                    else
+                    {
+                        Selection.activeObject = selectedAnimator.gameObject;
+                    }
+                        
                 }
 
                 Texture bigPlayButton = EditorApplication.isPlaying ? EditorGUIUtility.IconContent("preAudioPlayOn").image : EditorGUIUtility.IconContent("preAudioPlayOff").image;
