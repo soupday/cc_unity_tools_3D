@@ -307,8 +307,11 @@ namespace Reallusion.Import
 
             if (applyInstance) PrefabUtility.ApplyPrefabInstance(prefabInstance, InteractionMode.AutomatedAction);
 
+#if UNITY_2022_3_OR_NEWER
+            // Below 2022.x UnityEditorInternal.ComponentUtility is more restrictive
             // Reorder components within prefab test
             ReorderComponentsOfPrefabInstance();
+#endif
         }
 
         public void RemoveAllPhysics()
