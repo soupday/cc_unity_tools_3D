@@ -72,20 +72,20 @@ namespace Reallusion.Import
         {
             Current = this;
             colliderManager = (ColliderManager)target;
-            //CreateAbstractColliders();
+            //CreateAbstractColliders();            
             InitIcons();
-            //Debug.Log("OnEnable");
+            //Debug.Log("OnEnable: " + editMode);            
         }
 
         private void OnDestroy()
         {
-            if (Current == this) Current = null;
+            if (Current == this) Current = null;            
             //Debug.Log("OnDestroy");
         }
 
         private void OnDisable()
-        {
-            // Debug.Log("OnDisable");
+        {            
+            //Debug.Log("OnDisable");
         }
 
         private void InitCurrentCollider(string name = null)
@@ -332,7 +332,11 @@ namespace Reallusion.Import
             //CatchKeyEvents();
             SyncMode();
 
-            if (colliderManager.abstractedCapsuleColliders == null) CreateAbstractColliders();
+            if (colliderManager.abstractedCapsuleColliders == null || 
+                colliderManager.abstractedCapsuleColliders.Count == 0)
+            {
+                CreateAbstractColliders();
+            }
             if (editModeEnable == null) InitIcons();
             if (colliderManagerStyles == null) colliderManagerStyles = new Styles();
 
@@ -427,7 +431,7 @@ namespace Reallusion.Import
             GUILayout.EndVertical(); //(EditorStyles.helpBox);
         }
 
-        private void SetEditAssistMode()
+        public void SetEditAssistMode()
         {
             CreateAbstractColliders();
             Tools.hidden = true;
@@ -452,7 +456,7 @@ namespace Reallusion.Import
             }
         }
 
-        private void UnSetEditAssistMode()
+        public void UnSetEditAssistMode()
         {
             Tools.hidden = false;
             // optional: deselect the collider for editing

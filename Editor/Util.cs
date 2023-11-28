@@ -1336,6 +1336,14 @@ namespace Reallusion.Import
             }
         }
 
+        public static void LogDetail(string message)
+        {
+            if (LOG_LEVEL >= 3)
+            {
+                Debug.Log(message);
+            }
+        }
+
         public static void LogWarn(string message)
         {
             if (LOG_LEVEL >= 1)
