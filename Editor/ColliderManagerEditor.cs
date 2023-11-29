@@ -232,10 +232,10 @@ namespace Reallusion.Import
                                         hDir = c.transform.right;
                                         rDir = c.transform.forward;
                                     }
-                                    Vector3 hDelta = SceneView.currentDrawingSceneView.camera.WorldToViewportPoint(c.transform.position + hDir) -
-                                                     SceneView.currentDrawingSceneView.camera.WorldToViewportPoint(c.transform.position);
-                                    Vector3 rDelta = SceneView.currentDrawingSceneView.camera.WorldToViewportPoint(c.transform.position + rDir) -
-                                                     SceneView.currentDrawingSceneView.camera.WorldToViewportPoint(c.transform.position);
+                                    Vector3 hDelta = SceneView.lastActiveSceneView.camera.WorldToViewportPoint(c.transform.position + hDir) -
+                                                     SceneView.lastActiveSceneView.camera.WorldToViewportPoint(c.transform.position);
+                                    Vector3 rDelta = SceneView.lastActiveSceneView.camera.WorldToViewportPoint(c.transform.position + rDir) -
+                                                     SceneView.lastActiveSceneView.camera.WorldToViewportPoint(c.transform.position);
                                     float hSign = 1f;
                                     float rSign = 1f;                                    
                                     if (Mathf.Abs(hDelta.x) > Mathf.Abs(hDelta.y)) hSign = -Mathf.Sign(hDelta.x);
