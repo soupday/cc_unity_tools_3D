@@ -232,10 +232,13 @@ namespace Reallusion.Import
                                         hDir = c.transform.right;
                                         rDir = c.transform.forward;
                                     }
+                                    hDir *= h * 0.5f;
+                                    rDir *= r;
                                     Vector3 hDelta = SceneView.lastActiveSceneView.camera.WorldToViewportPoint(c.transform.position + hDir) -
                                                      SceneView.lastActiveSceneView.camera.WorldToViewportPoint(c.transform.position);
                                     Vector3 rDelta = SceneView.lastActiveSceneView.camera.WorldToViewportPoint(c.transform.position + rDir) -
                                                      SceneView.lastActiveSceneView.camera.WorldToViewportPoint(c.transform.position);
+                                    Debug.Log(hDelta);                                    
                                     float hSign = 1f;
                                     float rSign = 1f;                                    
                                     if (Mathf.Abs(hDelta.x) > Mathf.Abs(hDelta.y)) hSign = -Mathf.Sign(hDelta.x);
@@ -244,7 +247,7 @@ namespace Reallusion.Import
                                     else rSign = Mathf.Sign(rDelta.y);
 
                                     h = Handles.ScaleValueHandle(h,
-                                                                c.transform.position - (hDir * h * 0.5f * hSign),
+                                                                c.transform.position - (hDir * hSign),
                                                                 c.transform.rotation * Quaternion.Euler(90, 0, 0),                                                                
                                                                 0.075f, Handles.DotHandleCap, 1);
 
@@ -255,7 +258,7 @@ namespace Reallusion.Import
                                                         r);
 
                                     r = Handles.ScaleValueHandle(r,
-                                                                c.transform.position + (rDir * r * 1f * rSign),
+                                                                c.transform.position + (rDir * rSign),
                                                                 c.transform.rotation,
                                                                 0.075f, Handles.DotHandleCap, 1);
 
