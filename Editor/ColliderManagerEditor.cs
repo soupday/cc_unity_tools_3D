@@ -72,20 +72,17 @@ namespace Reallusion.Import
         {
             Current = this;
             colliderManager = (ColliderManager)target;
-            //CreateAbstractColliders();            
             InitIcons();
-            //Debug.Log("OnEnable: " + editMode);            
         }
 
         private void OnDestroy()
         {
             if (Current == this) Current = null;            
-            //Debug.Log("OnDestroy");
         }
 
         private void OnDisable()
-        {            
-            //Debug.Log("OnDisable");
+        {
+            //
         }
 
         private void InitCurrentCollider(string name = null)
@@ -217,10 +214,38 @@ namespace Reallusion.Import
                                     Handles.color = Color.green;
                                     EditorGUI.BeginChangeCheck();
                                     float h = c.height;
-                                    float r = c.radius;
+                                    float r = c.radius;      
+                                    
+                                    Vector3 hDir, rDir;
+                                    if (c.axis == ColliderManager.ColliderAxis.y)
+                                    {
+                                        hDir = c.transform.up;
+                                        rDir = c.transform.forward;
+                                    }
+                                    else if (c.axis == ColliderManager.ColliderAxis.z)
+                                    {
+                                        hDir = c.transform.forward;
+                                        rDir = c.transform.up;
+                                    }
+                                    else // x
+                                    {
+                                        hDir = c.transform.right;
+                                        rDir = c.transform.forward;
+                                    }
+                                    Vector3 hDelta = SceneView.currentDrawingSceneView.camera.WorldToViewportPoint(c.transform.position + hDir) -
+                                                     SceneView.currentDrawingSceneView.camera.WorldToViewportPoint(c.transform.position);
+                                    Vector3 rDelta = SceneView.currentDrawingSceneView.camera.WorldToViewportPoint(c.transform.position + rDir) -
+                                                     SceneView.currentDrawingSceneView.camera.WorldToViewportPoint(c.transform.position);
+                                    float hSign = 1f;
+                                    float rSign = 1f;                                    
+                                    if (Mathf.Abs(hDelta.x) > Mathf.Abs(hDelta.y)) hSign = -Mathf.Sign(hDelta.x);
+                                    else hSign = -Mathf.Sign(hDelta.y);
+                                    if (Mathf.Abs(rDelta.x) > Mathf.Abs(rDelta.y)) rSign = Mathf.Sign(rDelta.x);
+                                    else rSign = Mathf.Sign(rDelta.y);
+
                                     h = Handles.ScaleValueHandle(h,
-                                                                c.transform.position + c.transform.up * h * 0.5f,
-                                                                c.transform.rotation * Quaternion.Euler(90, 0, 0),
+                                                                c.transform.position - (hDir * h * 0.5f * hSign),
+                                                                c.transform.rotation * Quaternion.Euler(90, 0, 0),                                                                
                                                                 0.075f, Handles.DotHandleCap, 1);
 
                                     Handles.DrawWireArc(c.transform.position,
@@ -230,7 +255,7 @@ namespace Reallusion.Import
                                                         r);
 
                                     r = Handles.ScaleValueHandle(r,
-                                                                c.transform.position + c.transform.forward * r * 1f,
+                                                                c.transform.position + (rDir * r * 1f * rSign),
                                                                 c.transform.rotation,
                                                                 0.075f, Handles.DotHandleCap, 1);
 
@@ -924,120 +949,7 @@ namespace Reallusion.Import
             GUILayout.EndVertical();
             GUILayout.Space(6f);
             GUILayout.EndVertical();// (EditorStyles.helpBox);
-        }
-
-        public void UpdatePrefab(Object component)
-		{
-			WindowManager.HideAnimationPlayer(true);
-			WindowManager.HideAnimationRetargeter(true);
-
-			GameObject prefabRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(component);			
-			if (prefabRoot)
-			{									
-				// reset collider states
-				ColliderManager colliderManager = prefabRoot.GetComponentInChildren<ColliderManager>();
-				if (colliderManager)
-				{
-					foreach (ColliderSettings cs in colliderManager.settings)
-					{
-						cs.Reset(true);						
-					}
-				}
-
-				// save prefab asset
-				PrefabUtility.ApplyPrefabInstance(prefabRoot, InteractionMode.UserAction);
-			}
-		}
-
-        enum SymmetricalUpdateType { None, Update, Fetch, Reset }
-        
-		private void UpdateSymmetrical(SymmetricalUpdateType type)
-		{
-			string name = currentCollider.name;
-
-			string boneName = name.Remove(name.IndexOf("_Capsule"));
-			string symName = null;
-			//Debug.Log(boneName);
-
-			if (boneName.Contains("_L_"))
-			{
-				symName = boneName.Replace("_L_", "_R_");
-			}
-			else if (boneName.Contains("_R_"))
-			{
-				symName = boneName.Replace("_R_", "_L_");
-			}
-			else if (boneName.Contains("_Hip"))
-			{
-				symName = boneName;				
-			}				
-
-			if (!string.IsNullOrEmpty(symName))
-			{
-				foreach (ColliderSettings cs in colliderManager.settings)
-				{
-					if (cs != currentCollider && cs.name.StartsWith(symName))
-					{
-						if (type == SymmetricalUpdateType.Update)
-						{
-							cs.MirrorX(currentCollider);
-							cs.Update();
-						}
-						else if (type == SymmetricalUpdateType.Reset)
-						{
-							cs.Reset();
-						}
-						else if (type == SymmetricalUpdateType.Fetch)
-						{
-							cs.FetchSettings();
-						}
-					}
-				}
-			}
-
-			symName = null;
-
-			if (name == "CC_Base_NeckTwist01_Capsule(1)")
-			{
-				symName = "CC_Base_NeckTwist01_Capsule(2)";
-			}
-			else if (name == "CC_Base_NeckTwist01_Capsule(2)")
-			{
-				symName = "CC_Base_NeckTwist01_Capsule(1)";
-			}
-
-			if (!string.IsNullOrEmpty(symName))
-			{
-				foreach (ColliderSettings cs in colliderManager.settings)
-				{
-					if (cs != currentCollider && cs.name.StartsWith(symName))
-					{
-						if (type == SymmetricalUpdateType.Update)
-						{
-							cs.MirrorZ(currentCollider);
-							cs.Update();
-						}
-						else if (type == SymmetricalUpdateType.Reset)
-						{
-							cs.Reset();
-						}
-						else if (type == SymmetricalUpdateType.Fetch)
-						{
-							cs.FetchSettings();
-						}
-					}
-				}
-			}
-		}
-
-		private void SelectCurrentCollider(object sel)
-		{
-			currentCollider = (ColliderSettings)sel;
-			if (currentCollider != null)
-			{
-				CURRENT_COLLIDER_NAME = currentCollider.name;
-			}
-		}
+        }        
 
         // see: https://forum.unity.com/threads/drawing-capsule-gizmo.354634/#post-4100557
         public static void DrawWireCapsule(Vector3 _pos, Quaternion _rot, float _radius, float _height, ColliderManager.ColliderAxis _axis, Color _color = default(Color))
@@ -1147,14 +1059,12 @@ namespace Reallusion.Import
 							{
 								gizmoState = info.gizmoEnabled;
 								info.gizmoEnabled = false;
-								//Debug.Log("Gizmo Name: " + info.name + " Has state: " + gizmoState);
 							}
 
 							if (info.hasIcon)
 							{
 								iconState = info.iconEnabled;
 								info.iconEnabled = false;
-								//Debug.Log("Icon Name: " + info.name + " Has state: " + iconState);
 							}
 							GizmoUtility.ApplyGizmoInfo(info);
 
@@ -1206,13 +1116,11 @@ namespace Reallusion.Import
 
 							if (info.hasGizmo)
 							{
-								//Debug.Log("Gizmo Name: " + info.name + " Applying state: " + gizmoState);
 								info.gizmoEnabled = gizmoState;
 							}
 
 							if (info.hasIcon)
 							{
-								//Debug.Log("Icon Name: " + info.name + " Applying state: " + iconState);
 								info.iconEnabled = iconState;
 							}
 							GizmoUtility.ApplyGizmoInfo(info);
