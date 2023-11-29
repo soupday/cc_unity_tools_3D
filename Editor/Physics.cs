@@ -1829,13 +1829,10 @@ namespace Reallusion.Import
             int index = 0;
             int current = 0;
             ColliderManager col = null;
-            Debug.Log(components.Count);
             foreach (var component in components)
             {
-                Debug.Log("Component: " + component.GetType().Name);
                 if (component.GetType() == typeof(ColliderManager))
                 {
-                    Debug.Log("ColliderManager index: " + index);
                     current = index;
                     col = (ColliderManager)component;
                 }
@@ -1846,7 +1843,6 @@ namespace Reallusion.Import
                 UnityEditorInternal.ComponentUtility.MoveComponentUp(col);
             }
             PrefabUtility.SaveAsPrefabAsset(prefabRoot, currentPrefabAssetPath, out bool success);
-            Debug.Log("Prefab Asset: " + currentPrefabAssetPath + (success ? " successfully saved." : " failed to save."));
             PrefabUtility.UnloadPrefabContents(prefabRoot);
 #endif
         }

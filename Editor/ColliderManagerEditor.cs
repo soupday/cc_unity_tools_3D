@@ -238,7 +238,7 @@ namespace Reallusion.Import
                                                      SceneView.lastActiveSceneView.camera.WorldToViewportPoint(c.transform.position);
                                     Vector3 rDelta = SceneView.lastActiveSceneView.camera.WorldToViewportPoint(c.transform.position + rDir) -
                                                      SceneView.lastActiveSceneView.camera.WorldToViewportPoint(c.transform.position);
-                                    Debug.Log(hDelta);                                    
+                                    
                                     float hSign = 1f;
                                     float rSign = 1f;                                    
                                     if (Mathf.Abs(hDelta.x) > Mathf.Abs(hDelta.y)) hSign = -Mathf.Sign(hDelta.x);
