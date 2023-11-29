@@ -377,6 +377,10 @@ namespace Reallusion.Import
             {
                 DrawColliderSelectionBlock();
                 DrawStoreControls();
+            }
+
+            if (colliderManager.clothMeshes != null && colliderManager.clothMeshes.Length > 0)
+            {
                 DrawClothShortcuts();
             }
 
