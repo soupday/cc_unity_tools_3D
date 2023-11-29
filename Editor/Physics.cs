@@ -1816,6 +1816,39 @@ namespace Reallusion.Import
                 }
             }
             return genericColliders;
-        }                 
+        }
+
+        private void ReorderComponentsOfPrefabInstance()
+        {
+#if UNITY_2022_3_OR_NEWER
+            string currentPrefabAssetPath = AssetDatabase.GetAssetPath(ImporterWindow.Current.Character.PrefabAsset);
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(currentPrefabAssetPath);
+            //var components = prefabRoot.GetComponents<Component>();
+            List<Component> components = new List<Component>();
+            prefabRoot.gameObject.GetComponents<Component>(components);
+            int index = 0;
+            int current = 0;
+            ColliderManager col = null;
+            Debug.Log(components.Count);
+            foreach (var component in components)
+            {
+                Debug.Log("Component: " + component.GetType().Name);
+                if (component.GetType() == typeof(ColliderManager))
+                {
+                    Debug.Log("ColliderManager index: " + index);
+                    current = index;
+                    col = (ColliderManager)component;
+                }
+                index++;
+            }
+            for (int i = 0; i < current - 1; i++)
+            {
+                UnityEditorInternal.ComponentUtility.MoveComponentUp(col);
+            }
+            PrefabUtility.SaveAsPrefabAsset(prefabRoot, currentPrefabAssetPath, out bool success);
+            Debug.Log("Prefab Asset: " + currentPrefabAssetPath + (success ? " successfully saved." : " failed to save."));
+            PrefabUtility.UnloadPrefabContents(prefabRoot);
+#endif
+        }
     }
 }
