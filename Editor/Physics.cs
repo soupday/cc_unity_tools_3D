@@ -190,6 +190,7 @@ namespace Reallusion.Import
         public const float CLOTHSHAPEDISTANCE_DEFAULT = 0.06f;
         public const float HAIRSIMPLEDISTANCE_DEFAULT = 0.12f;
         public const float HAIRSHAPEDISTANCE_DEFAULT = 0.12f;
+        public const float MAGICA_WEIGHTMAP_THRESHOLD_PC_DEFAULT = 0.5f;
 
         public static float CLOTHSIMPLEDISTANCE
         {
@@ -248,6 +249,21 @@ namespace Reallusion.Import
             set
             {
                 EditorPrefs.SetFloat("RL_Physics_Magica_Hair_Shape_Distance", value);
+            }
+        }
+
+        public static float MAGICA_WEIGHTMAP_THRESHOLD_PC
+        {
+            get
+            {
+                if (EditorPrefs.HasKey("RL_Physics_Magica_WeightMap_Threshold_Percent"))
+                    return EditorPrefs.GetFloat("RL_Physics_Magica_WeightMap_Threshold_Percent");
+                return 0.5f;
+            }
+
+            set
+            {
+                EditorPrefs.SetFloat("RL_Physics_Magica_WeightMap_Threshold_Percent", value);
             }
         }
 
@@ -1103,7 +1119,7 @@ namespace Reallusion.Import
                 var particleRadiusValueField = particleRadiusData.GetType().GetField("value");
                 if (particleRadiusValueField != null)
                 {
-                    particleRadiusValueField.SetValue(particleRadiusData, 0.01f); // set the particle radius -- helps avoid the collider pushing out the cloth
+                    particleRadiusValueField.SetValue(particleRadiusData, 0.005f); // set the particle radius -- helps avoid the collider pushing out the cloth
                 }
             }
 
@@ -1913,7 +1929,7 @@ namespace Reallusion.Import
                 Texture2D physXWeightMap = Util.FindTexture(folders, "physXWeightMapTest");
                 string folder = ComputeBake.BakeTexturesFolder(currentCharacter.path);
                 string name = Path.GetFileNameWithoutExtension(data.weightMapPath) + "_" + MAGICA_WEIGHT_SIZE + "_magica";// "magicaWeightMapTest";
-                float threshold = 0f; // 1f / 255f;
+                float threshold = MAGICA_WEIGHTMAP_THRESHOLD_PC / 100f; //0f; // 1f / 255f;
                 Vector2Int size = new Vector2Int(MAGICA_WEIGHT_SIZE, MAGICA_WEIGHT_SIZE);
                 // should create the texture in: <current character folder>/Baked/<character name>/Textures
                 lowOutputMap = ComputeBake.BakeMagicaWeightMap(weightMap, threshold, size, folder, name);
