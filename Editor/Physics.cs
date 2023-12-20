@@ -917,6 +917,8 @@ namespace Reallusion.Import
                                 if (cloth != null)
                                 {
                                     cloth.enabled = data.activate;
+                                    if (!data.activate)
+                                        Debug.Log("Physics setup for " + meshName + " added. Unity Cloth component is currently set to inactive (using settings from Character Creator export).");
                                     clothMeshes.Add(new EnableStatusGameObject(obj, data.activate));
                                 }
                             }
@@ -929,6 +931,8 @@ namespace Reallusion.Import
                                 if (cloth != null)
                                 {
                                     cloth.enabled = data.activate;
+                                    if (!data.activate)
+                                        Debug.Log("Physics setup for " + meshName + " added. Unity Cloth component is currently set to inactive (using settings from Character Creator export).");
                                     clothMeshes.Add(new EnableStatusGameObject(obj, data.activate));
                                 }
                             }
@@ -1057,6 +1061,8 @@ namespace Reallusion.Import
                                     obj.AddComponent<PrefabNavigation>();
                                     var cloth = AddMagicaClothInstance(0, obj); // typeValue 0 == create magic mesh cloth 
                                     SetComponentEnabled(cloth, data.activate);
+                                    if (!data.activate)
+                                        Debug.Log("Physics setup for " + meshName + " added. Magica Cloth component is currently set to inactive (using settings from Character Creator export).");
                                     DoMagicaCloth(cloth, obj, data);
                                     SetMagicaParameters(cloth);
                                     //magicaClothMeshes.Add(obj);
@@ -1074,6 +1080,8 @@ namespace Reallusion.Import
                                     obj.AddComponent<PrefabNavigation>();
                                     var cloth = AddMagicaClothInstance(0, obj);
                                     SetComponentEnabled(cloth, data.activate);
+                                    if (!data.activate)
+                                        Debug.Log("Physics setup for " + meshName + " added. Magica Cloth component is currently set to inactive (using settings from Character Creator export).");
                                     DoMagicaCloth(cloth, obj, data);
                                     SetMagicaParameters(cloth);
                                     //magicaClothMeshes.Add(obj);
@@ -1203,7 +1211,7 @@ namespace Reallusion.Import
                 enabledProperty.SetValue(component, enabled);
 
                 bool isEnabled = (bool)enabledProperty.GetValue(component);
-                Debug.Log(component.name + " enabled status: " + isEnabled);                
+                //Debug.Log(component.name + " enabled status: " + isEnabled);                
             }
         }
 
