@@ -956,17 +956,39 @@ namespace Reallusion.Import
             GUI.backgroundColor = Color.Lerp(baseBackground, Color.blue, 0.20f);
             if (colliderManager.clothMeshes != null)
             {
-                foreach (GameObject clothMesh in colliderManager.clothMeshes)
+                foreach (ColliderManager.EnableStatusGameObject clothMesh in colliderManager.clothMeshes)
                 {
-                    GUILayout.BeginHorizontal();
-                    GUILayout.FlexibleSpace();
-                    if (GUILayout.Button(clothMesh.name, GUILayout.Width(160f)))
+                    if (clothMesh.GameObject != null)
                     {
-                        Selection.activeObject = clothMesh;
+                        GUILayout.BeginHorizontal();
+                        GUILayout.FlexibleSpace();
+                        if (GUILayout.Button(clothMesh.GameObject.name, GUILayout.Width(160f)))
+                        {
+                            Selection.activeObject = clothMesh.GameObject;
+                        }
+                        GUILayout.Space(4f);
+                        GUILayout.BeginVertical();
+                        GUILayout.Space(4f);
+                        EditorGUI.BeginChangeCheck();
+                        clothMesh.EnabledStatus = GUILayout.Toggle(clothMesh.EnabledStatus, "");
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            Cloth cloth = clothMesh.GameObject.GetComponent<Cloth>();
+                            if (cloth != null)
+                                cloth.enabled = clothMesh.EnabledStatus;
+
+                            WeightMapper weightMapper = clothMesh.GameObject.GetComponent<WeightMapper>();
+                            if (weightMapper != null)
+                                weightMapper.enabled = clothMesh.EnabledStatus;
+
+                            //save to prefab
+                            UpdatePrefab(cloth);
+                        }
+                        GUILayout.EndVertical();
+                        GUILayout.FlexibleSpace();
+                        GUILayout.EndHorizontal();
+                        GUILayout.Space(4f);
                     }
-                    GUILayout.FlexibleSpace();
-                    GUILayout.EndHorizontal();
-                    GUILayout.Space(4f);
                 }
             }
             GUI.backgroundColor = baseBackground;
@@ -991,17 +1013,33 @@ namespace Reallusion.Import
             GUI.backgroundColor = Color.Lerp(baseBackground, Color.green, 0.25f);
             if (colliderManager.magicaClothMeshes != null)
             {
-                foreach (GameObject clothMesh in colliderManager.magicaClothMeshes)
+                foreach (ColliderManager.EnableStatusGameObject clothMesh in colliderManager.magicaClothMeshes)
                 {
-                    GUILayout.BeginHorizontal();
-                    GUILayout.FlexibleSpace();
-                    if (GUILayout.Button(clothMesh.name, GUILayout.Width(160f)))
+                    if (clothMesh.GameObject != null)
                     {
-                        Selection.activeObject = clothMesh;
+                        GUILayout.BeginHorizontal();
+                        GUILayout.FlexibleSpace();
+                        if (GUILayout.Button(clothMesh.GameObject.name, GUILayout.Width(160f)))
+                        {
+                            Selection.activeObject = clothMesh.GameObject;
+                        }
+                        GUILayout.Space(4f);
+                        GUILayout.BeginVertical();
+                        GUILayout.Space(4f);
+                        EditorGUI.BeginChangeCheck();
+                        clothMesh.EnabledStatus = GUILayout.Toggle(clothMesh.EnabledStatus, "");
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            Physics.SetMagicaComponentEnableStatus(clothMesh.GameObject, clothMesh.EnabledStatus);
+
+                            //save to prefab
+                            UpdatePrefab(clothMesh.GameObject);
+                        }
+                        GUILayout.EndVertical();
+                        GUILayout.FlexibleSpace();
+                        GUILayout.EndHorizontal();
+                        GUILayout.Space(4f);
                     }
-                    GUILayout.FlexibleSpace();
-                    GUILayout.EndHorizontal();
-                    GUILayout.Space(4f);
                 }
             }
             GUI.backgroundColor = baseBackground;
@@ -1189,6 +1227,18 @@ namespace Reallusion.Import
 				}
 			}
 #endif
+        }
+        private void UpdatePrefab(Object component)
+        {
+            WindowManager.HideAnimationPlayer(true);
+            WindowManager.HideAnimationRetargeter(true);
+
+            GameObject prefabRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(component);
+            if (prefabRoot)
+            {
+                // save prefab asset
+                PrefabUtility.ApplyPrefabInstance(prefabRoot, InteractionMode.UserAction);
+            }
         }
     }
 }
