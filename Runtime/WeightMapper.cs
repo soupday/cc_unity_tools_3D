@@ -365,12 +365,12 @@ namespace Reallusion.Import
                 return false;
             }
         }
-
+        /*
         private void Update()
         {
             // needed so that the component can have an enable/disable toggle
         }
-
+        */
 #endif
     }
 }

@@ -73,6 +73,7 @@ namespace Reallusion.Import
             Current = this;
             colliderManager = (ColliderManager)target;
             InitIcons();
+            SyncEnableStatus();
         }
 
         private void OnDestroy()
@@ -363,6 +364,33 @@ namespace Reallusion.Import
                         }
                         break;
                     }
+            }
+        }
+
+        public void SyncEnableStatus()
+        {
+            if (colliderManager.clothMeshes != null && colliderManager.clothMeshes.Length > 0)
+            {
+                Debug.Log("Syncing UnityCloth Enabled Status");
+                foreach (ColliderManager.EnableStatusGameObject clothMesh in colliderManager.clothMeshes)
+                {
+                    Cloth c = clothMesh.GameObject.GetComponent<Cloth>();
+                    if (c != null) {
+                        clothMesh.EnabledStatus = c.enabled;
+                    }
+                }
+            }
+
+            if (colliderManager.magicaCloth2Available)
+            {
+                if (colliderManager.magicaClothMeshes != null && colliderManager.magicaClothMeshes.Length > 0)
+                {
+                    Debug.Log("Syncing Magica Cloth Enabled Status");
+                    foreach (ColliderManager.EnableStatusGameObject clothMesh in colliderManager.magicaClothMeshes)
+                    {
+                        clothMesh.EnabledStatus = Physics.GetMagicaComponentEnableStatus(clothMesh.GameObject);
+                    }
+                }
             }
         }
 
@@ -976,11 +1004,11 @@ namespace Reallusion.Import
                             Cloth cloth = clothMesh.GameObject.GetComponent<Cloth>();
                             if (cloth != null)
                                 cloth.enabled = clothMesh.EnabledStatus;
-
+                            /*
                             WeightMapper weightMapper = clothMesh.GameObject.GetComponent<WeightMapper>();
                             if (weightMapper != null)
                                 weightMapper.enabled = clothMesh.EnabledStatus;
-
+                            */
                             //save to prefab
                             UpdatePrefab(cloth);
                         }
