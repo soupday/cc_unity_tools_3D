@@ -74,7 +74,8 @@ namespace Reallusion.Import
             Current = this;
             colliderManager = (ColliderManager)target;
             InitIcons();
-            SyncEnableStatus();
+            UpdateClothShortcutList();
+            //SyncEnableStatus();
         }
 
         private void OnDestroy()
@@ -395,6 +396,40 @@ namespace Reallusion.Import
             }
         }
 
+        private void DrawClothShortcutUpdate()
+        {
+            if (GUILayout.Button("Refresh"))
+            {
+                UpdateClothShortcutList();
+            }
+        }
+        public void UpdateClothShortcutList()
+        {
+            if (colliderManager.magicaCloth2Available)
+            {
+                Type clothType = Physics.GetTypeInAssemblies("MagicaCloth2.MagicaCloth");
+                if (clothType != null)
+                {
+                    Component[] magicaClothInstances = colliderManager.gameObject.GetComponentsInChildren(clothType);
+                    List<ColliderManager.EnableStatusGameObject> magicaList = new List<ColliderManager.EnableStatusGameObject>();
+                    foreach(Component magicaComponent in magicaClothInstances)
+                    {
+                        GameObject g = magicaComponent.gameObject;
+                        magicaList.Add(new ColliderManager.EnableStatusGameObject(g, Physics.GetMagicaComponentEnableStatus(g)));
+                    }
+                    colliderManager.magicaClothMeshes = magicaList.ToArray();
+                }
+            }
+
+            Component[] unityClothInstances = colliderManager.gameObject.GetComponentsInChildren<Cloth>();
+            List<ColliderManager.EnableStatusGameObject> nativeList = new List<ColliderManager.EnableStatusGameObject>();
+            foreach (Component clothComponent in unityClothInstances)
+            {
+                GameObject g = clothComponent.gameObject;
+                nativeList.Add(new ColliderManager.EnableStatusGameObject(g, Physics.GetComponentEnabled(clothComponent)));
+            }
+            colliderManager.clothMeshes = nativeList.ToArray();
+        }
 
         public override void OnInspectorGUI()
         {
@@ -433,6 +468,8 @@ namespace Reallusion.Import
             {
                 DrawMagicaClothShortcuts();
             }
+
+            //DrawClothShortcutUpdate();
 
             if (resetAfterGUI)
             {

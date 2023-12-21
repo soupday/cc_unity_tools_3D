@@ -1184,7 +1184,7 @@ namespace Reallusion.Import
             return null;
         }
 
-        private static bool GetComponentEnabled(Object component)
+        public static bool GetComponentEnabled(Object component)
         {
             var enabledProperty = component.GetType().GetProperty("enabled");
             if (enabledProperty != null)
